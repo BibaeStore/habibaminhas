@@ -5,14 +5,15 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Settings,
-  LogOut, ShieldCheck, ChevronRight, Bell, TrendingUp,
-  Tag,
+  LogOut, ShieldCheck, ChevronRight, TrendingUp,
+  Tag, LayoutGrid,
 } from "lucide-react";
 
 const nav = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag, badge: "3" },
   { label: "Products", href: "/admin/products", icon: Package },
+  { label: "Categories", href: "/admin/categories", icon: LayoutGrid },
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Analytics", href: "/admin/analytics", icon: TrendingUp },
   { label: "Promotions", href: "/admin/promotions", icon: Tag },
