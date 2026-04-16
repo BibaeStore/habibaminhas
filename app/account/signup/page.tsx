@@ -1,29 +1,29 @@
 import Link from "next/link";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
+import Image from "next/image";
 
 export const metadata = { title: "Create Account" };
 
 export default function SignupPage() {
   return (
     <div className="grid min-h-[80vh] grid-cols-1 lg:grid-cols-2">
-      <div className="relative order-2 lg:order-1">
-        <PlaceholderImage
-          tone={["#ead7d1", "#c9917e", "#5a2a22"]}
-          motif="arch"
-          aspect="4/5"
-          animate
-          className="h-full lg:aspect-auto"
-          overlay
-        >
-          <div className="absolute inset-x-0 bottom-0 p-8 text-ivory sm:p-12">
-            <span className="text-[11px] uppercase tracking-[0.34em]">
-              Members
-            </span>
-            <p className="mt-3 max-w-md font-display text-2xl italic leading-tight sm:text-3xl">
-              Early access to new drops, restocks, and private sales — in your inbox first.
-            </p>
-          </div>
-        </PlaceholderImage>
+      <div className="relative order-2 lg:order-1 min-h-[40vh] lg:min-h-0">
+        <Image
+          src="/editorial/kids-festive.webp"
+          alt="Habiba Minhas"
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-cover object-top"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-8 text-ivory sm:p-12">
+          <span className="text-[11px] uppercase tracking-[0.34em]">
+            Members
+          </span>
+          <p className="mt-3 max-w-md font-display text-2xl italic leading-tight sm:text-3xl">
+            Early access to new drops, restocks, and private sales — in your inbox first.
+          </p>
+        </div>
       </div>
       <div className="order-1 flex items-center justify-center px-6 py-16 sm:px-10 lg:order-2">
         <div className="w-full max-w-md">

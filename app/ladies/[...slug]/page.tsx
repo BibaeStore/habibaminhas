@@ -43,6 +43,7 @@ export default async function LadiesCategoryPage({
       description="Handcrafted 3-piece stitched silk suits with gold brocade, mirror-work, and artisan embroidery — for every occasion."
       tone={["#f2e0d8", "#c97a86", "#5a2030"]}
       motif="floral"
+      image="/editorial/ladies-collection.webp"
       products={items}
     />
   );

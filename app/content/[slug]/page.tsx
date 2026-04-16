@@ -1,5 +1,5 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
 
 type Params = { slug: string };
 
@@ -132,13 +132,10 @@ export default async function ContentPage({
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
       <div className="relative mb-12">
-        <PlaceholderImage
-          tone={page.tone}
-          motif={page.motif}
-          aspect="21/9"
-          overlay
-          animate
-        />
+        <div className="relative aspect-[21/9] w-full overflow-hidden">
+          <Image src="/editorial/ladies-collection.webp" alt={page.title} fill priority sizes="100vw" className="object-cover object-top" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
+        </div>
         <div className="absolute inset-0 flex flex-col justify-end p-6 text-ivory sm:p-12">
           <span className="text-[11px] uppercase tracking-[0.32em] text-gold-light">
             {page.eyebrow}

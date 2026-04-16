@@ -1,4 +1,4 @@
-import { PlaceholderImage } from "@/components/common/placeholder-image";
+import Image from "next/image";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata = { title: "About" };
@@ -26,13 +26,17 @@ export default function AboutPage() {
   return (
     <>
       <section className="relative">
-        <PlaceholderImage
-          tone={["#f2e0d8", "#c97a86", "#5a2030"]}
-          motif="floral"
-          aspect="21/9"
-          animate
-          overlay
-        />
+        <div className="relative aspect-[21/9] w-full overflow-hidden">
+          <Image
+            src="/editorial/ladies-collection.webp"
+            alt="Habiba Minhas — Our Story"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-top"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
+        </div>
         <div className="absolute inset-0 mx-auto flex w-full max-w-[1440px] flex-col justify-end px-6 pb-16 text-ivory sm:px-12 sm:pb-24">
           <span className="text-[11px] uppercase tracking-[0.34em] text-gold-light">
             Our Story
@@ -90,16 +94,35 @@ export default function AboutPage() {
       <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8">
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 md:col-span-7">
-            <PlaceholderImage
-              tone={["#f5e8c0", "#c8900c", "#5a3800"]}
-              motif="floral"
-              aspect="4/5"
-              animate
-            />
+            <div className="relative aspect-[4/5] w-full overflow-hidden">
+              <Image
+                src="/editorial/kids-festive.webp"
+                alt="Habiba Minhas craftsmanship"
+                fill
+                sizes="(max-width: 768px) 100vw, 58vw"
+                className="object-cover object-top"
+              />
+            </div>
           </div>
           <div className="col-span-12 flex flex-col gap-4 md:col-span-5">
-            <PlaceholderImage tone={["#f0e0f0", "#c090c0", "#401840"]} motif="lattice" aspect="4/5" />
-            <PlaceholderImage tone={["#d4e8d0", "#507848", "#182810"]} motif="ogee" aspect="4/5" />
+            <div className="relative aspect-[4/5] w-full overflow-hidden">
+              <Image
+                src="/editorial/baby-nursery.webp"
+                alt="Habiba Minhas modest wear"
+                fill
+                sizes="(max-width: 768px) 100vw, 42vw"
+                className="object-cover object-center"
+              />
+            </div>
+            <div className="relative aspect-[4/5] w-full overflow-hidden">
+              <Image
+                src="/editorial/accessories.webp"
+                alt="Habiba Minhas accessories"
+                fill
+                sizes="(max-width: 768px) 100vw, 42vw"
+                className="object-cover object-top"
+              />
+            </div>
           </div>
         </div>
       </section>

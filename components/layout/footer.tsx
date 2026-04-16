@@ -196,8 +196,8 @@ export function Footer() {
               Contact
             </div>
             <ul className="mt-4 flex flex-col gap-2.5 text-[13px] text-ink-soft">
-              <li>support@habibaminhas.com</li>
-              <li>+92 312 0295812</li>
+              <li><a href="mailto:info@habibaminhas.com" className="hover:text-gold-dark transition-colors">info@habibaminhas.com</a></li>
+              <li><a href="https://wa.me/923120295812" target="_blank" rel="noopener noreferrer" className="hover:text-gold-dark transition-colors">+92 312 0295812</a></li>
               <li>Karachi, Pakistan — 75533</li>
               <li>Mon–Fri, 9a–6p PKT</li>
             </ul>

@@ -1,8 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Minus, Plus, X, ShieldCheck, Truck, RotateCcw, Tag } from "lucide-react";
 import { products } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
 
 export const metadata = { title: "Your Bag" };
 
@@ -40,12 +40,12 @@ export default function CartPage() {
           <ul className="divide-y divide-border-soft border-y border-border-soft">
             {lineItems.map((l, idx) => (
               <li key={idx} className="flex gap-5 py-6">
-                <div className="w-24 flex-none sm:w-32">
-                  <PlaceholderImage
-                    tone={l.product.palette}
-                    motif="floral"
-                    aspect="3/4"
-                  />
+                <div className="relative w-24 flex-none sm:w-32 aspect-[3/4] bg-cream overflow-hidden">
+                  {l.product.image ? (
+                    <Image src={l.product.image} alt={l.product.title} fill sizes="128px" className="object-cover object-top" />
+                  ) : (
+                    <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${l.product.palette[0]}, ${l.product.palette[1]})` }} />
+                  )}
                 </div>
                 <div className="flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-3">

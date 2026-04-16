@@ -13,6 +13,7 @@ export default function BabyPage() {
       description="Soft, padded nursery bedding sets, baby nests, swaddle wraps, and accessories — everything your little one needs, made with love in Pakistan."
       tone={["#f0e0f0", "#c090c0", "#401840"]}
       motif="stripes"
+      image="/products/pastel-dream-nursery.webp"
       products={items}
     />
   );

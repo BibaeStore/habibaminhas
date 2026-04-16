@@ -1,18 +1,14 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
 
 export default function NotFound() {
   return (
     <div className="relative">
-      <PlaceholderImage
-        tone={["#efe3d0", "#a8804b", "#2a1f17"]}
-        motif="arch"
-        aspect="21/9"
-        animate
-        overlay
-        className="min-h-[70vh]"
-      />
+      <div className="relative min-h-[70vh] w-full overflow-hidden">
+        <Image src="/editorial/ladies-collection.webp" alt="" fill sizes="100vw" className="object-cover object-top" />
+        <div className="absolute inset-0 bg-black/55" />
+      </div>
       <div className="absolute inset-0 mx-auto flex w-full max-w-[1440px] flex-col items-center justify-center px-6 text-center text-ivory sm:px-12">
         <span className="text-[11px] uppercase tracking-[0.34em] text-gold-light">
           Error 404

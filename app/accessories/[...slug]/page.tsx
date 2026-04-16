@@ -43,6 +43,7 @@ export default async function AccessoriesCategoryPage({
       description="Handcrafted silk headbands, floral hair clips, and 3-piece sets — made for girls of all ages."
       tone={["#eedbc4", "#b08040", "#3a2010"]}
       motif="lattice"
+      image="/editorial/accessories.webp"
       products={items}
     />
   );

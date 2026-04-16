@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
+import Image from "next/image";
 
 export const metadata = { title: "Sign In" };
 
@@ -66,24 +66,24 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
-      <div className="order-1 relative lg:order-2">
-        <PlaceholderImage
-          tone={["#efe3d0", "#a8804b", "#2a1f17"]}
-          motif="floral"
-          aspect="4/5"
-          animate
-          className="h-full lg:aspect-auto"
-          overlay
-        >
-          <div className="absolute inset-x-0 bottom-0 p-8 text-ivory sm:p-12">
-            <span className="text-[11px] uppercase tracking-[0.34em]">
-              Est. 2026
-            </span>
-            <p className="mt-3 max-w-md font-display text-2xl italic leading-tight sm:text-3xl">
-              A quiet house of cloth, composed in Karachi and dispatched to forty-two countries.
-            </p>
-          </div>
-        </PlaceholderImage>
+      <div className="order-1 relative lg:order-2 min-h-[40vh] lg:min-h-0">
+        <Image
+          src="/trending/emerald-embroidery.webp"
+          alt="Habiba Minhas"
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-cover object-top"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-8 text-ivory sm:p-12">
+          <span className="text-[11px] uppercase tracking-[0.34em]">
+            Est. 2026
+          </span>
+          <p className="mt-3 max-w-md font-display text-2xl italic leading-tight sm:text-3xl">
+            A quiet house of cloth, composed in Karachi and dispatched nationwide.
+          </p>
+        </div>
       </div>
     </div>
   );

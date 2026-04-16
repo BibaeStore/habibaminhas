@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   Heart,
@@ -62,23 +63,49 @@ export default async function ProductPage({
         <div className="lg:col-span-7">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-6">
             <div className="sm:col-span-6">
-              <PlaceholderImage
-                tone={product.palette}
-                motif="floral"
-                aspect="4/5"
-                animate
-              />
+              {product.image ? (
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-cream">
+                  <Image
+                    src={product.image}
+                    alt={product.title}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 58vw"
+                    className="object-cover object-top"
+                  />
+                </div>
+              ) : (
+                <PlaceholderImage
+                  tone={product.palette}
+                  motif="floral"
+                  aspect="4/5"
+                  animate
+                />
+              )}
             </div>
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
                 className="sm:col-span-3 lg:col-span-2 xl:col-span-3"
               >
-                <PlaceholderImage
-                  tone={product.palette}
-                  motif={motifs[i]}
-                  aspect="3/4"
-                />
+                {product.image ? (
+                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-cream opacity-70 hover:opacity-100 transition-opacity cursor-pointer">
+                    <Image
+                      src={product.image}
+                      alt={`${product.title} view ${i + 2}`}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 20vw"
+                      className="object-cover object-top"
+                      style={{ objectPosition: `${["top", "center", "bottom", "top"][i]}` }}
+                    />
+                  </div>
+                ) : (
+                  <PlaceholderImage
+                    tone={product.palette}
+                    motif={motifs[i]}
+                    aspect="3/4"
+                  />
+                )}
               </div>
             ))}
           </div>

@@ -13,6 +13,7 @@ export default function LadiesPage() {
       description="Handcrafted 3-piece silk suits adorned with gold brocade, mirror-work, and artisan embroidery — made for the modern Pakistani woman."
       tone={["#f2e0d8", "#c97a86", "#5a2030"]}
       motif="floral"
+      image="/editorial/ladies-collection.webp"
       products={items}
     />
   );

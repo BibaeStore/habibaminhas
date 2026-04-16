@@ -1,5 +1,5 @@
+import Image from "next/image";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata = { title: "Contact & Studio" };
@@ -8,13 +8,10 @@ export default function StoresPage() {
   return (
     <>
       <section className="relative">
-        <PlaceholderImage
-          tone={["#f2e0d8", "#c97a86", "#5a2030"]}
-          motif="arch"
-          aspect="21/9"
-          overlay
-          animate
-        />
+        <div className="relative aspect-[21/9] w-full overflow-hidden">
+          <Image src="/editorial/ladies-collection.webp" alt="Habiba Minhas Studio" fill priority sizes="100vw" className="object-cover object-top" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+        </div>
         <div className="absolute inset-0 mx-auto flex w-full max-w-[1440px] flex-col justify-end px-6 pb-12 text-ivory sm:px-12 sm:pb-16">
           <span className="text-[11px] uppercase tracking-[0.34em] text-gold-light">
             Find us
@@ -37,13 +34,9 @@ export default function StoresPage() {
 
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <article className="group overflow-hidden border border-border-soft bg-ivory">
-            <PlaceholderImage
-              tone={["#f2e0d8", "#c97a86", "#5a2030"]}
-              motif="floral"
-              aspect="4/5"
-              animate
-              label="Studio"
-            />
+            <div className="relative aspect-[4/5] overflow-hidden">
+              <Image src="/editorial/kids-festive.webp" alt="Habiba Minhas Studio" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover object-top transition-transform duration-500 group-hover:scale-105" />
+            </div>
             <div className="p-6">
               <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
                 Karachi
@@ -57,23 +50,19 @@ export default function StoresPage() {
                   <Clock className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Mon–Fri · 9a — 6p PKT
                 </li>
                 <li className="flex items-start gap-2">
-                  <Phone className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> +92 312 0295812
+                  <Phone className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> <a href="https://wa.me/923120295812" target="_blank" rel="noopener noreferrer" className="hover:text-gold-dark transition-colors">+92 312 0295812</a>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Mail className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> support@habibaminhas.com
+                  <Mail className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> <a href="mailto:info@habibaminhas.com" className="hover:text-gold-dark transition-colors">info@habibaminhas.com</a>
                 </li>
               </ul>
             </div>
           </article>
 
           <article className="group overflow-hidden border border-border-soft bg-ivory">
-            <PlaceholderImage
-              tone={["#f5e8c0", "#c8900c", "#5a3800"]}
-              motif="lattice"
-              aspect="4/5"
-              animate
-              label="Delivery"
-            />
+            <div className="relative aspect-[4/5] overflow-hidden">
+              <Image src="/trending/floral-lawn.webp" alt="Nationwide Delivery" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover object-top transition-transform duration-500 group-hover:scale-105" />
+            </div>
             <div className="p-6">
               <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
                 Nationwide
@@ -97,13 +86,9 @@ export default function StoresPage() {
           </article>
 
           <article className="group overflow-hidden border border-border-soft bg-ivory">
-            <PlaceholderImage
-              tone={["#f0e0f0", "#c090c0", "#401840"]}
-              motif="ogee"
-              aspect="4/5"
-              animate
-              label="Returns"
-            />
+            <div className="relative aspect-[4/5] overflow-hidden">
+              <Image src="/trending/pink-blossom.webp" alt="14-Day Returns" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover object-top transition-transform duration-500 group-hover:scale-105" />
+            </div>
             <div className="p-6">
               <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
                 Policy
@@ -114,7 +99,7 @@ export default function StoresPage() {
                   <Clock className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> 14-day return window
                 </li>
                 <li className="flex items-start gap-2">
-                  <Phone className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> WhatsApp: +92 312 0295812
+                  <Phone className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> WhatsApp: <a href="https://wa.me/923120295812" target="_blank" rel="noopener noreferrer" className="hover:text-gold-dark transition-colors">+92 312 0295812</a>
                 </li>
                 <li className="flex items-start gap-2">
                   <Mail className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Items must be in original condition

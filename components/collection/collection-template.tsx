@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, SlidersHorizontal, ArrowDownAZ } from "lucide-react";
 import type { Product } from "@/lib/data";
@@ -14,6 +15,7 @@ export function CollectionTemplate({
   description,
   tone = ["#efe3d0", "#a8804b", "#2a1f17"],
   motif = "floral",
+  image,
   products,
   filters,
 }: {
@@ -23,13 +25,28 @@ export function CollectionTemplate({
   description?: string;
   tone?: [string, string, string];
   motif?: "lattice" | "floral" | "ogee" | "stripes" | "arch";
+  image?: string;
   products: Product[];
   filters?: { colour?: Filter[]; size?: Filter[]; piece?: Filter[]; price?: Filter[] };
 }) {
   return (
     <>
       <section className="relative">
-        <PlaceholderImage tone={tone} motif={motif} aspect="21/9" overlay animate />
+        {image ? (
+          <div className="relative aspect-[21/9] w-full overflow-hidden">
+            <Image
+              src={image}
+              alt={title}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-top"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          </div>
+        ) : (
+          <PlaceholderImage tone={tone} motif={motif} aspect="21/9" overlay animate />
+        )}
         <div className="absolute inset-0 mx-auto flex w-full max-w-[1440px] flex-col justify-end px-6 pb-10 text-ivory sm:px-12 sm:pb-16">
           <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.28em] text-ivory/85">
             {crumbs.map((c, i) => (

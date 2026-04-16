@@ -13,6 +13,7 @@ export default function NewArrivalsPage() {
       description="The latest additions to the Habiba Minhas collection — ladies suits, kids formalwear, baby products, and accessories."
       tone={["#f2e0d8", "#c97a86", "#5a2030"]}
       motif="floral"
+      image="/trending/pink-blossom.webp"
       products={items}
     />
   );

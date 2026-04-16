@@ -55,6 +55,7 @@ export default async function BabyCategoryPage({
       description="Premium padded nursery bedding, baby nests, swaddles, and accessories — made with love and softness in mind."
       tone={tone}
       motif="stripes"
+      image="/editorial/baby-nursery.webp"
       products={items}
     />
   );

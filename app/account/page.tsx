@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Package, MapPin, CreditCard, Heart, User, LogOut } from "lucide-react";
+import Image from "next/image";
 import { products } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
 
 export const metadata = { title: "Account" };
 
@@ -148,8 +148,14 @@ export default function AccountPage() {
             </div>
             <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
               {saved.map((p) => (
-                <Link key={p.id} href={`/product/${p.slug}`} className="block">
-                  <PlaceholderImage tone={p.palette} motif="floral" aspect="3/4" />
+                <Link key={p.id} href={`/product/${p.slug}`} className="block group">
+                  <div className="relative aspect-[3/4] overflow-hidden bg-cream">
+                    {p.image ? (
+                      <Image src={p.image} alt={p.title} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover object-top transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${p.palette[0]}, ${p.palette[1]})` }} />
+                    )}
+                  </div>
                   <div className="mt-3 line-clamp-1 text-[12px]">{p.title}</div>
                   <div className="text-[12px] text-ink-soft">{formatPrice(p.price)}</div>
                 </Link>

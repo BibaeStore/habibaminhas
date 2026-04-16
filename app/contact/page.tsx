@@ -1,5 +1,5 @@
+import Image from "next/image";
 import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
 
 export const metadata = { title: "Contact" };
 
@@ -28,7 +28,7 @@ export default function ContactPage() {
                 <div className="text-[11px] uppercase tracking-[0.24em] text-muted">
                   Email
                 </div>
-                <div>support@habibaminhas.com</div>
+                <a href="mailto:info@habibaminhas.com" className="hover:text-gold-dark transition-colors">info@habibaminhas.com</a>
               </div>
             </li>
             <li className="flex items-start gap-4">
@@ -37,9 +37,9 @@ export default function ContactPage() {
               </span>
               <div>
                 <div className="text-[11px] uppercase tracking-[0.24em] text-muted">
-                  Call / WhatsApp
+                  WhatsApp
                 </div>
-                <div>+92 312 0295812</div>
+                <a href="https://wa.me/923120295812" target="_blank" rel="noopener noreferrer" className="hover:text-gold-dark transition-colors">+92 312 0295812</a>
               </div>
             </li>
             <li className="flex items-start gap-4">
@@ -67,21 +67,21 @@ export default function ContactPage() {
           </ul>
         </div>
         <div className="lg:col-span-7">
-          <div className="relative">
-            <PlaceholderImage
-              tone={["#efe3d0", "#a8804b", "#2a1f17"]}
-              motif="arch"
-              aspect="21/9"
-              overlay
-              animate
-              className="h-56"
+          <div className="relative h-56 overflow-hidden">
+            <Image
+              src="/editorial/ladies-collection.webp"
+              alt="Habiba Minhas Studio — Karachi"
+              fill
+              sizes="(max-width: 1024px) 100vw, 58vw"
+              className="object-cover object-top"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">
               <div className="text-[11px] uppercase tracking-[0.28em] opacity-85">
-                Open studio
+                Karachi Studio
               </div>
               <div className="font-display text-2xl italic">
-                Every Saturday, 2–5pm
+                Handcrafted in Pakistan
               </div>
             </div>
           </div>

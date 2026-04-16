@@ -43,6 +43,7 @@ export default async function KidsCategoryPage({
       description="Festive gowns, co-ord sets, and silk suits for girls — tailored for every celebration that deserves to be dressed well."
       tone={["#f5e8c0", "#c8900c", "#5a3800"]}
       motif="ogee"
+      image="/products/royal-amethyst-gown.webp"
       products={items}
     />
   );
