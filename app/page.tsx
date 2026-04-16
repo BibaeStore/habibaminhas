@@ -20,6 +20,7 @@ export default function HomePage() {
         body="3-piece stitched silk suits adorned with gold brocade, antique mirror-work, and artisan embroidery. Handcrafted in Pakistan for the modern woman."
         tone={["#f2e0d8", "#c97a86", "#5a2030"]}
         motif="floral"
+        image="/editorial/ladies-collection.webp"
         links={[
           { label: "Shop Ladies Suits", href: "/ladies/suits" },
           { label: "Formal & Party Wear", href: "/ladies/occasion/formal" },
@@ -34,6 +35,7 @@ export default function HomePage() {
         tone={["#f5e8c0", "#c8900c", "#5a3800"]}
         motif="ogee"
         orientation="right"
+        image="/editorial/kids-festive.webp"
         links={[
           { label: "Shop Girls Formal", href: "/kids/girls" },
           { label: "Festive Co-Ord Sets", href: "/kids/girls/co-ord" },
@@ -47,6 +49,7 @@ export default function HomePage() {
         body="Deluxe padded crib bedding sets, baby nest pods, swaddle wraps, and nursing pillows — everything your nursery needs, made with love in Pakistan."
         tone={["#f0e0f0", "#c090c0", "#401840"]}
         motif="stripes"
+        image="/editorial/baby-nursery.webp"
         links={[
           { label: "Shop Crib Bedding Sets", href: "/baby/bedding" },
           { label: "Baby Nests & Loungers", href: "/baby/nests" },
@@ -61,6 +64,7 @@ export default function HomePage() {
         tone={["#eedbc4", "#b08040", "#3a2010"]}
         motif="lattice"
         orientation="right"
+        image="/editorial/accessories.webp"
         links={[
           { label: "Shop Hair Accessories", href: "/accessories/hair" },
           { label: "Headband & Clip Sets", href: "/accessories/hair/sets" },

@@ -15,12 +15,20 @@ const toneMap = {
 export function MegaPanel({
   menu,
   onClose,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   menu: MegaMenu;
   onClose: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }) {
   return (
-    <div className="absolute inset-x-0 top-full hidden lg:block">
+    <div
+      className="absolute inset-x-0 top-full hidden lg:block"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <div className="border-t border-border-soft bg-ivory shadow-soft animate-fade-up">
         <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-10 px-8 py-10">
           <div className="col-span-8 grid grid-cols-4 gap-8">

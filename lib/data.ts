@@ -179,6 +179,7 @@ export type Product = {
   palette: [string, string, string];
   category: string;
   pieces?: string;
+  image?: string;
 };
 
 const palettes: Array<Product["palette"]> = [
@@ -201,14 +202,14 @@ const palettes: Array<Product["palette"]> = [
 ];
 
 // ─── Ladies Formal Suits ──────────────────────────────────────────────────
-const ladiesSuits: Pick<Product, "id" | "title" | "price" | "palette" | "badge" | "compareAt">[] = [
-  { id: "lad-1", title: "Rosewood Elegance — 3-Piece Formal Suit", price: 6000, palette: palettes[0], badge: "Bestseller" },
-  { id: "lad-2", title: "Indigo Radiance — 3-Piece Stitched Silk Suit with Gold Brocade Trim", price: 5000, palette: palettes[1] },
-  { id: "lad-3", title: "Bronze Mocha — 3-Piece Stitched Silk Suit with Sequin Artistry", price: 5000, palette: palettes[2] },
-  { id: "lad-4", title: "Pearl Radiance — 3-Piece Stitched Silk Suit with Silver Mirror-Work Trim", price: 5000, palette: palettes[3], badge: "New In" },
-  { id: "lad-5", title: "Golden Amber — 3-Piece Stitched Silk Suit with Embroidered Neckline", price: 5000, palette: palettes[4] },
-  { id: "lad-6", title: "Rose Jewel — 3-Piece Stitched Silk Suit with Silver Metallic Trim", price: 5000, palette: palettes[5] },
-  { id: "lad-7", title: "Dusty Rose Elegance — 3-Piece Stitched Silk Suit with Antique Gold Gota", price: 5000, palette: palettes[6] },
+const ladiesSuits: (Pick<Product, "id" | "title" | "price" | "palette" | "badge" | "compareAt"> & { image?: string })[] = [
+  { id: "lad-1", title: "Rosewood Elegance — 3-Piece Formal Suit", price: 6000, palette: palettes[0], badge: "Bestseller", image: "/products/indigo-floral.webp" },
+  { id: "lad-2", title: "Indigo Radiance — 3-Piece Stitched Silk Suit with Gold Brocade Trim", price: 5000, palette: palettes[1], image: "/products/sage-chiffon.webp" },
+  { id: "lad-3", title: "Bronze Mocha — 3-Piece Stitched Silk Suit with Sequin Artistry", price: 5000, palette: palettes[2], image: "/products/slate-printed.webp" },
+  { id: "lad-4", title: "Pearl Radiance — 3-Piece Stitched Silk Suit with Silver Mirror-Work Trim", price: 5000, palette: palettes[3], badge: "New In", image: "/products/ivory-floral.webp" },
+  { id: "lad-5", title: "Golden Amber — 3-Piece Stitched Silk Suit with Embroidered Neckline", price: 5000, palette: palettes[4], image: "/products/sky-embroidered.webp" },
+  { id: "lad-6", title: "Rose Jewel — 3-Piece Stitched Silk Suit with Silver Metallic Trim", price: 5000, palette: palettes[5], image: "/products/blush-embroidered.webp" },
+  { id: "lad-7", title: "Dusty Rose Elegance — 3-Piece Stitched Silk Suit with Antique Gold Gota", price: 5000, palette: palettes[6], image: "/products/pistachio-floral.webp" },
   { id: "lad-8", title: "Royal Plum — 3-Piece Stitched Silk Suit with Antique Gold Trim", price: 5000, palette: palettes[7] },
   { id: "lad-9", title: "Teal Enchantment — 3-Piece Stitched Silk Suit with Intricate Lace Work", price: 5000, palette: palettes[8] },
   { id: "lad-10", title: "Midnight Navy — 3-Piece Stitched Silk Suit with Silver V-Neck Detail", price: 4500, palette: palettes[1], compareAt: 5000 },
@@ -270,6 +271,7 @@ function makeProduct(
     category,
     compareAt: undefined,
     pieces: undefined,
+    image: undefined,
     ...base,
     ...extras,
   };
@@ -316,19 +318,19 @@ export const heroSlides = [
 ];
 
 export const categoryTiles = [
-  { label: "Ladies Suits", href: "/ladies/suits", tone: ["#f2e0d8", "#c97a86"] as const },
-  { label: "Kids Formal", href: "/kids/girls", tone: ["#f5e8c0", "#c8900c"] as const },
-  { label: "Baby Bedding", href: "/baby/bedding", tone: ["#d4e8d0", "#507848"] as const },
-  { label: "Baby Nests", href: "/baby/nests", tone: ["#f0e0f0", "#c090c0"] as const },
-  { label: "Accessories", href: "/accessories/hair", tone: ["#eedbc4", "#b08040"] as const },
-  { label: "New Arrivals", href: "/new", tone: ["#dde0f0", "#5c6dab"] as const },
+  { label: "Ladies Suits", href: "/ladies/suits", image: "/categories/ladies-suits.webp", tone: ["#f2e0d8", "#c97a86"] as const },
+  { label: "Kids Formal", href: "/kids/girls", image: "/categories/kids-formal.webp", tone: ["#f5e8c0", "#c8900c"] as const },
+  { label: "Baby Bedding", href: "/baby/bedding", image: "/categories/baby-bedding.webp", tone: ["#d4e8d0", "#507848"] as const },
+  { label: "Baby Nests", href: "/baby/nests", image: "/categories/baby-nests.webp", tone: ["#f0e0f0", "#c090c0"] as const },
+  { label: "Accessories", href: "/accessories/hair", image: "/categories/accessories.webp", tone: ["#eedbc4", "#b08040"] as const },
+  { label: "New Arrivals", href: "/new", image: "/categories/new-arrivals.webp", tone: ["#dde0f0", "#5c6dab"] as const },
 ];
 
 export const trendTiles = [
-  { label: "Rosewood Elegance", href: "/ladies/suits/formal-3-piece", tone: ["#f2e0d8", "#c97a86"] as const },
-  { label: "Festive Gowns", href: "/kids/girls/gowns", tone: ["#f5e8c0", "#c8900c"] as const },
-  { label: "Nursery Dreams", href: "/baby/bedding", tone: ["#f0e0f0", "#c090c0"] as const },
-  { label: "Silk Accessories", href: "/accessories/hair/sets", tone: ["#eedbc4", "#b08040"] as const },
+  { label: "Floral Lawn", href: "/ladies/suits", image: "/trending/floral-lawn.webp", tone: ["#c8ede4", "#e87aaa"] as const },
+  { label: "Emerald Embroidery", href: "/ladies/suits/gold-brocade", image: "/trending/emerald-embroidery.webp", tone: ["#1a3a30", "#c8a84b"] as const },
+  { label: "Sage & Bloom", href: "/ladies/suits", image: "/trending/sage-bloom.webp", tone: ["#c8d8b0", "#9090d0"] as const },
+  { label: "Pink Blossom", href: "/ladies/suits", image: "/trending/pink-blossom.webp", tone: ["#f8e0e8", "#e07898"] as const },
 ];
 
 export const promoMessages = [

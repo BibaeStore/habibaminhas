@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Search,
   User,
@@ -22,6 +22,34 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  // ── Close-delay timer ───────────────────────────────────────────────────
+  // The header's own bounding-box is only 74 px tall.  The mega panel sits
+  // below it via `position:absolute; top:100%`.  Without a delay the mouse
+  // crossing the 74 px edge fires mouseleave on <header> and instantly kills
+  // the panel before the cursor reaches any link inside it.
+  //
+  // Pattern: schedule close after 150 ms; cancel it the moment the mouse
+  // re-enters any nav trigger or the panel itself.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function scheduleClose() {
+    closeTimer.current = setTimeout(() => setOpen(null), 150);
+  }
+
+  function cancelClose() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  }
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
@@ -35,12 +63,12 @@ export function Navbar() {
         "sticky top-0 z-40 bg-ivory/85 backdrop-blur-md transition-shadow",
         scrolled ? "shadow-[0_1px_0_rgba(26,22,18,0.06)]" : "",
       )}
-      onMouseLeave={() => setOpen(null)}
+      onMouseLeave={scheduleClose}
     >
       <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-4 sm:h-[74px] sm:px-8">
         {/* Left: logo + desktop nav */}
         <div className="flex items-center gap-6">
-          {/* Mobile: hamburger + search */}
+          {/* Mobile: hamburger */}
           <div className="flex items-center gap-2 lg:hidden">
             <button
               type="button"
@@ -53,7 +81,7 @@ export function Navbar() {
           </div>
 
           {/* Logo — left-aligned on all breakpoints */}
-          <Link href="/" aria-label="Habiba Minhas">
+          <Link href="/" aria-label="Habiba Minhas" onMouseEnter={cancelClose}>
             <Image
               src="/logo/habiba-minhas-logo-t.png"
               alt="Habiba Minhas"
@@ -70,7 +98,10 @@ export function Navbar() {
               <button
                 key={m.label}
                 type="button"
-                onMouseEnter={() => setOpen(m.label)}
+                onMouseEnter={() => {
+                  cancelClose();
+                  setOpen(m.label);
+                }}
                 onClick={() => setOpen(open === m.label ? null : m.label)}
                 className={cn(
                   "group relative px-4 py-3 text-[12px] uppercase tracking-[0.26em] transition-colors",
@@ -88,12 +119,14 @@ export function Navbar() {
             ))}
             <Link
               href="/new"
+              onMouseEnter={() => { cancelClose(); setOpen(null); }}
               className="px-4 py-3 text-[12px] uppercase tracking-[0.26em] text-ink hover:text-gold-dark"
             >
               New In
             </Link>
             <Link
               href="/about"
+              onMouseEnter={() => { cancelClose(); setOpen(null); }}
               className="px-4 py-3 text-[12px] uppercase tracking-[0.26em] text-ink hover:text-gold-dark"
             >
               About
@@ -101,7 +134,11 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        {/* Right: utility icons */}
+        <div
+          className="flex items-center gap-1 sm:gap-2"
+          onMouseEnter={cancelClose}
+        >
           <button
             type="button"
             aria-label="Search"
@@ -147,7 +184,12 @@ export function Navbar() {
         ? (() => {
             const active = megaMenus.find((m) => m.label === open);
             return active ? (
-              <MegaPanel menu={active} onClose={() => setOpen(null)} />
+              <MegaPanel
+                menu={active}
+                onClose={() => setOpen(null)}
+                onMouseEnter={cancelClose}
+                onMouseLeave={scheduleClose}
+              />
             ) : null;
           })()
         : null}

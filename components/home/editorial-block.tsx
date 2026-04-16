@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 
@@ -11,6 +12,7 @@ export type EditorialBlockProps = {
   tone: [string, string, string];
   motif?: "lattice" | "floral" | "ogee" | "stripes" | "arch";
   orientation?: "left" | "right";
+  image?: string;
 };
 
 export function EditorialBlock({
@@ -21,6 +23,7 @@ export function EditorialBlock({
   tone,
   motif = "floral",
   orientation = "left",
+  image,
 }: EditorialBlockProps) {
   const reversed = orientation === "right";
   return (
@@ -31,13 +34,25 @@ export function EditorialBlock({
         }`}
       >
         <div className="lg:col-span-7">
-          <PlaceholderImage
-            tone={tone}
-            motif={motif}
-            aspect="4/5"
-            animate
-            className="h-full"
-          />
+          {image ? (
+            <div className="relative aspect-[4/5] w-full overflow-hidden">
+              <Image
+                src={image}
+                alt={title}
+                fill
+                sizes="(max-width: 1024px) 100vw, 58vw"
+                className="object-cover object-center"
+              />
+            </div>
+          ) : (
+            <PlaceholderImage
+              tone={tone}
+              motif={motif}
+              aspect="4/5"
+              animate
+              className="h-full"
+            />
+          )}
         </div>
         <div className="flex flex-col justify-center lg:col-span-5 lg:px-8">
           <span className="text-[11px] uppercase tracking-[0.34em] text-gold-dark">
