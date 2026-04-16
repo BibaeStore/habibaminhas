@@ -1,30 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Settings,
   LogOut, ShieldCheck, ChevronRight, TrendingUp,
-  Tag, LayoutGrid,
+  LayoutGrid, Megaphone, X,
 } from "lucide-react";
 
 const nav = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Orders", href: "/admin/orders", icon: ShoppingBag, badge: "3" },
-  { label: "Products", href: "/admin/products", icon: Package },
-  { label: "Categories", href: "/admin/categories", icon: LayoutGrid },
-  { label: "Customers", href: "/admin/customers", icon: Users },
-  { label: "Analytics", href: "/admin/analytics", icon: TrendingUp },
-  { label: "Promotions", href: "/admin/promotions", icon: Tag },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Dashboard",  href: "/admin",             icon: LayoutDashboard },
+  { label: "Orders",     href: "/admin/orders",       icon: ShoppingBag, badge: "7" },
+  { label: "Products",   href: "/admin/products",     icon: Package },
+  { label: "Categories", href: "/admin/categories",   icon: LayoutGrid },
+  { label: "Customers",  href: "/admin/customers",    icon: Users },
+  { label: "Analytics",  href: "/admin/analytics",    icon: TrendingUp },
+  { label: "Marketing",  href: "/admin/marketing",    icon: Megaphone },
+  { label: "Settings",   href: "/admin/settings",     icon: Settings },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({
+  isOpen = false,
+  onClose,
+}: {
+  isOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-64 flex-col bg-ink text-ivory shrink-0">
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-ink/60 md:hidden"
+          onClick={onClose}
+        />
+      )}
+    <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col bg-ink text-ivory shrink-0 transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+      {/* Mobile close button */}
+      <button
+        onClick={onClose}
+        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center text-ivory/40 hover:text-ivory md:hidden"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
       {/* Brand */}
       <div className="flex items-center gap-3 border-b border-ivory/10 px-6 py-5">
         <div className="flex h-8 w-8 items-center justify-center bg-gold-dark shrink-0">
@@ -81,5 +102,6 @@ export function AdminSidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

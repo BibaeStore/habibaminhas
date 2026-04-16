@@ -25,7 +25,12 @@ export default async function AccessoriesCategoryPage({
   if (!slug || slug.length === 0) notFound();
   const [sub, collection] = slug;
 
-  const items = products.filter((p) => p.category === "accessories");
+  const items = products.filter((p) => {
+    if (p.category !== "accessories") return false;
+    if (p.subcategory !== sub) return false;
+    if (collection) return p.subtype === collection;
+    return true;
+  });
 
   const subLabel = labelize(sub);
   const collectionLabel = collection ? labelize(collection) : null;

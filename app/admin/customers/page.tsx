@@ -1,9 +1,9 @@
-import { Search, Filter, Download, Mail, Phone, ChevronRight } from "lucide-react";
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { AdminTopbar } from "@/components/admin/admin-topbar";
-import { formatPrice } from "@/lib/utils";
+"use client";
 
-export const metadata = { title: "Customers | Admin" };
+import { useState } from "react";
+import { Search, Filter, Download, Mail, Phone, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
+import { AdminShell } from "@/components/admin/admin-shell";
+import { formatPrice } from "@/lib/utils";
 
 const customers = [
   { id: "C-001", name: "Ayesha Khan", email: "ayesha@example.com", phone: "+92 300 1234567", city: "Karachi", orders: 12, spent: 82600, joined: "Jan 2026", status: "VIP" },
@@ -22,16 +22,24 @@ const statusStyle: Record<string, { bg: string; text: string }> = {
   New: { bg: "bg-border-soft", text: "text-ink-soft" },
 };
 
+type Customer = typeof customers[number];
+
 export default function AdminCustomersPage() {
+  const [editTarget,   setEditTarget]   = useState<Customer | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
+  const [editForm,     setEditForm]     = useState({ name: "", phone: "" });
+
+  const openEdit = (c: Customer) => {
+    setEditTarget(c);
+    setEditForm({ name: c.name, phone: c.phone });
+  };
+
   return (
-    <div className="flex h-screen overflow-hidden bg-ivory">
-      <AdminSidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <AdminTopbar title="Customers" />
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+    <AdminShell title="Customers">
+        <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6">
 
           {/* Summary cards */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             {[
               { label: "Total customers", value: "341" },
               { label: "VIP customers", value: "28" },
@@ -47,12 +55,12 @@ export default function AdminCustomersPage() {
 
           {/* Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
               <input
                 type="search"
                 placeholder="Search by name, email, phone…"
-                className="h-9 w-72 border border-border-soft bg-ivory pl-9 pr-3 text-[12px] outline-none focus:border-ink"
+                className="h-9 w-full border border-border-soft bg-ivory pl-9 pr-3 text-[12px] outline-none focus:border-ink sm:w-72"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -123,9 +131,22 @@ export default function AdminCustomersPage() {
                           </span>
                         </td>
                         <td className="px-5 py-4">
-                          <button className="flex items-center gap-1 text-[11px] uppercase tracking-[0.18em] text-gold-dark hover:text-ink transition-colors whitespace-nowrap">
-                            View <ChevronRight className="h-3 w-3" />
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => openEdit(c)}
+                              className="flex h-7 w-7 items-center justify-center text-muted transition-colors hover:bg-cream hover:text-gold-dark"
+                              title="Edit"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(c)}
+                              className="flex h-7 w-7 items-center justify-center text-muted transition-colors hover:bg-cream hover:text-sale"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -145,7 +166,79 @@ export default function AdminCustomersPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+      {/* Edit Customer Dialog */}
+      {editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4">
+          <div className="w-full max-w-md bg-ivory shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border-soft px-6 py-5">
+              <h2 className="font-display text-xl italic">Edit Customer</h2>
+              <button onClick={() => setEditTarget(null)} className="flex h-7 w-7 items-center justify-center text-muted transition-colors hover:bg-cream hover:text-ink">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-4 px-6 py-5">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Full Name</span>
+                <input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Email</span>
+                <input
+                  defaultValue={editTarget.email}
+                  readOnly
+                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] text-muted outline-none cursor-not-allowed"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Phone Number</span>
+                <input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink"
+                />
+              </label>
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-border-soft px-6 py-4">
+              <button onClick={() => setEditTarget(null)} className="h-10 border border-border-soft px-5 text-[11px] uppercase tracking-[0.2em] text-ink-soft transition-colors hover:bg-cream">
+                Cancel
+              </button>
+              <button onClick={() => setEditTarget(null)} className="h-10 bg-ink px-6 text-[11px] uppercase tracking-[0.2em] text-ivory transition-colors hover:bg-gold-dark">
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4">
+          <div className="w-full max-w-sm bg-ivory shadow-2xl">
+            <div className="px-6 pt-6 pb-4">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center bg-sale/10">
+                <AlertTriangle className="h-6 w-6 text-sale" />
+              </div>
+              <h2 className="font-display text-xl italic">Delete account?</h2>
+              <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+                This will permanently delete <strong>{deleteTarget.name}&apos;s</strong> account and all associated data. This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-border-soft px-6 py-4">
+              <button onClick={() => setDeleteTarget(null)} className="h-10 border border-border-soft px-5 text-[11px] uppercase tracking-[0.2em] text-ink-soft transition-colors hover:bg-cream">
+                Cancel
+              </button>
+              <button onClick={() => setDeleteTarget(null)} className="h-10 bg-sale px-6 text-[11px] uppercase tracking-[0.2em] text-ivory transition-colors hover:opacity-90">
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </AdminShell>
   );
 }

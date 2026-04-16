@@ -1,12 +1,27 @@
 "use client";
 
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Menu } from "lucide-react";
 import Link from "next/link";
 
-export function AdminTopbar({ title }: { title: string }) {
+export function AdminTopbar({
+  title,
+  onMenuClick,
+}: {
+  title: string;
+  onMenuClick?: () => void;
+}) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border-soft bg-ivory px-6 shrink-0">
-      <h1 className="font-display text-2xl italic text-ink">{title}</h1>
+    <header className="flex h-16 items-center justify-between border-b border-border-soft bg-ivory px-4 md:px-6 shrink-0">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onMenuClick}
+          className="flex h-9 w-9 items-center justify-center text-ink-soft transition-colors hover:bg-cream md:hidden"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <h1 className="font-display text-xl italic text-ink md:text-2xl">{title}</h1>
+      </div>
       <div className="flex items-center gap-3">
         <div className="relative hidden sm:block">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />

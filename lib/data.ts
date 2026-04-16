@@ -182,6 +182,8 @@ export type Product = {
   badge?: "New In" | "Bestseller" | "Limited" | "Restock";
   palette: [string, string, string];
   category: string;
+  subcategory?: string;
+  subtype?: string;
   pieces?: string;
   image?: string;
 };
@@ -276,16 +278,78 @@ function makeProduct(
     compareAt: undefined,
     pieces: undefined,
     image: undefined,
+    subcategory: undefined,
+    subtype: undefined,
     ...base,
     ...extras,
   };
 }
 
+const ladiesSubtypes: Record<string, string> = {
+  "lad-1": "formal-3-piece",
+  "lad-2": "gold-brocade",
+  "lad-3": "embroidered",
+  "lad-4": "mirror-work",
+  "lad-5": "embroidered",
+  "lad-6": "silk",
+  "lad-7": "embroidered",
+  "lad-8": "silk",
+  "lad-9": "embroidered",
+  "lad-10": "silk",
+  "lad-11": "silk",
+  "lad-12": "silk",
+};
+
+const kidsData: Record<string, { subcategory: string; subtype?: string }> = {
+  "kid-1":  { subcategory: "girls", subtype: "co-ord" },
+  "kid-2":  { subcategory: "girls", subtype: "gowns" },
+  "kid-3":  { subcategory: "girls", subtype: "silk-suits" },
+  "kid-4":  { subcategory: "girls", subtype: "silk-suits" },
+  "kid-5":  { subcategory: "girls", subtype: "silk-suits" },
+  "kid-6":  { subcategory: "girls", subtype: "silk-suits" },
+  "kid-7":  { subcategory: "girls", subtype: "embroidered" },
+  "kid-8":  { subcategory: "girls", subtype: "gowns" },
+  "kid-9":  { subcategory: "girls", subtype: "gowns" },
+  "kid-10": { subcategory: "girls", subtype: "sharara" },
+  "kid-11": { subcategory: "girls", subtype: "silk-suits" },
+  "kid-12": { subcategory: "kurtis" },
+};
+
+const babyData: Record<string, { subcategory: string; subtype?: string }> = {
+  "bby-1":  { subcategory: "bedding", subtype: "5-piece" },
+  "bby-2":  { subcategory: "bedding", subtype: "character" },
+  "bby-3":  { subcategory: "bedding", subtype: "10-piece" },
+  "bby-4":  { subcategory: "bedding", subtype: "6-piece" },
+  "bby-5":  { subcategory: "bedding", subtype: "character" },
+  "bby-6":  { subcategory: "bedding", subtype: "character" },
+  "bby-7":  { subcategory: "nests" },
+  "bby-8":  { subcategory: "nests" },
+  "bby-9":  { subcategory: "nests" },
+  "bby-10": { subcategory: "carrier" },
+  "bby-11": { subcategory: "bedding", subtype: "character" },
+  "bby-12": { subcategory: "swaddles" },
+};
+
 export const products: Product[] = [
-  ...ladiesSuits.map((p) => makeProduct(p, "Ladies Stitched Collection", "ladies-suits", { pieces: "3-piece" })),
-  ...kidsFormal.map((p) => makeProduct(p, "Kids Festive Wear", "kids-formal")),
-  ...babyBedding.map((p) => makeProduct(p, "Baby & Nursery Essentials", "baby-products")),
-  ...hairAccessories.map((p) => makeProduct(p, "Handcrafted Accessories", "accessories")),
+  ...ladiesSuits.map((p) =>
+    makeProduct(p, "Ladies Stitched Collection", "ladies-suits", {
+      pieces: "3-piece",
+      subcategory: "suits",
+      subtype: ladiesSubtypes[p.id],
+    })
+  ),
+  ...kidsFormal.map((p) =>
+    makeProduct(p, "Kids Festive Wear", "kids-formal", kidsData[p.id] ?? {})
+  ),
+  ...babyBedding.map((p) =>
+    makeProduct(p, "Baby & Nursery Essentials", "baby-products", babyData[p.id] ?? {})
+  ),
+  ...hairAccessories.map((p) =>
+    makeProduct(p, "Handcrafted Accessories", "accessories", {
+      subcategory: "hair",
+      subtype: "sets",
+    })
+  ),
 ];
 
 export const heroSlides = [

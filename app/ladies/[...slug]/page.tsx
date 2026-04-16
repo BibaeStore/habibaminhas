@@ -25,7 +25,14 @@ export default async function LadiesCategoryPage({
   if (!slug || slug.length === 0) notFound();
   const [sub, collection] = slug;
 
-  const items = products.filter((p) => p.category === "ladies-suits");
+  const items = products.filter((p) => {
+    if (p.category !== "ladies-suits") return false;
+    if (sub === "suits") {
+      if (collection) return p.subtype === collection;
+      return true;
+    }
+    return p.subcategory === sub;
+  });
 
   const subLabel = labelize(sub);
   const collectionLabel = collection ? labelize(collection) : null;

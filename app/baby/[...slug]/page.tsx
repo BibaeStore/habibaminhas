@@ -36,7 +36,12 @@ export default async function BabyCategoryPage({
   if (!slug || slug.length === 0) notFound();
   const [sub, collection] = slug;
 
-  const items = products.filter((p) => p.category === "baby-products");
+  const items = products.filter((p) => {
+    if (p.category !== "baby-products") return false;
+    if (p.subcategory !== sub) return false;
+    if (collection) return p.subtype === collection;
+    return true;
+  });
   const tone = toneBySub[sub] ?? toneBySub.bedding;
 
   const subLabel = labelize(sub);

@@ -54,7 +54,12 @@ export default async function ProductPage({
       <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.26em] text-muted">
         <Link href="/" className="hover:text-ink">Home</Link>
         <ChevronRight className="h-3 w-3" />
-        <Link href={`/women`} className="hover:text-ink">Women</Link>
+        {{
+          "ladies-suits": <Link href="/ladies" className="hover:text-ink">Ladies</Link>,
+          "kids-formal":  <Link href="/kids"   className="hover:text-ink">Kids</Link>,
+          "baby-products":<Link href="/baby"   className="hover:text-ink">Baby Products</Link>,
+          "accessories":  <Link href="/accessories" className="hover:text-ink">Accessories</Link>,
+        }[product.category] ?? <Link href="/shop" className="hover:text-ink">Shop</Link>}
         <ChevronRight className="h-3 w-3" />
         <span className="text-ink-soft">{product.collection}</span>
       </nav>
