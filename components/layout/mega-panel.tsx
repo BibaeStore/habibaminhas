@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import type { MegaMenu } from "@/lib/data";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
@@ -66,32 +67,60 @@ export function MegaPanel({
             <Link
               href={menu.feature.href}
               onClick={onClose}
-              className="col-span-4 group relative block"
+              className="col-span-4 group relative block overflow-hidden"
             >
-              <PlaceholderImage
-                tone={toneMap[menu.feature.tone]}
-                motif="floral"
-                aspect="4/5"
-                overlay
-                animate
-                className="h-full"
-              >
-                <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">
-                  <span className="text-[10px] uppercase tracking-[0.32em] opacity-90">
-                    Featured
-                  </span>
-                  <h3 className="mt-2 font-display text-2xl italic leading-tight">
-                    {menu.feature.title}
-                  </h3>
-                  <p className="mt-1 max-w-xs text-[12px] leading-relaxed opacity-85">
-                    {menu.feature.subtitle}
-                  </p>
-                  <span className="mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.28em]">
-                    Explore
-                    <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  </span>
+              {menu.feature.image ? (
+                <div className="relative aspect-[4/5] w-full overflow-hidden">
+                  <Image
+                    src={menu.feature.image}
+                    alt={menu.feature.title}
+                    fill
+                    sizes="320px"
+                    className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">
+                    <span className="text-[10px] uppercase tracking-[0.32em] opacity-80">
+                      Featured
+                    </span>
+                    <h3 className="mt-2 font-display text-2xl italic leading-tight drop-shadow-sm">
+                      {menu.feature.title}
+                    </h3>
+                    <p className="mt-1 max-w-xs text-[12px] leading-relaxed opacity-85">
+                      {menu.feature.subtitle}
+                    </p>
+                    <span className="mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.28em]">
+                      Explore
+                      <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </span>
+                  </div>
                 </div>
-              </PlaceholderImage>
+              ) : (
+                <PlaceholderImage
+                  tone={toneMap[menu.feature.tone]}
+                  motif="floral"
+                  aspect="4/5"
+                  overlay
+                  animate
+                  className="h-full"
+                >
+                  <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">
+                    <span className="text-[10px] uppercase tracking-[0.32em] opacity-90">
+                      Featured
+                    </span>
+                    <h3 className="mt-2 font-display text-2xl italic leading-tight">
+                      {menu.feature.title}
+                    </h3>
+                    <p className="mt-1 max-w-xs text-[12px] leading-relaxed opacity-85">
+                      {menu.feature.subtitle}
+                    </p>
+                    <span className="mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.28em]">
+                      Explore
+                      <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </span>
+                  </div>
+                </PlaceholderImage>
+              )}
             </Link>
           ) : null}
         </div>

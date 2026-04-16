@@ -6,7 +6,7 @@ export type MegaMenu = {
   label: string;
   href: string;
   columns: NavColumn[];
-  feature?: { title: string; subtitle: string; href: string; tone: "rose" | "sage" | "gold" | "ink" };
+  feature?: { title: string; subtitle: string; href: string; tone: "rose" | "sage" | "gold" | "ink"; image?: string };
 };
 
 export const megaMenus: MegaMenu[] = [
@@ -49,6 +49,7 @@ export const megaMenus: MegaMenu[] = [
       subtitle: "3-piece formal suits handcrafted with silk and artisan embroidery.",
       href: "/ladies/suits/formal-3-piece",
       tone: "rose",
+      image: "/editorial/ladies-collection.webp",
     },
   },
   {
@@ -88,6 +89,7 @@ export const megaMenus: MegaMenu[] = [
       subtitle: "Festive co-ord sets for little girls — embroidered, silk-lined, celebration-ready.",
       href: "/kids/girls/co-ord",
       tone: "gold",
+      image: "/products/royal-amethyst-gown.webp",
     },
   },
   {
@@ -127,6 +129,7 @@ export const megaMenus: MegaMenu[] = [
       subtitle: "10-piece deluxe plush nursery set — the complete starter for your nursery.",
       href: "/baby/bedding/10-piece",
       tone: "sage",
+      image: "/products/pastel-dream-nursery.webp",
     },
   },
   {
@@ -155,6 +158,7 @@ export const megaMenus: MegaMenu[] = [
       subtitle: "3-piece headband & floral clip sets — made by hand, gifted with love.",
       href: "/accessories/hair/sets",
       tone: "ink",
+      image: "/editorial/accessories.webp",
     },
   },
 ];
@@ -218,14 +222,14 @@ const ladiesSuits: (Pick<Product, "id" | "title" | "price" | "palette" | "badge"
 ];
 
 // ─── Kids Formal Wear ─────────────────────────────────────────────────────
-const kidsFormal: Pick<Product, "id" | "title" | "price" | "palette" | "badge">[] = [
-  { id: "kid-1", title: "Sunset Bloom — Girls Festive Co-Ord Set", price: 6000, palette: palettes[4], badge: "New In" },
+const kidsFormal: (Pick<Product, "id" | "title" | "price" | "palette" | "badge"> & { image?: string })[] = [
+  { id: "kid-1", title: "Sunset Bloom — Girls Festive Co-Ord Set", price: 6000, palette: palettes[4], badge: "New In", image: "/products/sunset-bloom-festive.webp" },
   { id: "kid-2", title: "Blush Petal — Cape Style Girls Formal Set", price: 4000, palette: palettes[5] },
   { id: "kid-3", title: "Amber Radiance — Kids 3-Piece Stitched Silk Suit with Gold Foil Detailing", price: 3000, palette: palettes[4] },
   { id: "kid-4", title: "Magenta Muse — Kids 3-Piece Stitched Silk Suit with Silver Foil Accents", price: 3000, palette: palettes[10] },
   { id: "kid-5", title: "Maroon Charm — Kids 3-Piece Stitched Silk Suit with Gold Border", price: 3000, palette: palettes[11] },
   { id: "kid-6", title: "Ivory Grace — Kids 3-Piece Stitched Silk Suit with Net Dupatta", price: 3000, palette: palettes[9] },
-  { id: "kid-7", title: "Royal Amethyst — Kids Two-Tone Embroidered Formal Gown", price: 3000, palette: palettes[7], badge: "Bestseller" },
+  { id: "kid-7", title: "Royal Amethyst — Kids Two-Tone Embroidered Formal Gown", price: 3000, palette: palettes[7], badge: "Bestseller", image: "/products/royal-amethyst-gown.webp" },
   { id: "kid-8", title: "Marigold & Crimson — Kids Dual-Tone Embroidered Festive Gown", price: 3000, palette: palettes[4] },
   { id: "kid-9", title: "Rose Sparkle — Kids Long-Flare Festive Gown with Embellished Bodice", price: 3000, palette: palettes[5] },
   { id: "kid-10", title: "Crimson Bloom — Kids 3-Piece Stitched Silk Sharara Set", price: 3000, palette: palettes[11] },
@@ -234,10 +238,10 @@ const kidsFormal: Pick<Product, "id" | "title" | "price" | "palette" | "badge">[
 ];
 
 // ─── Baby Bedding & Nursery ───────────────────────────────────────────────
-const babyBedding: Pick<Product, "id" | "title" | "price" | "palette" | "badge">[] = [
-  { id: "bby-1", title: "Sandstone Gingham — 5-Piece Deluxe Padded Crib Bedding Set", price: 6900, palette: palettes[12], badge: "Bestseller" },
+const babyBedding: (Pick<Product, "id" | "title" | "price" | "palette" | "badge"> & { image?: string })[] = [
+  { id: "bby-1", title: "Sandstone Gingham — 5-Piece Deluxe Padded Crib Bedding Set", price: 6900, palette: palettes[12], badge: "Bestseller", image: "/products/sandstone-gingham-bedding.webp" },
   { id: "bby-2", title: "Sunny Street — 6-Piece Character-Themed Nursery Bedding & Bumper Set", price: 6500, palette: palettes[13] },
-  { id: "bby-3", title: "Pastel Dream — Deluxe 10-Piece Plush Bumper & Travel Set", price: 9000, palette: palettes[14], badge: "New In" },
+  { id: "bby-3", title: "Pastel Dream — Deluxe 10-Piece Plush Bumper & Travel Set", price: 9000, palette: palettes[14], badge: "New In", image: "/products/pastel-dream-nursery.webp" },
   { id: "bby-4", title: "Coral Stripe — 6-Piece Modern Nursery Bedding & Bumper Set", price: 8500, palette: palettes[15] },
   { id: "bby-5", title: "Little Athlete — 7-Piece Sports-Themed Nursery Bedding & Bumper Set", price: 8500, palette: palettes[1] },
   { id: "bby-6", title: "Little Explorer — 5-Piece Safari Nursery Bedding & Bumper Set", price: 7500, palette: palettes[12] },
@@ -341,24 +345,30 @@ export const promoMessages = [
   "WhatsApp Support: +92 312 0295812",
 ];
 
-export type Testimonial = { quote: string; name: string; city: string };
+export type Testimonial = { quote: string; name: string; city: string; avatar: string; rating: number };
 export const testimonials: Testimonial[] = [
   {
     quote:
       "The quality of the silk suit is beyond what I expected at this price. The embroidery is absolutely beautiful — I wore it to a wedding and got so many compliments.",
     name: "Fatima R.",
     city: "Karachi",
+    avatar: "/profiles/fatima-r.webp",
+    rating: 5,
   },
   {
     quote:
       "Ordered the Pastel Dream nursery set for my baby — the padding is so thick and the fabric is incredibly soft. Fast delivery, beautifully packaged.",
     name: "Sara A.",
     city: "Lahore",
+    avatar: "/profiles/sara-a.webp",
+    rating: 5,
   },
   {
     quote:
       "The kids festive gown was perfect for Eid! Great stitching and my daughter loved the embellished bodice. Will definitely order again.",
     name: "Nadia K.",
     city: "Islamabad",
+    avatar: "/profiles/nadia-k.webp",
+    rating: 5,
   },
 ];

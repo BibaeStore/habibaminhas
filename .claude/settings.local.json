@@ -48,7 +48,8 @@
       "Bash(cp \"C:/Users/ASUS/Downloads/42.webp\" \"D:/web/habibaminhas/public/products/sage-chiffon.webp\")",
       "Bash(cp \"C:/Users/ASUS/Downloads/43.webp\" \"D:/web/habibaminhas/public/products/slate-printed.webp\")",
       "Bash(cp \"C:/Users/ASUS/Downloads/44.webp\" \"D:/web/habibaminhas/public/products/ivory-floral.webp\")",
-      "Bash(cp \"C:/Users/ASUS/Downloads/45.webp\" \"D:/web/habibaminhas/public/products/sky-embroidered.webp\")"
+      "Bash(cp \"C:/Users/ASUS/Downloads/45.webp\" \"D:/web/habibaminhas/public/products/sky-embroidered.webp\")",
+      "Bash(mkdir -p public/profiles)"
     ]
   }
 }
