@@ -29,6 +29,17 @@ export async function getOrderById(id: string) {
   return data;
 }
 
+export async function getOrderByNumber(orderNumber: string) {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("orders")
+    .select("*, order_items(*)")
+    .eq("order_number", orderNumber)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function createOrder(
   order: Omit<TablesInsert<"orders">, "order_number">,
   items: Omit<TablesInsert<"order_items">, "order_id">[]

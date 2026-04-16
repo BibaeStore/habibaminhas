@@ -1,38 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Filter, Download, Mail, Phone, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { getCustomers, getCustomerStats, updateCustomer, deleteCustomer } from "@/lib/actions/customers";
 import { formatPrice } from "@/lib/utils";
+import type { Tables } from "@/lib/supabase/types";
 
-const customers = [
-  { id: "C-001", name: "Ayesha Khan", email: "ayesha@example.com", phone: "+92 300 1234567", city: "Karachi", orders: 12, spent: 82600, joined: "Jan 2026", status: "VIP" },
-  { id: "C-002", name: "Sara Ahmed", email: "sara@example.com", phone: "+92 312 9876543", city: "Lahore", orders: 7, spent: 41300, joined: "Feb 2026", status: "Regular" },
-  { id: "C-003", name: "Nadia Mahmood", email: "nadia@example.com", phone: "+92 333 4567890", city: "Islamabad", orders: 5, spent: 28900, joined: "Feb 2026", status: "Regular" },
-  { id: "C-004", name: "Fatima Raza", email: "fatima@example.com", phone: "+92 321 1122334", city: "Karachi", orders: 3, spent: 14200, joined: "Mar 2026", status: "New" },
-  { id: "C-005", name: "Zara Qureshi", email: "zara@example.com", phone: "+92 300 9988776", city: "Rawalpindi", orders: 9, spent: 58400, joined: "Jan 2026", status: "VIP" },
-  { id: "C-006", name: "Mariam Siddiqui", email: "mariam@example.com", phone: "+92 321 5544332", city: "Karachi", orders: 4, spent: 22100, joined: "Mar 2026", status: "Regular" },
-  { id: "C-007", name: "Hina Baig", email: "hina@example.com", phone: "+92 333 7766554", city: "Faisalabad", orders: 2, spent: 10800, joined: "Apr 2026", status: "New" },
-  { id: "C-008", name: "Sana Khan", email: "sana@example.com", phone: "+92 312 3344556", city: "Multan", orders: 6, spent: 35600, joined: "Feb 2026", status: "Regular" },
-];
+type Customer = Tables<"customers">;
 
-const statusStyle: Record<string, { bg: string; text: string }> = {
-  VIP: { bg: "bg-gold/30", text: "text-gold-dark" },
-  Regular: { bg: "bg-sage/15", text: "text-sage" },
-  New: { bg: "bg-border-soft", text: "text-ink-soft" },
+const tierStyle: Record<string, { bg: string; text: string }> = {
+  VIP:     { bg: "bg-gold/30",   text: "text-gold-dark" },
+  Regular: { bg: "bg-sage/15",   text: "text-sage" },
+  New:     { bg: "bg-border-soft", text: "text-ink-soft" },
 };
 
-type Customer = typeof customers[number];
+type Stats = { total: number; vip: number; newThisMonth: number; avgLifetimeValue: number };
 
 export default function AdminCustomersPage() {
+  const [customers,    setCustomers]    = useState<Customer[]>([]);
+  const [stats,        setStats]        = useState<Stats | null>(null);
+  const [loading,      setLoading]      = useState(true);
+  const [search,       setSearch]       = useState("");
   const [editTarget,   setEditTarget]   = useState<Customer | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
   const [editForm,     setEditForm]     = useState({ name: "", phone: "" });
+  const [saving,       setSaving]       = useState(false);
+  const [deleting,     setDeleting]     = useState(false);
+
+  const loadData = () => {
+    setLoading(true);
+    Promise.all([getCustomers(), getCustomerStats()])
+      .then(([custs, s]) => { setCustomers(custs); setStats(s); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const filtered = useMemo(() =>
+    customers.filter((c) => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return c.name.toLowerCase().includes(q) ||
+             c.email.toLowerCase().includes(q) ||
+             (c.phone ?? "").toLowerCase().includes(q);
+    }),
+    [customers, search]
+  );
 
   const openEdit = (c: Customer) => {
     setEditTarget(c);
-    setEditForm({ name: c.name, phone: c.phone });
+    setEditForm({ name: c.name, phone: c.phone ?? "" });
   };
+
+  const handleSaveEdit = async () => {
+    if (!editTarget) return;
+    setSaving(true);
+    await updateCustomer(editTarget.id, { name: editForm.name.trim(), phone: editForm.phone.trim() || null });
+    setSaving(false);
+    setEditTarget(null);
+    loadData();
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    await deleteCustomer(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
+    loadData();
+  };
+
+  const statCards = [
+    { label: "Total customers",    value: stats ? String(stats.total)                  : "—" },
+    { label: "VIP customers",      value: stats ? String(stats.vip)                    : "—" },
+    { label: "New this month",     value: stats ? String(stats.newThisMonth)            : "—" },
+    { label: "Avg. lifetime value",value: stats ? formatPrice(stats.avgLifetimeValue)   : "—" },
+  ];
 
   return (
     <AdminShell title="Customers">
@@ -40,12 +84,7 @@ export default function AdminCustomersPage() {
 
           {/* Summary cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-            {[
-              { label: "Total customers", value: "341" },
-              { label: "VIP customers", value: "28" },
-              { label: "New this month", value: "47" },
-              { label: "Avg. lifetime value", value: "Rs. 24,200" },
-            ].map((s) => (
+            {statCards.map((s) => (
               <div key={s.label} className="border border-border-soft bg-ivory p-4">
                 <div className="text-[11px] uppercase tracking-[0.22em] text-muted">{s.label}</div>
                 <div className="mt-1.5 font-display text-2xl italic">{s.value}</div>
@@ -57,11 +96,9 @@ export default function AdminCustomersPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
-              <input
-                type="search"
-                placeholder="Search by name, email, phone…"
-                className="h-9 w-full border border-border-soft bg-ivory pl-9 pr-3 text-[12px] outline-none focus:border-ink sm:w-72"
-              />
+              <input type="search" placeholder="Search by name, email, phone…" value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 w-full border border-border-soft bg-ivory pl-9 pr-3 text-[12px] outline-none focus:border-ink sm:w-72" />
             </div>
             <div className="flex items-center gap-2">
               <button className="flex h-9 items-center gap-2 border border-border-soft bg-ivory px-4 text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:bg-cream">
@@ -93,8 +130,13 @@ export default function AdminCustomersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-soft">
-                  {customers.map((c) => {
-                    const s = statusStyle[c.status];
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="px-5 py-14 text-center text-[12px] text-muted">Loading customers…</td>
+                    </tr>
+                  ) : filtered.map((c) => {
+                    const s = tierStyle[c.tier] ?? tierStyle.New;
+                    const joined = new Date(c.created_at).toLocaleDateString("en-PK", { month: "short", year: "numeric" });
                     return (
                       <tr key={c.id} className="hover:bg-cream/40 transition-colors">
                         <td className="px-5 py-4">
@@ -103,47 +145,41 @@ export default function AdminCustomersPage() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-cream font-display text-[13px] italic text-gold-dark">
-                              {c.name[0]}
+                              {c.name[0]?.toUpperCase()}
                             </div>
                             <div>
                               <div className="text-[12px] font-medium">{c.name}</div>
-                              <div className="text-[11px] text-muted">{c.id}</div>
+                              <div className="text-[11px] text-muted truncate max-w-[160px]">{c.email}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5 text-[11px] text-ink-soft">
-                            <Mail className="h-3 w-3 text-muted" />
-                            {c.email}
+                            <Mail className="h-3 w-3 text-muted" /> {c.email}
                           </div>
-                          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-soft">
-                            <Phone className="h-3 w-3 text-muted" />
-                            {c.phone}
-                          </div>
+                          {c.phone && (
+                            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-soft">
+                              <Phone className="h-3 w-3 text-muted" /> {c.phone}
+                            </div>
+                          )}
                         </td>
-                        <td className="px-5 py-4 text-[12px] text-ink-soft">{c.city}</td>
-                        <td className="px-5 py-4 text-right text-[12px]">{c.orders}</td>
-                        <td className="px-5 py-4 text-right text-[12px] font-medium">{formatPrice(c.spent)}</td>
-                        <td className="px-5 py-4 text-[12px] text-ink-soft">{c.joined}</td>
+                        <td className="px-5 py-4 text-[12px] text-ink-soft">{c.city ?? "—"}</td>
+                        <td className="px-5 py-4 text-right text-[12px]">{c.total_orders}</td>
+                        <td className="px-5 py-4 text-right text-[12px] font-medium">{formatPrice(c.total_spent)}</td>
+                        <td className="px-5 py-4 text-[12px] text-ink-soft">{joined}</td>
                         <td className="px-5 py-4">
                           <span className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] ${s.bg} ${s.text}`}>
-                            {c.status}
+                            {c.tier}
                           </span>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => openEdit(c)}
-                              className="flex h-7 w-7 items-center justify-center text-muted transition-colors hover:bg-cream hover:text-gold-dark"
-                              title="Edit"
-                            >
+                            <button onClick={() => openEdit(c)}
+                              className="flex h-7 w-7 items-center justify-center text-muted transition-colors hover:bg-cream hover:text-gold-dark" title="Edit">
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
-                            <button
-                              onClick={() => setDeleteTarget(c)}
-                              className="flex h-7 w-7 items-center justify-center text-muted transition-colors hover:bg-cream hover:text-sale"
-                              title="Delete"
-                            >
+                            <button onClick={() => setDeleteTarget(c)}
+                              className="flex h-7 w-7 items-center justify-center text-muted transition-colors hover:bg-cream hover:text-sale" title="Delete">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -151,18 +187,18 @@ export default function AdminCustomersPage() {
                       </tr>
                     );
                   })}
+                  {!loading && filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="px-5 py-14 text-center text-[12px] text-muted">
+                        {search ? "No customers match your search." : "No customers yet."}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="flex items-center justify-between border-t border-border-soft px-5 py-3">
-              <span className="text-[12px] text-muted">Showing 1–{customers.length} of 341 customers</span>
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, "..."].map((p, i) => (
-                  <button key={i} className={`flex h-8 w-8 items-center justify-center text-[12px] transition-colors ${p === 1 ? "bg-ink text-ivory" : "text-ink-soft hover:bg-cream"}`}>
-                    {p}
-                  </button>
-                ))}
-              </div>
+              <span className="text-[12px] text-muted">Showing {filtered.length} of {customers.length} customers</span>
             </div>
           </div>
         </div>
@@ -180,35 +216,27 @@ export default function AdminCustomersPage() {
             <div className="space-y-4 px-6 py-5">
               <label className="flex flex-col gap-1.5">
                 <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Full Name</span>
-                <input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink"
-                />
+                <input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink" />
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Email</span>
-                <input
-                  defaultValue={editTarget.email}
-                  readOnly
-                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] text-muted outline-none cursor-not-allowed"
-                />
+                <input defaultValue={editTarget.email} readOnly
+                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] text-muted outline-none cursor-not-allowed" />
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Phone Number</span>
-                <input
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
-                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink"
-                />
+                <input value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink" />
               </label>
             </div>
             <div className="flex items-center justify-end gap-3 border-t border-border-soft px-6 py-4">
               <button onClick={() => setEditTarget(null)} className="h-10 border border-border-soft px-5 text-[11px] uppercase tracking-[0.2em] text-ink-soft transition-colors hover:bg-cream">
                 Cancel
               </button>
-              <button onClick={() => setEditTarget(null)} className="h-10 bg-ink px-6 text-[11px] uppercase tracking-[0.2em] text-ivory transition-colors hover:bg-gold-dark">
-                Save Changes
+              <button onClick={handleSaveEdit} disabled={saving}
+                className="h-10 bg-ink px-6 text-[11px] uppercase tracking-[0.2em] text-ivory transition-colors hover:bg-gold-dark disabled:opacity-60">
+                {saving ? "Saving…" : "Save Changes"}
               </button>
             </div>
           </div>
@@ -232,8 +260,9 @@ export default function AdminCustomersPage() {
               <button onClick={() => setDeleteTarget(null)} className="h-10 border border-border-soft px-5 text-[11px] uppercase tracking-[0.2em] text-ink-soft transition-colors hover:bg-cream">
                 Cancel
               </button>
-              <button onClick={() => setDeleteTarget(null)} className="h-10 bg-sale px-6 text-[11px] uppercase tracking-[0.2em] text-ivory transition-colors hover:opacity-90">
-                Delete Account
+              <button onClick={handleDelete} disabled={deleting}
+                className="h-10 bg-sale px-6 text-[11px] uppercase tracking-[0.2em] text-ivory transition-colors hover:opacity-90 disabled:opacity-60">
+                {deleting ? "Deleting…" : "Delete Account"}
               </button>
             </div>
           </div>

@@ -1,24 +1,48 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, Plus } from "lucide-react";
-import type { Product } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 
 const motifs = ["lattice", "floral", "ogee", "stripes", "arch"] as const;
 
+// Accepts both the old lib/data Product shape and Supabase products
+export interface CardProduct {
+  id: string | number;
+  slug: string;
+  title: string;
+  price: number;
+  // old format
+  image?: string | null;
+  compareAt?: number | null;
+  collection?: string;
+  // supabase format
+  images?: string[];
+  compare_at?: number | null;
+  subcategory?: string | null;
+  subtype?: string | null;
+  palette: string[];
+  badge?: string | null;
+}
+
 export function ProductCard({
   product,
   index = 0,
   compact = false,
 }: {
-  product: Product;
+  product: CardProduct;
   index?: number;
   compact?: boolean;
 }) {
   const motif = motifs[index % motifs.length];
-  const hasSale = product.compareAt && product.compareAt > product.price;
+
+  // Normalise field names (support both old and supabase formats)
+  const img = product.image ?? product.images?.[0] ?? null;
+  const compareAt = product.compareAt ?? product.compare_at ?? null;
+  const collection = product.collection ?? product.subcategory ?? product.subtype ?? null;
+
+  const hasSale = compareAt && compareAt > product.price;
   const aspect = compact ? "4/5" : "3/4";
 
   const imageContent = (
@@ -67,13 +91,13 @@ export function ProductCard({
   return (
     <article className="group relative flex flex-col">
       <Link href={`/product/${product.slug}`} className="relative block">
-        {product.image ? (
+        {img ? (
           <div
             className="relative w-full overflow-hidden bg-cream"
             style={{ aspectRatio: aspect.replace("/", " / ") }}
           >
             <Image
-              src={product.image}
+              src={img}
               alt={product.title}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
@@ -83,7 +107,7 @@ export function ProductCard({
           </div>
         ) : (
           <PlaceholderImage
-            tone={product.palette}
+            tone={product.palette as [string, string, string]}
             motif={motif}
             aspect={aspect}
             className="bg-cream transition-opacity duration-500"
@@ -100,16 +124,18 @@ export function ProductCard({
         >
           {product.title}
         </Link>
-        <div className="text-[11px] uppercase tracking-[0.22em] text-muted">
-          {product.collection}
-        </div>
+        {collection && (
+          <div className="text-[11px] uppercase tracking-[0.22em] text-muted">
+            {collection}
+          </div>
+        )}
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-[13px] font-medium text-ink">
             {formatPrice(product.price)}
           </span>
           {hasSale ? (
             <span className="text-[12px] text-muted line-through">
-              {formatPrice(product.compareAt!)}
+              {formatPrice(compareAt!)}
             </span>
           ) : null}
         </div>

@@ -1,20 +1,96 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, ShieldCheck, Truck, RotateCcw, Lock } from "lucide-react";
-import { products } from "@/lib/data";
+import { useRouter } from "next/navigation";
+import { ChevronRight, ShieldCheck, Truck, RotateCcw } from "lucide-react";
+import { useCartStore } from "@/lib/cart-store";
+import { useCheckoutStore } from "@/lib/checkout-store";
 import { formatPrice } from "@/lib/utils";
 
-export const metadata = { title: "Shipping — Checkout" };
-
-const lineItems = [
-  { product: products[0], qty: 1, size: "M", colour: "Dusty Rose" },
-  { product: products[8], qty: 2, size: "S", colour: "Ink" },
-];
-const subtotal = lineItems.reduce((s, l) => s + l.product.price * l.qty, 0);
-const shipping = subtotal > 3500 ? 0 : 250;
-const total = subtotal + shipping;
+const SHIPPING_STANDARD = 200;
+const SHIPPING_EXPRESS = 500;
+const FREE_THRESHOLD = 3500;
 
 export default function ShippingPage() {
+  const { items } = useCartStore();
+  const { shipping: saved, setShipping } = useCheckoutStore();
+  const router = useRouter();
+
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const [method, setMethod] = useState<"standard" | "express">(
+    saved?.shippingMethod ?? "standard"
+  );
+  const shippingCost =
+    method === "express"
+      ? SHIPPING_EXPRESS
+      : subtotal >= FREE_THRESHOLD
+      ? 0
+      : SHIPPING_STANDARD;
+  const total = subtotal + shippingCost;
+
+  const [form, setForm] = useState({
+    firstName: saved?.firstName ?? "",
+    lastName: saved?.lastName ?? "",
+    phone: saved?.phone ?? "",
+    email: saved?.email ?? "",
+    street: saved?.street ?? "",
+    apartment: saved?.apartment ?? "",
+    city: saved?.city ?? "",
+    province: saved?.province ?? "",
+    postalCode: saved?.postalCode ?? "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (items.length === 0) router.replace("/cart");
+  }, [items, router]);
+
+  function set(field: string, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => ({ ...e, [field]: "" }));
+  }
+
+  function validate() {
+    const e: Record<string, string> = {};
+    if (!form.firstName.trim()) e.firstName = "Required";
+    if (!form.lastName.trim()) e.lastName = "Required";
+    if (!form.phone.trim()) e.phone = "Required";
+    if (!form.email.trim() || !form.email.includes("@")) e.email = "Valid email required";
+    if (!form.street.trim()) e.street = "Required";
+    if (!form.city.trim()) e.city = "Required";
+    if (!form.province) e.province = "Required";
+    return e;
+  }
+
+  function handleContinue(e: React.FormEvent) {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setShipping({ ...form, shippingMethod: method, shippingCost, giftMessage: "", paymentMethod: "cod" });
+    router.push("/checkout/payment");
+  }
+
+  const field = (name: keyof typeof form, label: string, type = "text", placeholder = "", className = "") => (
+    <label className={`flex flex-col gap-2 ${className}`}>
+      <span className="text-[11px] uppercase tracking-[0.22em] text-muted">{label}</span>
+      <input
+        type={type}
+        placeholder={placeholder}
+        value={form[name]}
+        onChange={(e) => set(name, e.target.value)}
+        className={`h-11 border bg-transparent px-3 text-[14px] outline-none focus:border-ink ${
+          errors[name] ? "border-sale" : "border-border-soft"
+        }`}
+      />
+      {errors[name] && <span className="text-[11px] text-sale">{errors[name]}</span>}
+    </label>
+  );
+
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-10 sm:px-8 lg:py-16">
       {/* Step indicator */}
@@ -46,27 +122,15 @@ export default function ShippingPage() {
           <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Step 2 of 3</span>
           <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Shipping.</h1>
 
-          <form className="mt-8 flex flex-col gap-8">
+          <form onSubmit={handleContinue} className="mt-8 flex flex-col gap-8" noValidate>
             {/* Contact */}
             <section>
               <h2 className="font-display text-xl italic text-ink-soft">Contact</h2>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="flex flex-col gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">First name</span>
-                  <input className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                </label>
-                <label className="flex flex-col gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Last name</span>
-                  <input className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                </label>
-                <label className="sm:col-span-2 flex flex-col gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Phone number (WhatsApp preferred)</span>
-                  <input type="tel" placeholder="+92 3XX XXXXXXX" className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                </label>
-                <label className="sm:col-span-2 flex flex-col gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Email address</span>
-                  <input type="email" className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                </label>
+                {field("firstName", "First name")}
+                {field("lastName", "Last name")}
+                {field("phone", "Phone number (WhatsApp preferred)", "tel", "+92 3XX XXXXXXX", "sm:col-span-2")}
+                {field("email", "Email address", "email", "", "sm:col-span-2")}
               </div>
             </section>
 
@@ -74,21 +138,27 @@ export default function ShippingPage() {
             <section>
               <h2 className="font-display text-xl italic text-ink-soft">Delivery address</h2>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {field("street", "Street address", "text", "House/flat no., street, area", "sm:col-span-2")}
                 <label className="sm:col-span-2 flex flex-col gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Street address</span>
-                  <input className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" placeholder="House/flat no., street, area" />
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">
+                    Apartment / Floor / Landmark (optional)
+                  </span>
+                  <input
+                    value={form.apartment}
+                    onChange={(e) => set("apartment", e.target.value)}
+                    className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink"
+                  />
                 </label>
-                <label className="sm:col-span-2 flex flex-col gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Apartment / Floor / Landmark (optional)</span>
-                  <input className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                </label>
-                <label className="flex flex-col gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">City</span>
-                  <input className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                </label>
+                {field("city", "City")}
                 <label className="flex flex-col gap-2">
                   <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Province</span>
-                  <select className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink">
+                  <select
+                    value={form.province}
+                    onChange={(e) => set("province", e.target.value)}
+                    className={`h-11 border bg-transparent px-3 text-[14px] outline-none focus:border-ink ${
+                      errors.province ? "border-sale" : "border-border-soft"
+                    }`}
+                  >
                     <option value="">Select province</option>
                     <option>Sindh</option>
                     <option>Punjab</option>
@@ -98,11 +168,9 @@ export default function ShippingPage() {
                     <option>AJK</option>
                     <option>Gilgit-Baltistan</option>
                   </select>
+                  {errors.province && <span className="text-[11px] text-sale">{errors.province}</span>}
                 </label>
-                <label className="flex flex-col gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Postal code</span>
-                  <input className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                </label>
+                {field("postalCode", "Postal code")}
               </div>
             </section>
 
@@ -110,27 +178,51 @@ export default function ShippingPage() {
             <section>
               <h2 className="font-display text-xl italic text-ink-soft">Delivery method</h2>
               <div className="mt-4 flex flex-col gap-3">
-                <label className="flex cursor-pointer items-center justify-between border border-ink bg-cream px-4 py-4">
+                <label
+                  className={`flex cursor-pointer items-center justify-between border px-4 py-4 ${
+                    method === "standard" ? "border-ink bg-cream" : "border-border-soft bg-ivory"
+                  }`}
+                >
                   <div className="flex items-center gap-3">
-                    <input type="radio" name="shipping" defaultChecked className="accent-ink" />
+                    <input
+                      type="radio"
+                      name="shipping"
+                      checked={method === "standard"}
+                      onChange={() => setMethod("standard")}
+                      className="accent-ink"
+                    />
                     <div>
                       <div className="text-[13px] font-medium">Standard Delivery · 3–5 business days</div>
                       <div className="text-[12px] text-ink-soft">TCS Courier — tracking provided</div>
                     </div>
                   </div>
                   <div className="text-[13px] font-medium">
-                    {shipping === 0 ? <span className="text-gold-dark">Complimentary</span> : formatPrice(shipping)}
+                    {subtotal >= FREE_THRESHOLD ? (
+                      <span className="text-gold-dark">Complimentary</span>
+                    ) : (
+                      formatPrice(SHIPPING_STANDARD)
+                    )}
                   </div>
                 </label>
-                <label className="flex cursor-pointer items-center justify-between border border-border-soft bg-ivory px-4 py-4">
+                <label
+                  className={`flex cursor-pointer items-center justify-between border px-4 py-4 ${
+                    method === "express" ? "border-ink bg-cream" : "border-border-soft bg-ivory"
+                  }`}
+                >
                   <div className="flex items-center gap-3">
-                    <input type="radio" name="shipping" className="accent-ink" />
+                    <input
+                      type="radio"
+                      name="shipping"
+                      checked={method === "express"}
+                      onChange={() => setMethod("express")}
+                      className="accent-ink"
+                    />
                     <div>
                       <div className="text-[13px] font-medium">Express Delivery · 1–2 business days</div>
                       <div className="text-[12px] text-ink-soft">TCS Overnight — Karachi, Lahore, Islamabad only</div>
                     </div>
                   </div>
-                  <div className="text-[13px] font-medium">{formatPrice(500)}</div>
+                  <div className="text-[13px] font-medium">{formatPrice(SHIPPING_EXPRESS)}</div>
                 </label>
               </div>
             </section>
@@ -139,12 +231,12 @@ export default function ShippingPage() {
               <Link href="/cart" className="text-[12px] uppercase tracking-[0.24em] text-ink-soft hover:text-ink">
                 ← Back to bag
               </Link>
-              <Link
-                href="/checkout/payment"
+              <button
+                type="submit"
                 className="flex h-14 items-center gap-2 bg-ink px-10 text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark transition-colors"
               >
                 Continue to payment <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
+              </button>
             </div>
           </form>
         </div>
@@ -154,24 +246,26 @@ export default function ShippingPage() {
           <div className="sticky top-28 flex flex-col gap-5 border border-border-soft bg-cream p-6">
             <h2 className="font-display text-2xl italic">Order summary</h2>
             <ul className="flex flex-col gap-4 border-b border-border-soft pb-5">
-              {lineItems.map((l, i) => (
-                <li key={i} className="flex gap-4">
+              {items.map((item) => (
+                <li key={item.cartKey} className="flex gap-4">
                   <div className="relative w-14 flex-none aspect-[3/4] bg-ivory overflow-hidden">
-                    {l.product.image ? (
-                      <Image src={l.product.image} alt={l.product.title} fill sizes="56px" className="object-cover object-top" />
+                    {item.image ? (
+                      <Image src={item.image} alt={item.title} fill sizes="56px" className="object-cover object-top" />
                     ) : (
-                      <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${l.product.palette[0]}, ${l.product.palette[1]})` }} />
+                      <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${item.palette[0]}, ${item.palette[1] ?? item.palette[0]})` }} />
                     )}
                     <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[10px] text-ivory">
-                      {l.qty}
+                      {item.qty}
                     </span>
                   </div>
                   <div className="flex flex-1 items-start justify-between gap-2 text-[13px]">
                     <div>
-                      <div className="font-medium leading-snug">{l.product.title}</div>
-                      <div className="mt-0.5 text-[11px] text-muted">{l.size} · {l.colour}</div>
+                      <div className="font-medium leading-snug">{item.title}</div>
+                      {item.size && item.size !== "onesize" && (
+                        <div className="mt-0.5 text-[11px] text-muted">{item.size}</div>
+                      )}
                     </div>
-                    <div className="shrink-0 font-medium">{formatPrice(l.product.price * l.qty)}</div>
+                    <div className="shrink-0 font-medium">{formatPrice(item.price * item.qty)}</div>
                   </div>
                 </li>
               ))}
@@ -183,7 +277,13 @@ export default function ShippingPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Shipping</dt>
-                <dd>{shipping === 0 ? <span className="text-gold-dark">Complimentary</span> : formatPrice(shipping)}</dd>
+                <dd>
+                  {shippingCost === 0 ? (
+                    <span className="text-gold-dark">Complimentary</span>
+                  ) : (
+                    formatPrice(shippingCost)
+                  )}
+                </dd>
               </div>
             </dl>
             <div className="flex items-center justify-between border-t border-border-soft pt-4 text-[15px] font-medium">

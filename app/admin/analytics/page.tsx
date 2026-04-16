@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, BarChart2, ShoppingBag, Users, DollarSign } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { getOrderStats } from "@/lib/actions/orders";
+import { getCustomerStats } from "@/lib/actions/customers";
 import { formatPrice } from "@/lib/utils";
 
 // ─── Mock analytics data ───────────────────────────────────────────────────────
@@ -107,9 +109,34 @@ function Sparkline({ data, color = "#8c9b7e" }: { data: number[]; color?: string
 
 export default function AdminAnalyticsPage() {
   const [period, setPeriod] = useState<Period>("7d");
-  const kpi = KPI_DATA[period];
   const revenueData = period === "7d" ? REVENUE_7D : REVENUE_30D;
   const sparkData   = period === "7d" ? ORDERS_SPARKLINE_7D : ORDERS_SPARKLINE_30D;
+
+  const [realStats, setRealStats] = useState<{
+    totalRevenue: number;
+    totalOrders: number;
+    totalCustomers: number;
+    avgOrderValue: number;
+  } | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      getOrderStats().catch(() => null),
+      getCustomerStats().catch(() => null),
+    ]).then(([os, cs]) => {
+      if (!os && !cs) return;
+      const totalOrders = os?.total ?? 0;
+      const totalRevenue = os?.totalRevenue ?? 0;
+      setRealStats({
+        totalRevenue,
+        totalOrders,
+        totalCustomers: cs?.total ?? 0,
+        avgOrderValue: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
+      });
+    });
+  }, []);
+
+  const kpi = KPI_DATA[period];
 
   return (
     <AdminShell title="Analytics">
@@ -141,10 +168,10 @@ export default function AdminAnalyticsPage() {
           {/* KPI cards */}
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { icon: DollarSign, label: "Total Revenue",   value: kpi.revenue,   change: kpi.rChange,   up: kpi.rUp,   sub: "gross sales" },
-              { icon: ShoppingBag,label: "Orders",          value: String(kpi.orders),  change: kpi.oChange,   up: kpi.oUp,   sub: "completed" },
-              { icon: Users,       label: "New Customers",  value: String(kpi.customers),change: kpi.cChange,  up: kpi.cUp,   sub: "registered" },
-              { icon: BarChart2,   label: "Avg. Order Value",value: kpi.aov,      change: kpi.aovChange, up: kpi.aovUp, sub: "per order" },
+              { icon: DollarSign, label: "Total Revenue",    value: realStats ? formatPrice(realStats.totalRevenue)    : kpi.revenue,    change: kpi.rChange,   up: kpi.rUp,   sub: "all time" },
+              { icon: ShoppingBag,label: "Total Orders",     value: realStats ? String(realStats.totalOrders)          : String(kpi.orders),  change: kpi.oChange,   up: kpi.oUp,   sub: "all time" },
+              { icon: Users,       label: "Total Customers", value: realStats ? String(realStats.totalCustomers)       : String(kpi.customers),change: kpi.cChange,  up: kpi.cUp,   sub: "registered" },
+              { icon: BarChart2,   label: "Avg. Order Value",value: realStats ? formatPrice(realStats.avgOrderValue)   : kpi.aov,        change: kpi.aovChange, up: kpi.aovUp, sub: "per order" },
             ].map(({ icon: Icon, label, value, change, up, sub }) => (
               <div key={label} className="border border-border-soft bg-ivory p-5">
                 <div className="flex items-center justify-between mb-2">

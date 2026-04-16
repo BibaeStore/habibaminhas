@@ -1,19 +1,34 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, X, ShieldCheck, Truck, RotateCcw, Tag } from "lucide-react";
-import { products } from "@/lib/data";
+import { useCartStore } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/utils";
 
-export const metadata = { title: "Your Bag" };
+const SHIPPING = 200;
+const FREE_SHIPPING_THRESHOLD = 3500;
 
 export default function CartPage() {
-  const lineItems = [
-    { product: products[0], qty: 1, size: "M", colour: "Dusty Rose" },
-    { product: products[8], qty: 2, size: "S", colour: "Ink" },
-  ];
-  const subtotal = lineItems.reduce((s, l) => s + l.product.price * l.qty, 0);
-  const shipping = subtotal > 3500 ? 0 : 250;
+  const { items, removeItem, updateQty } = useCartStore();
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING;
   const total = subtotal + shipping;
+
+  if (items.length === 0) {
+    return (
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-24 sm:px-8 text-center">
+        <h1 className="font-display text-4xl italic sm:text-5xl">Your bag is empty</h1>
+        <p className="mt-4 text-[14px] text-ink-soft">Add some beautiful pieces to get started.</p>
+        <Link
+          href="/ladies"
+          className="mt-8 inline-flex h-12 items-center gap-2 bg-ink px-8 text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark transition-colors"
+        >
+          Shop ladies
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-10 sm:px-8 lg:py-16">
@@ -24,11 +39,11 @@ export default function CartPage() {
           </span>
           <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Your Bag</h1>
           <p className="mt-1 text-[13px] text-ink-soft">
-            {lineItems.length} pieces · Held for 30 minutes.
+            {items.length} {items.length === 1 ? "piece" : "pieces"} · Held for 30 minutes.
           </p>
         </div>
         <Link
-          href="/women"
+          href="/ladies"
           className="hidden text-[12px] uppercase tracking-[0.24em] text-ink-soft underline-offset-4 hover:text-ink hover:underline sm:block"
         >
           Continue shopping
@@ -38,57 +53,72 @@ export default function CartPage() {
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
         <div className="lg:col-span-8">
           <ul className="divide-y divide-border-soft border-y border-border-soft">
-            {lineItems.map((l, idx) => (
-              <li key={idx} className="flex gap-5 py-6">
+            {items.map((item) => (
+              <li key={item.cartKey} className="flex gap-5 py-6">
                 <div className="relative w-24 flex-none sm:w-32 aspect-[3/4] bg-cream overflow-hidden">
-                  {l.product.image ? (
-                    <Image src={l.product.image} alt={l.product.title} fill sizes="128px" className="object-cover object-top" />
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      sizes="128px"
+                      className="object-cover object-top"
+                    />
                   ) : (
-                    <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${l.product.palette[0]}, ${l.product.palette[1]})` }} />
+                    <div
+                      className="h-full w-full"
+                      style={{
+                        background: `linear-gradient(135deg, ${item.palette[0]}, ${item.palette[1] ?? item.palette[0]})`,
+                      }}
+                    />
                   )}
                 </div>
                 <div className="flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <Link
-                        href={`/product/${l.product.slug}`}
+                        href={`/product/${item.slug}`}
                         className="line-clamp-2 text-[14px] leading-snug text-ink hover:text-gold-dark"
                       >
-                        {l.product.title}
+                        {item.title}
                       </Link>
-                      <div className="mt-1 text-[11px] uppercase tracking-[0.22em] text-muted">
-                        {l.product.collection}
-                      </div>
                     </div>
                     <button
                       aria-label="Remove"
+                      onClick={() => removeItem(item.cartKey)}
                       className="text-muted hover:text-ink"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-[12px] text-ink-soft">
-                    <span>Size: <strong className="font-medium">{l.size}</strong></span>
-                    <span>Colour: <strong className="font-medium">{l.colour}</strong></span>
+                    {item.size && item.size !== "onesize" && (
+                      <span>Size: <strong className="font-medium">{item.size}</strong></span>
+                    )}
+                    {item.sku && (
+                      <span className="text-muted">SKU: {item.sku}</span>
+                    )}
                   </div>
                   <div className="mt-auto flex items-end justify-between pt-3">
                     <div className="inline-flex items-center border border-border-soft">
                       <button
                         aria-label="Decrease"
+                        onClick={() => updateQty(item.cartKey, item.qty - 1)}
                         className="flex h-9 w-9 items-center justify-center text-ink-soft hover:bg-cream"
                       >
                         <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="w-8 text-center text-[13px]">{l.qty}</span>
+                      <span className="w-8 text-center text-[13px]">{item.qty}</span>
                       <button
                         aria-label="Increase"
+                        onClick={() => updateQty(item.cartKey, item.qty + 1)}
                         className="flex h-9 w-9 items-center justify-center text-ink-soft hover:bg-cream"
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
                     <div className="text-[14px] font-medium">
-                      {formatPrice(l.product.price * l.qty)}
+                      {formatPrice(item.price * item.qty)}
                     </div>
                   </div>
                 </div>
@@ -102,7 +132,7 @@ export default function CartPage() {
               Got a code? Apply at checkout.
             </div>
             <Link
-              href="/women"
+              href="/ladies"
               className="text-[12px] uppercase tracking-[0.24em] text-ink-soft hover:text-ink sm:hidden"
             >
               Continue shopping
@@ -137,7 +167,10 @@ export default function CartPage() {
               <span>Total</span>
               <span className="font-display text-2xl">{formatPrice(total)}</span>
             </div>
-            <Link href="/checkout/shipping" className="flex h-14 w-full items-center justify-center bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark transition-colors">
+            <Link
+              href="/checkout/shipping"
+              className="flex h-14 w-full items-center justify-center bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark transition-colors"
+            >
               Proceed to checkout
             </Link>
             <ul className="grid grid-cols-1 gap-3 pt-2 text-[11px] text-ink-soft">

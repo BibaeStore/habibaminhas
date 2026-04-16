@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Package, RotateCcw, MapPin, ShieldCheck } from "lucide-react";
 import { Newsletter } from "./newsletter";
+import { TrustpilotWidget } from "@/components/trustpilot-widget";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -206,7 +207,12 @@ export function Footer() {
 
         <Newsletter />
 
-        <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-border-soft pt-6 text-[11px] uppercase tracking-[0.22em] text-muted sm:flex-row sm:items-center">
+        {/* Trustpilot Reviews */}
+        <div className="mt-14 border-t border-border-soft pt-10">
+          <TrustpilotWidget />
+        </div>
+
+        <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border-soft pt-6 text-[11px] uppercase tracking-[0.22em] text-muted sm:flex-row sm:items-center">
           <div>© 2026 Habiba Minhas Atelier — All rights reserved</div>
           <div className="flex items-center gap-3">
             <PayIcon label="Visa" />

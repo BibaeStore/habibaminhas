@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Store, Truck, CreditCard, Bell, Shield, Globe,
   Check, Eye, EyeOff, Upload, Save,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { getSettings, updateSettings } from "@/lib/actions/settings";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,6 +78,76 @@ export default function AdminSettingsPage() {
     desc: "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan.",
     currency: "PKR", timezone: "Asia/Karachi",
   });
+
+  // ── Load from Supabase on mount ──
+  useEffect(() => {
+    getSettings().then((s) => {
+      setStore({
+        name: s.store_name,
+        email: s.store_email,
+        phone: s.store_phone,
+        city: s.store_city,
+        desc: s.description ?? "",
+        currency: s.currency,
+        timezone: s.timezone,
+      });
+      const sr = s.shipping_rates as Record<string, unknown> | null;
+      if (sr) {
+        setShipping({
+          standard: String(sr.standard ?? "200"),
+          express: String(sr.express ?? "500"),
+          freeThreshold: String(sr.freeThreshold ?? "3500"),
+          carrier: String(sr.carrier ?? "TCS"),
+          estimatedStd: String(sr.estimatedStd ?? "3–5"),
+          estimatedExp: String(sr.estimatedExp ?? "1–2"),
+          codEnabled: Boolean(sr.codEnabled ?? true),
+        });
+      }
+      const pm = s.payment_methods as Record<string, unknown> | null;
+      if (pm) {
+        setPayment((p) => ({
+          ...p,
+          cod: Boolean(pm.cod ?? true),
+          jazzcash: Boolean(pm.jazzcash ?? true),
+          easypaisa: Boolean(pm.easypaisa ?? true),
+          bankTransfer: Boolean(pm.bankTransfer ?? false),
+          bankName: String(pm.bankName ?? p.bankName),
+          accountTitle: String(pm.accountTitle ?? p.accountTitle),
+          accountNo: String(pm.accountNo ?? p.accountNo),
+          iban: String(pm.iban ?? p.iban),
+        }));
+      }
+      const ns = s.notification_settings as Record<string, unknown> | null;
+      if (ns) {
+        setNotif({
+          newOrder: Boolean(ns.newOrder ?? true),
+          orderShipped: Boolean(ns.orderShipped ?? true),
+          orderDelivered: Boolean(ns.orderDelivered ?? false),
+          lowStock: Boolean(ns.lowStock ?? true),
+          newCustomer: Boolean(ns.newCustomer ?? false),
+          payment: Boolean(ns.payment ?? true),
+          dailySummary: Boolean(ns.dailySummary ?? true),
+          weeklySummary: Boolean(ns.weeklySummary ?? false),
+        });
+      }
+      const ss = s.seo_settings as Record<string, unknown> | null;
+      if (ss) {
+        setSeo((prev) => ({
+          ...prev,
+          siteTitle: String(ss.siteTitle ?? prev.siteTitle),
+          metaDesc: String(ss.metaDesc ?? prev.metaDesc),
+          ogTitle: String(ss.ogTitle ?? prev.ogTitle),
+          ogDesc: String(ss.ogDesc ?? prev.ogDesc),
+          ga4: String(ss.ga4 ?? prev.ga4),
+          fbPixel: String(ss.fbPixel ?? prev.fbPixel),
+          robotsTxt: Boolean(ss.robotsTxt ?? prev.robotsTxt),
+          sitemap: Boolean(ss.sitemap ?? prev.sitemap),
+          structuredData: Boolean(ss.structuredData ?? prev.structuredData),
+        }));
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Shipping state ──
   const [shipping, setShipping] = useState({
@@ -183,7 +254,7 @@ export default function AdminSettingsPage() {
                           className="sm:col-span-2 border border-border-soft bg-cream px-3 py-2.5 text-[14px] outline-none focus:border-ink resize-none" />
                       </Field>
                     </div>
-                    <SaveBar onSave={() => {}} />
+                    <SaveBar onSave={() => updateSettings({ store_name: store.name, store_email: store.email, store_phone: store.phone, store_city: store.city, description: store.desc, currency: store.currency, timezone: store.timezone }).catch(() => {})} />
                   </section>
 
                   <section className="border border-border-soft bg-ivory p-6">
@@ -252,7 +323,7 @@ export default function AdminSettingsPage() {
                       sub="Allow customers to pay when their order arrives"
                     />
                   </div>
-                  <SaveBar label="Update rates" onSave={() => {}} />
+                  <SaveBar label="Update rates" onSave={() => updateSettings({ shipping_rates: { standard: Number(shipping.standard), express: Number(shipping.express), freeThreshold: Number(shipping.freeThreshold), carrier: shipping.carrier, estimatedStd: shipping.estimatedStd, estimatedExp: shipping.estimatedExp, codEnabled: shipping.codEnabled } }).catch(() => {})} />
                 </section>
               )}
 
@@ -293,7 +364,7 @@ export default function AdminSettingsPage() {
                             className="h-10 border border-border-soft bg-cream px-3 text-[13px] font-mono outline-none focus:border-ink" />
                         </Field>
                       </div>
-                      <SaveBar onSave={() => {}} />
+                      <SaveBar onSave={() => updateSettings({ payment_methods: { cod: payment.cod, jazzcash: payment.jazzcash, easypaisa: payment.easypaisa, bankTransfer: payment.bankTransfer, bankName: payment.bankName, accountTitle: payment.accountTitle, accountNo: payment.accountNo, iban: payment.iban } }).catch(() => {})} />
                     </section>
                   )}
                 </>
@@ -326,7 +397,7 @@ export default function AdminSettingsPage() {
                     <Toggle checked={notif.dailySummary}  onChange={(v) => setNotif({ ...notif, dailySummary: v })}  label="Daily sales summary"  sub="Receive a daily digest email each morning" />
                     <Toggle checked={notif.weeklySummary} onChange={(v) => setNotif({ ...notif, weeklySummary: v })} label="Weekly performance"   sub="Receive a weekly analytics summary on Mondays" />
                   </div>
-                  <SaveBar label="Save preferences" onSave={() => {}} />
+                  <SaveBar label="Save preferences" onSave={() => updateSettings({ notification_settings: { newOrder: notif.newOrder, orderShipped: notif.orderShipped, orderDelivered: notif.orderDelivered, lowStock: notif.lowStock, newCustomer: notif.newCustomer, payment: notif.payment, dailySummary: notif.dailySummary, weeklySummary: notif.weeklySummary } }).catch(() => {})} />
                 </section>
               )}
 
@@ -433,7 +504,7 @@ export default function AdminSettingsPage() {
                         </Field>
                       </div>
                     </div>
-                    <SaveBar onSave={() => {}} />
+                    <SaveBar onSave={() => updateSettings({ seo_settings: { siteTitle: seo.siteTitle, metaDesc: seo.metaDesc, ogTitle: seo.ogTitle, ogDesc: seo.ogDesc, ga4: seo.ga4, fbPixel: seo.fbPixel, robotsTxt: seo.robotsTxt, sitemap: seo.sitemap, structuredData: seo.structuredData } }).catch(() => {})} />
                   </section>
 
                   <section className="border border-border-soft bg-ivory p-6">
@@ -443,7 +514,7 @@ export default function AdminSettingsPage() {
                       <Toggle checked={seo.sitemap}        onChange={(v) => setSeo({ ...seo, sitemap: v })}        label="XML Sitemap"       sub="Auto-generate and submit sitemap to Google" />
                       <Toggle checked={seo.structuredData} onChange={(v) => setSeo({ ...seo, structuredData: v })} label="Structured Data"   sub="Enable JSON-LD schema for products and breadcrumbs" />
                     </div>
-                    <SaveBar label="Save SEO settings" onSave={() => {}} />
+                    <SaveBar label="Save SEO settings" onSave={() => updateSettings({ seo_settings: { siteTitle: seo.siteTitle, metaDesc: seo.metaDesc, ogTitle: seo.ogTitle, ogDesc: seo.ogDesc, ga4: seo.ga4, fbPixel: seo.fbPixel, robotsTxt: seo.robotsTxt, sitemap: seo.sitemap, structuredData: seo.structuredData } }).catch(() => {})} />
                   </section>
                 </>
               )}
