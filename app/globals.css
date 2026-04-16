@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ivory: #faf7f1;
+  --color-cream: #f3eee3;
+  --color-parchment: #ece4d4;
+  --color-border-soft: #e5ddd0;
+  --color-ink: #1a1612;
+  --color-ink-soft: #3d3731;
+  --color-muted: #8a8179;
+  --color-gold: #ebd7bc;
+  --color-gold-dark: #b89464;
+  --color-gold-light: #f5ede0;
+  --color-rose: #c9917e;
+  --color-sage: #8c9b7e;
+  --color-sale: #9c3b2f;
+
+  --font-display: var(--font-fraunces), "Cormorant Garamond", serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 2px rgba(26, 22, 18, 0.04),
+    0 8px 24px rgba(26, 22, 18, 0.05);
+  --shadow-lift: 0 2px 6px rgba(26, 22, 18, 0.06),
+    0 20px 40px rgba(26, 22, 18, 0.08);
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: var(--color-ivory);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-ivory);
+}
+
+/* marquee */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+/* subtle fade-up */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+
+/* slow pan used on hero placeholders */
+@keyframes slow-pan {
+  from {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(-2%, -1%, 0);
+  }
+}
+.animate-slow-pan {
+  animation: slow-pan 16s ease-in-out infinite alternate;
+}
+
+/* hide scrollbar for horizontal rails */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* thin underline hover */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.35s cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
+
+/* grain texture */
+.grain {
+  position: relative;
+}
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: radial-gradient(
+      circle at 20% 20%,
+      #000 0.5px,
+      transparent 1px
+    ),
+    radial-gradient(circle at 70% 60%, #000 0.4px, transparent 1px),
+    radial-gradient(circle at 40% 80%, #000 0.5px, transparent 1px);
+  background-size: 3px 3px, 4px 4px, 5px 5px;
+}

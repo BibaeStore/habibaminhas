@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:safironlinestore.com)",
+      "WebFetch(domain:pk.sapphireonline.pk)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/women)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/product/uns-1)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/cart)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/about)",
+      "Bash(curl -sS -o /dev/null -w \"/ HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -sS -o /dev/null -w \"/women HTTP %{http_code}\\\\n\" http://localhost:3000/women)",
+      "Bash(curl -sS -o /dev/null -w \"/product/uns-1 HTTP %{http_code}\\\\n\" http://localhost:3000/product/uns-1)",
+      "Bash(curl -sS -o /dev/null -w \"/cart HTTP %{http_code}\\\\n\" http://localhost:3000/cart)",
+      "Bash(curl -sS -o /dev/null -w \"/about HTTP %{http_code}\\\\n\" http://localhost:3000/about)",
+      "Bash(curl -sS -o /dev/null -w \"/ %{http_code} / /women %{http_code} / /product/uns-1 %{http_code} / /cart %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -sS -o /dev/null -w \"aggregate ok\\\\n\" http://localhost:3000/)",
+      "WebFetch(domain:habibaminhas.com)",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)",
+      "Bash(taskkill *)",
+      "Bash(cmd *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(powershell *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(cp \"C:/Users/ASUS/Downloads/1234.webp\" \"D:/web/habibaminhas/public/hero-1.webp\")",
+      "Bash(cp \"C:/Users/ASUS/Downloads/12345.webp\" \"D:/web/habibaminhas/public/hero-2.webp\")",
+      "Bash(cp \"C:/Users/ASUS/Downloads/123.webp\" \"D:/web/habibaminhas/public/hero-3.webp\")",
+      "Bash(xargs sed *)",
+      "Bash(mv \"Habiba Minhas Logo T.png\" \"habiba-minhas-logo-t.png\")",
+      "Bash(mv \"Habiba Minhas Logo.png\" \"habiba-minhas-logo.png\")",
+      "Bash(mv \"Habiba Minhas Icon T.png\" \"habiba-minhas-icon-t.png\")",
+      "Bash(mv \"Habiba Minhas Icon.png\" \"habiba-minhas-icon.png\")",
+      "Bash(mv \"Habiba Minhas Logo.ai\" \"habiba-minhas-logo.ai\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP:%{http_code}\" http://localhost:3000/)"
+    ]
+  }
+}
