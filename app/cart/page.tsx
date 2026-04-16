@@ -137,9 +137,9 @@ export default function CartPage() {
               <span>Total</span>
               <span className="font-display text-2xl">{formatPrice(total)}</span>
             </div>
-            <button className="h-14 w-full bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark">
+            <Link href="/checkout/shipping" className="flex h-14 w-full items-center justify-center bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark transition-colors">
               Proceed to checkout
-            </button>
+            </Link>
             <ul className="grid grid-cols-1 gap-3 pt-2 text-[11px] text-ink-soft">
               <li className="flex items-center gap-2">
                 <Truck className="h-3.5 w-3.5 text-gold-dark" /> Free shipping over Rs. 3,500

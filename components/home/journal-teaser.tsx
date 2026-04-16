@@ -66,7 +66,7 @@ export function JournalTeaser() {
                 className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
               />
             ) : (
-              <PlaceholderImage tone={posts[0].tone} motif={posts[0].motif} aspect="3/2" />
+              <PlaceholderImage tone={posts[0].tone} motif={posts[0].motif} aspect="16/9" />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">

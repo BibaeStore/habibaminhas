@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, MapPin, CreditCard, Heart, User, LogOut } from "lucide-react";
+import { Package, MapPin, CreditCard, Heart, User, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
 import { products } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
@@ -36,6 +36,7 @@ const sidebar = [
   { label: "Addresses", href: "/account/addresses", icon: MapPin },
   { label: "Payments", href: "/account/payments", icon: CreditCard },
   { label: "Wishlist", href: "/wishlist", icon: Heart },
+  { label: "Settings", href: "/account/settings", icon: Settings },
 ];
 
 export default function AccountPage() {
