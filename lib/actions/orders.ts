@@ -90,10 +90,9 @@ export async function getOrderStats() {
     .select("status, total, created_at");
   if (error) throw new Error(error.message);
 
-  const today = new Date().toISOString().split("T")[0];
-  const todayOrders = data.filter((o) => o.created_at.startsWith(today));
-
   type Row = { status: string; total: number; created_at: string };
+  const today = new Date().toISOString().split("T")[0];
+  const todayOrders = (data as Row[]).filter((o) => o.created_at.startsWith(today));
   return {
     total: data.length,
     todayCount: todayOrders.length,
