@@ -1,0 +1,625 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - img [ref=e7]
+    - generic [ref=e8]:
+      - generic [ref=e9]: Habiba Minhas
+      - generic [ref=e10]: Atelier · Est. 2026
+  - generic [ref=e13]:
+    - generic [ref=e14]: Flat Rs. 200 Delivery Nationwide
+    - generic [ref=e16]: Premium Quality — Handcrafted with Love in Pakistan
+    - generic [ref=e18]: 14-Day Easy Return Policy
+    - generic [ref=e20]: Free Shipping on Orders Over Rs. 5,000
+    - generic [ref=e22]: "WhatsApp Support: +92 312 0295812"
+    - generic [ref=e24]: Flat Rs. 200 Delivery Nationwide
+    - generic [ref=e26]: Premium Quality — Handcrafted with Love in Pakistan
+    - generic [ref=e28]: 14-Day Easy Return Policy
+    - generic [ref=e30]: Free Shipping on Orders Over Rs. 5,000
+    - generic [ref=e32]: "WhatsApp Support: +92 312 0295812"
+  - banner [ref=e34]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - link "Habiba Minhas" [ref=e37] [cursor=pointer]:
+          - /url: /
+          - img "Habiba Minhas" [ref=e38]
+        - generic [ref=e39]:
+          - button "Ladies" [ref=e40]:
+            - text: Ladies
+            - img [ref=e41]
+          - button "Kids" [ref=e43]:
+            - text: Kids
+            - img [ref=e44]
+          - button "Baby Products" [ref=e46]:
+            - text: Baby Products
+            - img [ref=e47]
+          - button "Accessories" [ref=e49]:
+            - text: Accessories
+            - img [ref=e50]
+          - link "New In" [ref=e52] [cursor=pointer]:
+            - /url: /new
+          - link "About" [ref=e53] [cursor=pointer]:
+            - /url: /about
+      - generic [ref=e54]:
+        - button "Search" [ref=e55]:
+          - img [ref=e56]
+        - button "Region" [ref=e59]:
+          - img [ref=e60]
+          - generic [ref=e63]: PK
+        - link "Account" [ref=e64] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e65]
+        - link "Wishlist" [ref=e68] [cursor=pointer]:
+          - /url: /wishlist
+          - img [ref=e69]
+        - link "Cart" [ref=e71] [cursor=pointer]:
+          - /url: /cart
+          - img [ref=e72]
+          - generic [ref=e75]: "2"
+  - main [ref=e76]:
+    - generic [ref=e78]:
+      - img "Elegance Redefined" [ref=e80]
+      - img "Crafted for Her" [ref=e82]
+      - img "Dressed with Ease" [ref=e84]
+      - generic [ref=e88]:
+        - text: Ladies Collection 2026
+        - heading "Elegance Redefined" [level=1] [ref=e89]
+        - paragraph [ref=e90]: Handcrafted 3-piece silk suits adorned with gold brocade, mirror-work, and artisan embroidery — curated for the modern Pakistani woman.
+        - generic [ref=e91]:
+          - link "Shop Ladies" [ref=e92] [cursor=pointer]:
+            - /url: /ladies/suits
+            - text: Shop Ladies
+            - img [ref=e93]
+          - link "View All Collections" [ref=e95] [cursor=pointer]:
+            - /url: /shop
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - button "Previous slide" [ref=e98]:
+            - img [ref=e99]
+          - button "Next slide" [ref=e101]:
+            - img [ref=e102]
+        - generic [ref=e104]:
+          - generic [ref=e105]: 01/03
+          - generic [ref=e106]:
+            - button "Go to slide 1" [ref=e107]
+            - button "Go to slide 2" [ref=e108]
+            - button "Go to slide 3" [ref=e109]
+    - generic [ref=e111]:
+      - generic [ref=e112]:
+        - generic [ref=e113]:
+          - generic [ref=e114]: 5,000+
+          - generic [ref=e115]: Happy Customers
+        - generic [ref=e117]:
+          - generic [ref=e118]: Rs. 200
+          - generic [ref=e119]: Flat Nationwide Delivery
+        - generic [ref=e121]: 14-Day Easy Returns
+      - link "Shop now" [ref=e122] [cursor=pointer]:
+        - /url: /shop
+        - text: Shop now
+        - img [ref=e123]
+    - generic [ref=e125]:
+      - generic [ref=e126]:
+        - generic [ref=e127]:
+          - generic [ref=e128]: Shop by Category
+          - heading "Find your perfect collection." [level=2] [ref=e129]
+          - paragraph [ref=e130]: From elegant ladies suits to premium baby essentials — curated with love in Pakistan.
+        - link "View All" [ref=e131] [cursor=pointer]:
+          - /url: /shop
+      - generic [ref=e132]:
+        - link "Ladies Suits Ladies Suits Shop" [ref=e133] [cursor=pointer]:
+          - /url: /ladies/suits
+          - img "Ladies Suits" [ref=e135]
+          - generic [ref=e137]:
+            - generic [ref=e138]: Ladies Suits
+            - generic [ref=e139]:
+              - text: Shop
+              - img [ref=e140]
+        - link "Kids Formal Kids Formal Shop" [ref=e143] [cursor=pointer]:
+          - /url: /kids/girls
+          - img "Kids Formal" [ref=e145]
+          - generic [ref=e147]:
+            - generic [ref=e148]: Kids Formal
+            - generic [ref=e149]:
+              - text: Shop
+              - img [ref=e150]
+        - link "Baby Bedding Baby Bedding Shop" [ref=e153] [cursor=pointer]:
+          - /url: /baby/bedding
+          - img "Baby Bedding" [ref=e155]
+          - generic [ref=e157]:
+            - generic [ref=e158]: Baby Bedding
+            - generic [ref=e159]:
+              - text: Shop
+              - img [ref=e160]
+        - link "Baby Nests Baby Nests Shop" [ref=e163] [cursor=pointer]:
+          - /url: /baby/nests
+          - img "Baby Nests" [ref=e165]
+          - generic [ref=e167]:
+            - generic [ref=e168]: Baby Nests
+            - generic [ref=e169]:
+              - text: Shop
+              - img [ref=e170]
+        - link "Accessories Accessories Shop" [ref=e173] [cursor=pointer]:
+          - /url: /accessories/hair
+          - img "Accessories" [ref=e175]
+          - generic [ref=e177]:
+            - generic [ref=e178]: Accessories
+            - generic [ref=e179]:
+              - text: Shop
+              - img [ref=e180]
+        - link "New Arrivals New Arrivals Shop" [ref=e183] [cursor=pointer]:
+          - /url: /new
+          - img "New Arrivals" [ref=e185]
+          - generic [ref=e187]:
+            - generic [ref=e188]: New Arrivals
+            - generic [ref=e189]:
+              - text: Shop
+              - img [ref=e190]
+    - generic [ref=e194]:
+      - img "Crafted for her." [ref=e197]
+      - generic [ref=e198]:
+        - generic [ref=e199]: Ladies Collection
+        - heading "Crafted for her." [level=2] [ref=e200]
+        - paragraph [ref=e201]: 3-piece stitched silk suits adorned with gold brocade, antique mirror-work, and artisan embroidery. Handcrafted in Pakistan for the modern woman.
+        - list [ref=e202]:
+          - listitem [ref=e203]:
+            - link "Shop Ladies Suits" [ref=e204] [cursor=pointer]:
+              - /url: /ladies/suits
+              - text: Shop Ladies Suits
+              - img [ref=e205]
+          - listitem [ref=e207]:
+            - link "Formal & Party Wear" [ref=e208] [cursor=pointer]:
+              - /url: /ladies/occasion/formal
+              - text: Formal & Party Wear
+              - img [ref=e209]
+          - listitem [ref=e211]:
+            - link "Gold Brocade Collection" [ref=e212] [cursor=pointer]:
+              - /url: /ladies/suits/gold-brocade
+              - text: Gold Brocade Collection
+              - img [ref=e213]
+    - generic [ref=e216]:
+      - img "Little stars, big moments." [ref=e219]
+      - generic [ref=e220]:
+        - generic [ref=e221]: Kids Festive Wear
+        - heading "Little stars, big moments." [level=2] [ref=e222]
+        - paragraph [ref=e223]: Festive co-ord sets, embroidered gowns, and silk suits for girls — crafted for Eid, weddings, and every celebration worth dressing up for.
+        - list [ref=e224]:
+          - listitem [ref=e225]:
+            - link "Shop Girls Formal" [ref=e226] [cursor=pointer]:
+              - /url: /kids/girls
+              - text: Shop Girls Formal
+              - img [ref=e227]
+          - listitem [ref=e229]:
+            - link "Festive Co-Ord Sets" [ref=e230] [cursor=pointer]:
+              - /url: /kids/girls/co-ord
+              - text: Festive Co-Ord Sets
+              - img [ref=e231]
+          - listitem [ref=e233]:
+            - link "Embroidered Gowns" [ref=e234] [cursor=pointer]:
+              - /url: /kids/girls/gowns
+              - text: Embroidered Gowns
+              - img [ref=e235]
+    - generic [ref=e238]:
+      - img "Soft from the start." [ref=e241]
+      - generic [ref=e242]:
+        - generic [ref=e243]: Baby & Nursery
+        - heading "Soft from the start." [level=2] [ref=e244]
+        - paragraph [ref=e245]: Deluxe padded crib bedding sets, baby nest pods, swaddle wraps, and nursing pillows — everything your nursery needs, made with love in Pakistan.
+        - list [ref=e246]:
+          - listitem [ref=e247]:
+            - link "Shop Crib Bedding Sets" [ref=e248] [cursor=pointer]:
+              - /url: /baby/bedding
+              - text: Shop Crib Bedding Sets
+              - img [ref=e249]
+          - listitem [ref=e251]:
+            - link "Baby Nests & Loungers" [ref=e252] [cursor=pointer]:
+              - /url: /baby/nests
+              - text: Baby Nests & Loungers
+              - img [ref=e253]
+          - listitem [ref=e255]:
+            - link "Swaddles & Accessories" [ref=e256] [cursor=pointer]:
+              - /url: /baby/swaddles
+              - text: Swaddles & Accessories
+              - img [ref=e257]
+    - generic [ref=e260]:
+      - img "Finished by hand." [ref=e263]
+      - generic [ref=e264]:
+        - generic [ref=e265]: Handcrafted Accessories
+        - heading "Finished by hand." [level=2] [ref=e266]
+        - paragraph [ref=e267]: 3-piece handcrafted silk headband & floral clip sets — made with the same care as our fashion pieces, gifted with love.
+        - list [ref=e268]:
+          - listitem [ref=e269]:
+            - link "Shop Hair Accessories" [ref=e270] [cursor=pointer]:
+              - /url: /accessories/hair
+              - text: Shop Hair Accessories
+              - img [ref=e271]
+          - listitem [ref=e273]:
+            - link "Headband & Clip Sets" [ref=e274] [cursor=pointer]:
+              - /url: /accessories/hair/sets
+              - text: Headband & Clip Sets
+              - img [ref=e275]
+    - generic [ref=e277]:
+      - generic [ref=e278]:
+        - generic [ref=e279]: Trending Now
+        - heading "Four directions in one season." [level=2] [ref=e280]
+        - paragraph [ref=e281]: Colour stories we are following this summer, pulled together from the floor and the runway.
+      - generic [ref=e282]:
+        - link "Floral Lawn Trend 01 Floral Lawn" [ref=e283] [cursor=pointer]:
+          - /url: /ladies/suits
+          - img "Floral Lawn" [ref=e285]
+          - generic [ref=e287]:
+            - generic [ref=e288]: Trend 01
+            - heading "Floral Lawn" [level=3] [ref=e289]
+        - link "Emerald Embroidery Trend 02 Emerald Embroidery" [ref=e290] [cursor=pointer]:
+          - /url: /ladies/suits/gold-brocade
+          - img "Emerald Embroidery" [ref=e292]
+          - generic [ref=e294]:
+            - generic [ref=e295]: Trend 02
+            - heading "Emerald Embroidery" [level=3] [ref=e296]
+        - link "Sage & Bloom Trend 03 Sage & Bloom" [ref=e297] [cursor=pointer]:
+          - /url: /ladies/suits
+          - img "Sage & Bloom" [ref=e299]
+          - generic [ref=e301]:
+            - generic [ref=e302]: Trend 03
+            - heading "Sage & Bloom" [level=3] [ref=e303]
+        - link "Pink Blossom Trend 04 Pink Blossom" [ref=e304] [cursor=pointer]:
+          - /url: /ladies/suits
+          - img "Pink Blossom" [ref=e306]
+          - generic [ref=e308]:
+            - generic [ref=e309]: Trend 04
+            - heading "Pink Blossom" [level=3] [ref=e310]
+    - generic [ref=e312]:
+      - generic [ref=e313]:
+        - generic [ref=e314]:
+          - generic [ref=e315]: Most-loved this week
+          - heading "Trending now." [level=2] [ref=e316]
+          - paragraph [ref=e317]: Our most popular pieces — handcrafted and ready to ship.
+        - generic [ref=e318]:
+          - button "All" [ref=e319]
+          - button "Ladies" [ref=e320]
+          - button "Kids" [ref=e321]
+          - button "Baby" [ref=e322]
+          - button "Accessories" [ref=e323]
+      - generic [ref=e324]:
+        - article [ref=e325]:
+          - link "Rosewood Elegance — 3-Piece Formal Suit Bestseller Add to wishlist Quick View Add to bag" [ref=e326] [cursor=pointer]:
+            - /url: /product/lad-1
+            - generic [ref=e327]:
+              - img "Rosewood Elegance — 3-Piece Formal Suit" [ref=e328]
+              - generic [ref=e329]:
+                - generic [ref=e331]: Bestseller
+                - button "Add to wishlist" [ref=e332]:
+                  - img [ref=e333]
+              - generic [ref=e335]:
+                - generic [ref=e336]: Quick View
+                - button "Add to bag" [ref=e337]:
+                  - img [ref=e338]
+          - generic [ref=e339]:
+            - link "Rosewood Elegance — 3-Piece Formal Suit" [ref=e340] [cursor=pointer]:
+              - /url: /product/lad-1
+            - generic [ref=e341]: Ladies Stitched Collection
+            - generic [ref=e343]: Rs. 6,000
+        - article [ref=e344]:
+          - link "Pearl Radiance — 3-Piece Stitched Silk Suit with Silver Mirror-Work Trim New In Add to wishlist Quick View Add to bag" [ref=e345] [cursor=pointer]:
+            - /url: /product/lad-4
+            - generic [ref=e346]:
+              - img "Pearl Radiance — 3-Piece Stitched Silk Suit with Silver Mirror-Work Trim" [ref=e347]
+              - generic [ref=e348]:
+                - generic [ref=e350]: New In
+                - button "Add to wishlist" [ref=e351]:
+                  - img [ref=e352]
+              - generic [ref=e354]:
+                - generic [ref=e355]: Quick View
+                - button "Add to bag" [ref=e356]:
+                  - img [ref=e357]
+          - generic [ref=e358]:
+            - link "Pearl Radiance — 3-Piece Stitched Silk Suit with Silver Mirror-Work Trim" [ref=e359] [cursor=pointer]:
+              - /url: /product/lad-4
+            - generic [ref=e360]: Ladies Stitched Collection
+            - generic [ref=e362]: Rs. 5,000
+        - article [ref=e363]:
+          - link "Sunset Bloom — Girls Festive Co-Ord Set New In Add to wishlist Quick View Add to bag" [ref=e364] [cursor=pointer]:
+            - /url: /product/kid-1
+            - generic [ref=e365]:
+              - img "Sunset Bloom — Girls Festive Co-Ord Set" [ref=e366]
+              - generic [ref=e367]:
+                - generic [ref=e369]: New In
+                - button "Add to wishlist" [ref=e370]:
+                  - img [ref=e371]
+              - generic [ref=e373]:
+                - generic [ref=e374]: Quick View
+                - button "Add to bag" [ref=e375]:
+                  - img [ref=e376]
+          - generic [ref=e377]:
+            - link "Sunset Bloom — Girls Festive Co-Ord Set" [ref=e378] [cursor=pointer]:
+              - /url: /product/kid-1
+            - generic [ref=e379]: Kids Festive Wear
+            - generic [ref=e381]: Rs. 6,000
+        - article [ref=e382]:
+          - link "Royal Amethyst — Kids Two-Tone Embroidered Formal Gown Bestseller Add to wishlist Quick View Add to bag" [ref=e383] [cursor=pointer]:
+            - /url: /product/kid-7
+            - generic [ref=e384]:
+              - img "Royal Amethyst — Kids Two-Tone Embroidered Formal Gown" [ref=e385]
+              - generic [ref=e386]:
+                - generic [ref=e388]: Bestseller
+                - button "Add to wishlist" [ref=e389]:
+                  - img [ref=e390]
+              - generic [ref=e392]:
+                - generic [ref=e393]: Quick View
+                - button "Add to bag" [ref=e394]:
+                  - img [ref=e395]
+          - generic [ref=e396]:
+            - link "Royal Amethyst — Kids Two-Tone Embroidered Formal Gown" [ref=e397] [cursor=pointer]:
+              - /url: /product/kid-7
+            - generic [ref=e398]: Kids Festive Wear
+            - generic [ref=e400]: Rs. 3,000
+        - article [ref=e401]:
+          - link "Sandstone Gingham — 5-Piece Deluxe Padded Crib Bedding Set Bestseller Add to wishlist Quick View Add to bag" [ref=e402] [cursor=pointer]:
+            - /url: /product/bby-1
+            - generic [ref=e403]:
+              - img "Sandstone Gingham — 5-Piece Deluxe Padded Crib Bedding Set" [ref=e404]
+              - generic [ref=e405]:
+                - generic [ref=e407]: Bestseller
+                - button "Add to wishlist" [ref=e408]:
+                  - img [ref=e409]
+              - generic [ref=e411]:
+                - generic [ref=e412]: Quick View
+                - button "Add to bag" [ref=e413]:
+                  - img [ref=e414]
+          - generic [ref=e415]:
+            - link "Sandstone Gingham — 5-Piece Deluxe Padded Crib Bedding Set" [ref=e416] [cursor=pointer]:
+              - /url: /product/bby-1
+            - generic [ref=e417]: Baby & Nursery Essentials
+            - generic [ref=e419]: Rs. 6,900
+        - article [ref=e420]:
+          - link "Pastel Dream — Deluxe 10-Piece Plush Bumper & Travel Set New In Add to wishlist Quick View Add to bag" [ref=e421] [cursor=pointer]:
+            - /url: /product/bby-3
+            - generic [ref=e422]:
+              - img "Pastel Dream — Deluxe 10-Piece Plush Bumper & Travel Set" [ref=e423]
+              - generic [ref=e424]:
+                - generic [ref=e426]: New In
+                - button "Add to wishlist" [ref=e427]:
+                  - img [ref=e428]
+              - generic [ref=e430]:
+                - generic [ref=e431]: Quick View
+                - button "Add to bag" [ref=e432]:
+                  - img [ref=e433]
+          - generic [ref=e434]:
+            - link "Pastel Dream — Deluxe 10-Piece Plush Bumper & Travel Set" [ref=e435] [cursor=pointer]:
+              - /url: /product/bby-3
+            - generic [ref=e436]: Baby & Nursery Essentials
+            - generic [ref=e438]: Rs. 9,000
+      - link "View all products" [ref=e440] [cursor=pointer]:
+        - /url: /shop
+        - text: View all products
+        - img [ref=e441]
+    - generic [ref=e444]:
+      - generic [ref=e445]:
+        - generic [ref=e446]: Worn & loved
+        - heading "A kind word from the wearers." [level=2] [ref=e447]
+        - generic [ref=e448]:
+          - generic "5 out of 5 stars" [ref=e449]:
+            - img [ref=e450]
+            - img [ref=e452]
+            - img [ref=e454]
+            - img [ref=e456]
+            - img [ref=e458]
+          - generic [ref=e460]: 5.0 · 2,400+ reviews
+      - generic [ref=e461]:
+        - figure "Fatima R. Fatima R. Karachi Verified" [ref=e462]:
+          - generic "5 out of 5 stars" [ref=e463]:
+            - img [ref=e464]
+            - img [ref=e466]
+            - img [ref=e468]
+            - img [ref=e470]
+            - img [ref=e472]
+          - blockquote [ref=e474]: “The quality of the silk suit is beyond what I expected at this price. The embroidery is absolutely beautiful — I wore it to a wedding and got so many compliments.”
+          - generic [ref=e475]:
+            - img "Fatima R." [ref=e477]
+            - generic [ref=e478]:
+              - generic [ref=e479]: Fatima R.
+              - generic [ref=e480]: Karachi
+            - generic [ref=e481]:
+              - img [ref=e482]
+              - text: Verified
+        - figure "Sara A. Sara A. Lahore Verified" [ref=e484]:
+          - generic "5 out of 5 stars" [ref=e485]:
+            - img [ref=e486]
+            - img [ref=e488]
+            - img [ref=e490]
+            - img [ref=e492]
+            - img [ref=e494]
+          - blockquote [ref=e496]: “Ordered the Pastel Dream nursery set for my baby — the padding is so thick and the fabric is incredibly soft. Fast delivery, beautifully packaged.”
+          - generic [ref=e497]:
+            - img "Sara A." [ref=e499]
+            - generic [ref=e500]:
+              - generic [ref=e501]: Sara A.
+              - generic [ref=e502]: Lahore
+            - generic [ref=e503]:
+              - img [ref=e504]
+              - text: Verified
+        - figure "Nadia K. Nadia K. Islamabad Verified" [ref=e506]:
+          - generic "5 out of 5 stars" [ref=e507]:
+            - img [ref=e508]
+            - img [ref=e510]
+            - img [ref=e512]
+            - img [ref=e514]
+            - img [ref=e516]
+          - blockquote [ref=e518]: “The kids festive gown was perfect for Eid! Great stitching and my daughter loved the embellished bodice. Will definitely order again.”
+          - generic [ref=e519]:
+            - img "Nadia K." [ref=e521]
+            - generic [ref=e522]:
+              - generic [ref=e523]: Nadia K.
+              - generic [ref=e524]: Islamabad
+            - generic [ref=e525]:
+              - img [ref=e526]
+              - text: Verified
+    - generic [ref=e528]:
+      - generic [ref=e529]:
+        - generic [ref=e530]:
+          - generic [ref=e531]: The Journal
+          - heading "Style, culture & craft." [level=2] [ref=e532]
+        - link "All Stories" [ref=e533] [cursor=pointer]:
+          - /url: /journal
+      - generic [ref=e534]:
+        - link "How to style a dupatta in five ways Style Notes How to style a dupatta in five ways Read" [ref=e535] [cursor=pointer]:
+          - /url: /journal/dupatta-five-ways
+          - generic [ref=e536]:
+            - img "How to style a dupatta in five ways" [ref=e537]
+            - generic [ref=e539]:
+              - text: Style Notes
+              - heading "How to style a dupatta in five ways" [level=3] [ref=e540]
+              - generic [ref=e541]:
+                - text: Read
+                - img [ref=e542]
+        - generic [ref=e545]:
+          - 'link "Modest dressing: comfort meets elegance Modest Wear Modest dressing: comfort meets elegance Discover how clean silhouettes and breathable fabrics can elevate your everyday look. Read" [ref=e546] [cursor=pointer]':
+            - /url: /journal/modest-dressing
+            - 'img "Modest dressing: comfort meets elegance" [ref=e548]'
+            - generic [ref=e549]:
+              - generic [ref=e550]: Modest Wear
+              - 'heading "Modest dressing: comfort meets elegance" [level=3] [ref=e551]'
+              - paragraph [ref=e552]: Discover how clean silhouettes and breathable fabrics can elevate your everyday look.
+              - generic [ref=e553]:
+                - text: Read
+                - img [ref=e554]
+          - 'link "Dressing for Eid: tradition in every thread Occasion Dressing for Eid: tradition in every thread How to choose the perfect ensemble for Eid celebrations — from fabric to embroidery. Read" [ref=e557] [cursor=pointer]':
+            - /url: /journal/eid-dressing
+            - 'img "Dressing for Eid: tradition in every thread" [ref=e559]'
+            - generic [ref=e560]:
+              - generic [ref=e561]: Occasion
+              - 'heading "Dressing for Eid: tradition in every thread" [level=3] [ref=e562]'
+              - paragraph [ref=e563]: How to choose the perfect ensemble for Eid celebrations — from fabric to embroidery.
+              - generic [ref=e564]:
+                - text: Read
+                - img [ref=e565]
+  - contentinfo [ref=e568]:
+    - generic [ref=e569]:
+      - generic [ref=e570]:
+        - link "Flat Rs. 200 Delivery Nationwide shipping across all of Pakistan." [ref=e571] [cursor=pointer]:
+          - /url: /help/shipping
+          - img [ref=e572]
+          - generic [ref=e576]:
+            - generic [ref=e577]: Flat Rs. 200 Delivery
+            - generic [ref=e578]: Nationwide shipping across all of Pakistan.
+        - link "14-Day Returns Easy returns within 14 days of delivery." [ref=e579] [cursor=pointer]:
+          - /url: /help/returns
+          - img [ref=e580]
+          - generic [ref=e583]:
+            - generic [ref=e584]: 14-Day Returns
+            - generic [ref=e585]: Easy returns within 14 days of delivery.
+        - link "Based in Karachi Handcrafted and dispatched from Karachi, Pakistan." [ref=e586] [cursor=pointer]:
+          - /url: /about
+          - img [ref=e587]
+          - generic [ref=e590]:
+            - generic [ref=e591]: Based in Karachi
+            - generic [ref=e592]: Handcrafted and dispatched from Karachi, Pakistan.
+        - link "Secure Checkout Card, COD, JazzCash and Easypaisa." [ref=e593] [cursor=pointer]:
+          - /url: /help/payments
+          - img [ref=e594]
+          - generic [ref=e597]:
+            - generic [ref=e598]: Secure Checkout
+            - generic [ref=e599]: Card, COD, JazzCash and Easypaisa.
+      - generic [ref=e600]:
+        - generic [ref=e601]:
+          - link "Habiba Minhas" [ref=e602] [cursor=pointer]:
+            - /url: /
+            - img "Habiba Minhas" [ref=e603]
+          - paragraph [ref=e604]: Premium fashion & baby products — handcrafted with love in Pakistan. Ladies suits, kids formalwear, nursery essentials, and silk accessories for the modern family.
+          - generic [ref=e605]:
+            - link "Instagram" [ref=e606] [cursor=pointer]:
+              - /url: https://instagram.com/habibaminhas/
+              - img [ref=e607]
+            - link "Facebook" [ref=e611] [cursor=pointer]:
+              - /url: https://facebook.com/profile.php?id=61574335512818
+              - img [ref=e612]
+            - link "YouTube" [ref=e614] [cursor=pointer]:
+              - /url: https://youtube.com/@HabibaMinhas989
+              - img [ref=e615]
+            - link "TikTok" [ref=e618] [cursor=pointer]:
+              - /url: https://tiktok.com/@habibaminhas_989
+              - text: Tt
+        - generic [ref=e619]:
+          - generic [ref=e620]: Customer Care
+          - list [ref=e621]:
+            - listitem [ref=e622]:
+              - link "FAQs" [ref=e623] [cursor=pointer]:
+                - /url: /help/faq
+            - listitem [ref=e624]:
+              - link "Exchange & Returns" [ref=e625] [cursor=pointer]:
+                - /url: /help/returns
+            - listitem [ref=e626]:
+              - link "Shipping Info" [ref=e627] [cursor=pointer]:
+                - /url: /help/shipping
+            - listitem [ref=e628]:
+              - link "Contact Us" [ref=e629] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e630]:
+              - link "Payment Methods" [ref=e631] [cursor=pointer]:
+                - /url: /help/payments
+        - generic [ref=e632]:
+          - generic [ref=e633]: Information
+          - list [ref=e634]:
+            - listitem [ref=e635]:
+              - link "About Us" [ref=e636] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e637]:
+              - link "Privacy Policy" [ref=e638] [cursor=pointer]:
+                - /url: /legal/privacy
+            - listitem [ref=e639]:
+              - link "Terms of Service" [ref=e640] [cursor=pointer]:
+                - /url: /legal/terms
+            - listitem [ref=e641]:
+              - link "Wholesale Enquiries" [ref=e642] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e643]:
+              - link "Journal" [ref=e644] [cursor=pointer]:
+                - /url: /journal
+        - generic [ref=e645]:
+          - generic [ref=e646]: Shop
+          - list [ref=e647]:
+            - listitem [ref=e648]:
+              - link "Ladies Suits" [ref=e649] [cursor=pointer]:
+                - /url: /ladies/suits
+            - listitem [ref=e650]:
+              - link "Kids Formal Wear" [ref=e651] [cursor=pointer]:
+                - /url: /kids/girls
+            - listitem [ref=e652]:
+              - link "Baby Bedding" [ref=e653] [cursor=pointer]:
+                - /url: /baby/bedding
+            - listitem [ref=e654]:
+              - link "Baby Nests & Loungers" [ref=e655] [cursor=pointer]:
+                - /url: /baby/nests
+            - listitem [ref=e656]:
+              - link "Accessories" [ref=e657] [cursor=pointer]:
+                - /url: /accessories/hair
+        - generic [ref=e658]:
+          - generic [ref=e659]: Contact
+          - list [ref=e660]:
+            - listitem [ref=e661]:
+              - link "info@habibaminhas.com" [ref=e662] [cursor=pointer]:
+                - /url: mailto:info@habibaminhas.com
+            - listitem [ref=e663]:
+              - link "+92 312 0295812" [ref=e664] [cursor=pointer]:
+                - /url: https://wa.me/923120295812
+            - listitem [ref=e665]: Karachi, Pakistan — 75533
+            - listitem [ref=e666]: Mon–Fri, 9a–6p PKT
+      - generic [ref=e667]:
+        - generic [ref=e668]:
+          - generic [ref=e669]: The Atelier Letter
+          - heading "Slow dispatches from the studio." [level=3] [ref=e670]
+          - paragraph [ref=e671]: New collections, fabric notes, restocks, and the occasional behind-the-scenes from Karachi. One email a week, never more.
+        - generic [ref=e672]:
+          - generic [ref=e673]:
+            - generic [ref=e674]: Email address
+            - textbox "Email address" [ref=e675]:
+              - /placeholder: you@example.com
+          - button "Subscribe" [ref=e676]:
+            - text: Subscribe
+            - img [ref=e677]
+      - generic [ref=e679]:
+        - generic [ref=e680]: © 2026 Habiba Minhas Atelier — All rights reserved
+        - generic [ref=e681]:
+          - generic [ref=e682]: Visa
+          - generic [ref=e683]: Master
+          - generic [ref=e684]: JazzCash
+          - generic [ref=e685]: Easypaisa
+          - generic [ref=e686]: COD
+  - alert [ref=e687]

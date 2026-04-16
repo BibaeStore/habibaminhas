@@ -49,7 +49,12 @@
       "Bash(cp \"C:/Users/ASUS/Downloads/43.webp\" \"D:/web/habibaminhas/public/products/slate-printed.webp\")",
       "Bash(cp \"C:/Users/ASUS/Downloads/44.webp\" \"D:/web/habibaminhas/public/products/ivory-floral.webp\")",
       "Bash(cp \"C:/Users/ASUS/Downloads/45.webp\" \"D:/web/habibaminhas/public/products/sky-embroidered.webp\")",
-      "Bash(mkdir -p public/profiles)"
+      "Bash(mkdir -p public/profiles)",
+      "Bash(grep -r 'src=\"/\\\\|src={`/' --include=\"*.tsx\" -h)",
+      "Bash(grep -oP '\\(?<=\\(src=\"|src=`\\)\\)/[^\"` ]+')",
+      "Bash(xargs grep *)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot"
     ]
   }
 }
