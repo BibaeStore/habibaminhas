@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
-import { PromoBar } from "@/components/layout/promo-bar";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
-import { PageLoader } from "@/components/common/page-loader";
-import { CookieConsent } from "@/components/common/cookie-consent";
+import { LayoutShell } from "@/components/layout/layout-shell";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -40,12 +36,7 @@ export default function RootLayout({
       className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-ivory text-ink">
-        <PageLoader />
-        <CookieConsent />
-        <PromoBar />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );
