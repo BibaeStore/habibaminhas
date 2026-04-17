@@ -15,11 +15,13 @@ import {
 import { megaMenus } from "@/lib/data";
 import { MegaPanel } from "./mega-panel";
 import { MobileMenu } from "./mobile-menu";
+import { SearchOverlay } from "./search-overlay";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [open, setOpen] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   // ── Close-delay timer ───────────────────────────────────────────────────
@@ -68,8 +70,8 @@ export function Navbar() {
       <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-4 sm:h-[74px] sm:px-8">
         {/* Left: logo + desktop nav */}
         <div className="flex items-center gap-6">
-          {/* Mobile: hamburger */}
-          <div className="flex items-center gap-2 lg:hidden">
+          {/* Mobile: hamburger + search */}
+          <div className="flex items-center gap-1 lg:hidden">
             <button
               type="button"
               aria-label="Open menu"
@@ -77,6 +79,14 @@ export function Navbar() {
               className="p-2 -ml-2"
             >
               <Menu className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Search"
+              onClick={() => setSearchOpen(true)}
+              className="p-2 text-ink hover:text-gold-dark"
+            >
+              <Search className="h-5 w-5" />
             </button>
           </div>
 
@@ -142,9 +152,10 @@ export function Navbar() {
           <button
             type="button"
             aria-label="Search"
-            className="hidden lg:inline-flex items-center gap-2 p-2 text-ink hover:text-gold-dark"
+            onClick={() => { setOpen(null); setSearchOpen(true); }}
+            className="hidden lg:inline-flex items-center gap-2 border border-border-soft px-3 py-1.5 text-ink hover:border-ink hover:text-gold-dark transition-colors"
           >
-            <Search className="h-[18px] w-[18px]" />
+            <Search className="h-[15px] w-[15px]" />
             <span className="hidden xl:inline text-[11px] uppercase tracking-[0.28em]">
               Search
             </span>
@@ -195,6 +206,7 @@ export function Navbar() {
         : null}
 
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }
