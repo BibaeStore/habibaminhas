@@ -46,7 +46,7 @@ export async function createOrder(
 ) {
   const sb = createAdminClient();
 
-  // Generate order number manually
+  // Generate order number
   const year = new Date().getFullYear();
   const { count } = await sb.from("orders").select("*", { count: "exact", head: true });
   const num = String((count ?? 0) + 1).padStart(4, "0");
@@ -64,7 +64,38 @@ export async function createOrder(
     .insert(items.map((i) => ({ ...i, order_id: newOrder.id })));
   if (itemsError) throw new Error(itemsError.message);
 
+  // Upsert customer record (create or update stats)
+  const email = order.customer_email;
+  const { data: existing } = await sb
+    .from("customers")
+    .select("id, total_orders, total_spent")
+    .eq("email", email)
+    .single();
+
+  if (existing) {
+    await sb.from("customers").update({
+      total_orders: existing.total_orders + 1,
+      total_spent:  existing.total_spent  + (order.total ?? 0),
+      tier: existing.total_spent + (order.total ?? 0) >= 50000 ? "VIP" : existing.total_orders + 1 >= 3 ? "Regular" : "New",
+      phone: order.customer_phone ?? undefined,
+    }).eq("id", existing.id);
+  } else {
+    const addressCity = typeof order.address === "object" && !Array.isArray(order.address)
+      ? (order.address as Record<string, string>)?.city ?? null
+      : null;
+    await sb.from("customers").insert({
+      name:          order.customer_name,
+      email,
+      phone:         order.customer_phone ?? null,
+      city:          addressCity,
+      total_orders:  1,
+      total_spent:   order.total ?? 0,
+      tier:          "New",
+    });
+  }
+
   revalidatePath("/admin/orders");
+  revalidatePath("/admin/customers");
   return newOrder;
 }
 

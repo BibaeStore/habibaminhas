@@ -184,7 +184,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
-          name?: string
+          name: string
           phone?: string | null
           tier?: string
           total_orders?: number

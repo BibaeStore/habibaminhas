@@ -3,22 +3,25 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Settings,
   LogOut, ChevronRight, TrendingUp,
   LayoutGrid, Megaphone, X, Bell,
 } from "lucide-react";
+import { adminLogout } from "@/lib/actions/auth";
+import { getOrderStats } from "@/lib/actions/orders";
 
-const nav = [
-  { label: "Dashboard",      href: "/admin",                  icon: LayoutDashboard },
-  { label: "Orders",         href: "/admin/orders",           icon: ShoppingBag, badge: "7" },
-  { label: "Products",       href: "/admin/products",         icon: Package },
-  { label: "Categories",     href: "/admin/categories",       icon: LayoutGrid },
-  { label: "Customers",      href: "/admin/customers",        icon: Users },
-  { label: "Analytics",      href: "/admin/analytics",        icon: TrendingUp },
-  { label: "Marketing",      href: "/admin/marketing",        icon: Megaphone },
-  { label: "Notifications",  href: "/admin/notifications",    icon: Bell },
-  { label: "Settings",       href: "/admin/settings",         icon: Settings },
+const NAV_ITEMS = [
+  { label: "Dashboard",      href: "/admin",               icon: LayoutDashboard },
+  { label: "Orders",         href: "/admin/orders",        icon: ShoppingBag, dynamicBadge: true },
+  { label: "Products",       href: "/admin/products",      icon: Package },
+  { label: "Categories",     href: "/admin/categories",    icon: LayoutGrid },
+  { label: "Customers",      href: "/admin/customers",     icon: Users },
+  { label: "Analytics",      href: "/admin/analytics",     icon: TrendingUp },
+  { label: "Marketing",      href: "/admin/marketing",     icon: Megaphone },
+  { label: "Notifications",  href: "/admin/notifications", icon: Bell },
+  { label: "Settings",       href: "/admin/settings",      icon: Settings },
 ];
 
 export function AdminSidebar({
@@ -29,6 +32,18 @@ export function AdminSidebar({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
+  const [pendingOrders, setPendingOrders] = useState<number | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    getOrderStats()
+      .then((s) => setPendingOrders(s.byStatus.pending + s.byStatus.processing))
+      .catch(() => {});
+  }, []);
+
+  function handleLogout() {
+    startTransition(() => { adminLogout(); });
+  }
 
   return (
     <>
@@ -61,8 +76,9 @@ export function AdminSidebar({
 
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">
-        {nav.map(({ label, href, icon: Icon, badge }) => {
+        {NAV_ITEMS.map(({ label, href, icon: Icon, dynamicBadge }) => {
           const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
+          const badge = dynamicBadge && pendingOrders ? String(pendingOrders) : null;
           return (
             <Link
               key={href}
@@ -78,11 +94,11 @@ export function AdminSidebar({
                 {label}
               </span>
               {badge && (
-                <span className="flex h-5 w-5 items-center justify-center bg-gold-dark text-[10px] font-medium text-ink">
+                <span className="flex h-5 min-w-5 items-center justify-center bg-gold-dark px-1 text-[10px] font-medium text-ink">
                   {badge}
                 </span>
               )}
-              {active && <ChevronRight className="ml-auto h-3 w-3 text-gold-dark" />}
+              {active && !badge && <ChevronRight className="ml-auto h-3 w-3 text-gold-dark" />}
             </Link>
           );
         })}
@@ -98,8 +114,13 @@ export function AdminSidebar({
             <div className="truncate text-[12px] font-medium text-ivory">Habiba Minhas</div>
             <div className="truncate text-[10px] text-ivory/40">Super Admin</div>
           </div>
-          <button className="text-ivory/30 hover:text-sale transition-colors" title="Sign out">
-            <LogOut className="h-4 w-4" />
+          <button
+            onClick={handleLogout}
+            disabled={isPending}
+            className="text-ivory/30 hover:text-sale transition-colors disabled:opacity-40"
+            title="Sign out"
+          >
+            <LogOut className={`h-4 w-4 ${isPending ? "animate-pulse" : ""}`} />
           </button>
         </div>
       </div>
