@@ -23,6 +23,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
 
   // ── Close-delay timer ───────────────────────────────────────────────────
   // The header's own bounding-box is only 74 px tall.  The mega panel sits
@@ -57,6 +58,14 @@ export function Navbar() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Fetch category images from DB once on mount
+  useEffect(() => {
+    fetch("/api/categories/images")
+      .then((r) => r.json())
+      .then((map: Record<string, string>) => setCategoryImages(map))
+      .catch(() => {});
   }, []);
 
   return (
@@ -197,6 +206,7 @@ export function Navbar() {
             return active ? (
               <MegaPanel
                 menu={active}
+                categoryImages={categoryImages}
                 onClose={() => setOpen(null)}
                 onMouseEnter={cancelClose}
                 onMouseLeave={scheduleClose}

@@ -14,7 +14,7 @@ interface Hit {
   title: string;
   price: number;
   image?: string | null;
-  palette: [string, string, string];
+  palette: string[];
   category: string;
 }
 
@@ -63,7 +63,7 @@ export function SearchOverlay({ open, onClose }: Props) {
     try {
       const data = await getProducts({ status: "active" });
       const lower = q.toLowerCase();
-      const filtered = (data as Hit[])
+      const filtered = (data as unknown as Hit[])
         .filter((p) =>
           p.title.toLowerCase().includes(lower) ||
           p.category.toLowerCase().includes(lower)
@@ -149,7 +149,7 @@ export function SearchOverlay({ open, onClose }: Props) {
                           ) : (
                             <div
                               className="h-full w-full"
-                              style={{ background: `linear-gradient(135deg, ${p.palette[0]}, ${p.palette[1]})` }}
+                              style={{ background: `linear-gradient(135deg, ${p.palette[0] ?? "#f0ece4"}, ${p.palette[1] ?? "#c0b89a"})` }}
                             />
                           )}
                         </div>

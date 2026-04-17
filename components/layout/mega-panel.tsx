@@ -13,17 +13,30 @@ const toneMap = {
   ink: ["#d7dbe4", "#6f7c8f", "#1a1612"] as [string, string, string],
 };
 
+// Maps mega menu label → category slug in the DB
+const MENU_SLUG: Record<string, string> = {
+  Ladies:          "ladies-suits",
+  Kids:            "kids-formal",
+  "Baby Products": "baby-bedding",
+  Accessories:     "accessories",
+};
+
 export function MegaPanel({
   menu,
+  categoryImages = {},
   onClose,
   onMouseEnter,
   onMouseLeave,
 }: {
   menu: MegaMenu;
+  categoryImages?: Record<string, string>;
   onClose: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 }) {
+  const slug = MENU_SLUG[menu.label];
+  const resolvedImage = (slug && categoryImages[slug]) || menu.feature?.image || null;
+
   return (
     <div
       className="absolute inset-x-0 top-full hidden lg:block"
@@ -69,10 +82,10 @@ export function MegaPanel({
               onClick={onClose}
               className="col-span-4 group relative block overflow-hidden"
             >
-              {menu.feature.image ? (
+              {resolvedImage ? (
                 <div className="relative aspect-[4/5] w-full overflow-hidden">
                   <Image
-                    src={menu.feature.image}
+                    src={resolvedImage}
                     alt={menu.feature.title}
                     fill
                     sizes="320px"
