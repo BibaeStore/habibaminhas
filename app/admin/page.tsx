@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   TrendingUp, AlertTriangle, ChevronRight,
-  ArrowUpRight, Calendar, DollarSign,
+  ArrowUpRight, Calendar, DollarSign, BarChart2,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { getProducts } from "@/lib/actions/products";
@@ -12,6 +12,50 @@ import type { Tables } from "@/lib/supabase/types";
 
 type Product = Tables<"products">;
 import { formatPrice } from "@/lib/utils";
+
+// ── Illustrative weekly data (no historical DB yet) ────────────────────────────
+const WEEK_REVENUE = [38400, 52100, 41800, 63200, 57400, 74800, 68300];
+const WEEK_LABELS  = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEK_ORDERS  = [4, 7, 5, 9, 8, 12, 10];
+
+function MiniBarChart({ values, labels, color = "#a8804b" }: { values: number[]; labels: string[]; color?: string }) {
+  const max = Math.max(...values);
+  const bw = 26; const gap = 6; const padX = 4; const h = 72;
+  const totalW = values.length * (bw + gap) + padX * 2;
+  return (
+    <svg viewBox={`0 0 ${totalW} ${h + 22}`} className="w-full" style={{ display: "block", height: h + 22 }} preserveAspectRatio="none">
+      {values.map((v, i) => {
+        const barH = (v / max) * h;
+        const x = padX + i * (bw + gap);
+        const fill = i === values.length - 1 ? color : color + "99";
+        return (
+          <g key={i}>
+            <rect x={x} y={h - barH} width={bw} height={barH} fill={fill} rx="1" />
+            <text x={x + bw / 2} y={h + 14} textAnchor="middle" fontSize="7.5" fill="#9a9080" fontFamily="inherit">{labels[i]}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function MiniLineChart({ values, color = "#8c9b7e" }: { values: number[]; color?: string }) {
+  const max = Math.max(...values); const min = Math.min(...values);
+  const w = 300; const h = 60;
+  const pts = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * w;
+    const y = h - ((v - min) / (max - min || 1)) * h;
+    return `${x},${y}`;
+  }).join(" ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ display: "block", height: h }} preserveAspectRatio="none">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      {values.map((v, i) => (
+        <circle key={i} cx={(i / (values.length - 1)) * w} cy={h - ((v - min) / (max - min || 1)) * h} r="3" fill={color} />
+      ))}
+    </svg>
+  );
+}
 
 export const metadata = { title: "Dashboard | Admin" };
 
@@ -89,6 +133,38 @@ export default async function AdminDashboard() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Charts row */}
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+            {/* Revenue chart */}
+            <section className="lg:col-span-8 border border-border-soft bg-ivory p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h2 className="font-display text-xl italic">Weekly Revenue</h2>
+                  <p className="mt-0.5 text-[11px] text-muted">
+                    {formatPrice(WEEK_REVENUE.reduce((a, v) => a + v, 0))} this week
+                    <span className="ml-2 text-sage">+18.4% vs last week</span>
+                  </p>
+                </div>
+                <BarChart2 className="h-4 w-4 text-muted" />
+              </div>
+              <MiniBarChart values={WEEK_REVENUE} labels={WEEK_LABELS} color="#a8804b" />
+            </section>
+
+            {/* Orders sparkline */}
+            <section className="lg:col-span-4 border border-border-soft bg-ivory p-5">
+              <div className="mb-3">
+                <h2 className="font-display text-xl italic">Daily Orders</h2>
+                <p className="mt-0.5 text-[11px] text-muted">
+                  {WEEK_ORDERS.reduce((a, v) => a + v, 0)} orders · peak {Math.max(...WEEK_ORDERS)}
+                </p>
+              </div>
+              <MiniLineChart values={WEEK_ORDERS} color="#8c9b7e" />
+              <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted">
+                <span>Mon</span><span>Sun</span>
+              </div>
+            </section>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">

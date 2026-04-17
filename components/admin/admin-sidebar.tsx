@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Settings,
-  LogOut, ShieldCheck, ChevronRight, TrendingUp,
+  LogOut, ChevronRight, TrendingUp,
   LayoutGrid, Megaphone, X,
 } from "lucide-react";
 
@@ -48,8 +49,8 @@ export function AdminSidebar({
 
       {/* Brand */}
       <div className="flex items-center gap-3 border-b border-ivory/10 px-6 py-5">
-        <div className="flex h-8 w-8 items-center justify-center bg-gold-dark shrink-0">
-          <ShieldCheck className="h-4 w-4 text-ink" />
+        <div className="relative h-8 w-8 shrink-0">
+          <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="32px" className="object-contain" />
         </div>
         <div>
           <div className="font-display text-[14px] italic text-ivory leading-none">Habiba Minhas</div>

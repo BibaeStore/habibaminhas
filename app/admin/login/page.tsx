@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { ShieldCheck, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { adminLogin } from "@/lib/actions/auth";
 import { useRouter } from "next/navigation";
 
@@ -31,8 +31,8 @@ export default function AdminLoginPage() {
       <div className="flex flex-col justify-between bg-ink px-8 py-10 sm:px-14">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center bg-gold-dark">
-            <ShieldCheck className="h-4 w-4 text-ink" />
+          <div className="relative h-9 w-9 shrink-0">
+            <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="36px" className="object-contain" />
           </div>
           <div>
             <div className="font-display text-[15px] italic text-ivory">Habiba Minhas</div>
@@ -96,7 +96,7 @@ export default function AdminLoginPage() {
           </form>
 
           <div className="mt-10 flex items-start gap-3 border border-ivory/10 bg-ivory/5 p-4">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
+            <Lock className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
             <p className="text-[11px] leading-relaxed text-ivory/40">
               This portal is restricted to authorised Habiba Minhas staff only. Unauthorised access attempts are logged and reported.
             </p>
