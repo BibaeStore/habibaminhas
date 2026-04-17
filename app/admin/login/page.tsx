@@ -31,8 +31,8 @@ export default function AdminLoginPage() {
       <div className="flex flex-col justify-between bg-ink px-8 py-10 sm:px-14">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="relative h-9 w-9 shrink-0">
-            <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="36px" className="object-contain" />
+          <div className="relative h-9 w-9 shrink-0 bg-gold-dark overflow-hidden">
+            <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="36px" className="object-contain p-1" />
           </div>
           <div>
             <div className="font-display text-[15px] italic text-ivory">Habiba Minhas</div>

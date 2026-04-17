@@ -6,18 +6,19 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Settings,
   LogOut, ChevronRight, TrendingUp,
-  LayoutGrid, Megaphone, X,
+  LayoutGrid, Megaphone, X, Bell,
 } from "lucide-react";
 
 const nav = [
-  { label: "Dashboard",  href: "/admin",             icon: LayoutDashboard },
-  { label: "Orders",     href: "/admin/orders",       icon: ShoppingBag, badge: "7" },
-  { label: "Products",   href: "/admin/products",     icon: Package },
-  { label: "Categories", href: "/admin/categories",   icon: LayoutGrid },
-  { label: "Customers",  href: "/admin/customers",    icon: Users },
-  { label: "Analytics",  href: "/admin/analytics",    icon: TrendingUp },
-  { label: "Marketing",  href: "/admin/marketing",    icon: Megaphone },
-  { label: "Settings",   href: "/admin/settings",     icon: Settings },
+  { label: "Dashboard",      href: "/admin",                  icon: LayoutDashboard },
+  { label: "Orders",         href: "/admin/orders",           icon: ShoppingBag, badge: "7" },
+  { label: "Products",       href: "/admin/products",         icon: Package },
+  { label: "Categories",     href: "/admin/categories",       icon: LayoutGrid },
+  { label: "Customers",      href: "/admin/customers",        icon: Users },
+  { label: "Analytics",      href: "/admin/analytics",        icon: TrendingUp },
+  { label: "Marketing",      href: "/admin/marketing",        icon: Megaphone },
+  { label: "Notifications",  href: "/admin/notifications",    icon: Bell },
+  { label: "Settings",       href: "/admin/settings",         icon: Settings },
 ];
 
 export function AdminSidebar({
@@ -49,8 +50,8 @@ export function AdminSidebar({
 
       {/* Brand */}
       <div className="flex items-center gap-3 border-b border-ivory/10 px-6 py-5">
-        <div className="relative h-8 w-8 shrink-0">
-          <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="32px" className="object-contain" />
+        <div className="relative h-9 w-9 shrink-0 bg-gold-dark p-1 overflow-hidden">
+          <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="36px" className="object-contain p-0.5" />
         </div>
         <div>
           <div className="font-display text-[14px] italic text-ivory leading-none">Habiba Minhas</div>

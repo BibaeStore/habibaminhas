@@ -2,6 +2,8 @@
 
 import { Search, Bell, Menu } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState, useCallback } from "react";
+import { getUnreadCount } from "@/lib/actions/notifications";
 
 export function AdminTopbar({
   title,
@@ -10,6 +12,18 @@ export function AdminTopbar({
   title: string;
   onMenuClick?: () => void;
 }) {
+  const [unread, setUnread] = useState(0);
+
+  const refresh = useCallback(() => {
+    getUnreadCount().then(setUnread).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const interval = setInterval(refresh, 30_000);
+    return () => clearInterval(interval);
+  }, [refresh]);
+
   return (
     <header className="flex h-16 items-center justify-between border-b border-border-soft bg-ivory px-4 md:px-6 shrink-0">
       <div className="flex items-center gap-3">
@@ -31,10 +45,21 @@ export function AdminTopbar({
             className="h-9 w-56 border border-border-soft bg-cream pl-9 pr-3 text-[12px] outline-none focus:border-ink"
           />
         </div>
-        <button className="relative flex h-9 w-9 items-center justify-center border border-border-soft bg-cream text-muted hover:text-ink transition-colors">
+
+        {/* Notification bell */}
+        <Link
+          href="/admin/notifications"
+          className="relative flex h-9 w-9 items-center justify-center border border-border-soft bg-cream text-muted hover:text-ink transition-colors"
+          aria-label="Notifications"
+        >
           <Bell className="h-4 w-4" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 bg-gold-dark" />
-        </button>
+          {unread > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center bg-gold-dark px-1 text-[10px] font-bold text-ink leading-none">
+              {unread > 99 ? "99+" : unread}
+            </span>
+          )}
+        </Link>
+
         <Link
           href="/"
           target="_blank"
