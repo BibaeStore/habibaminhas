@@ -1,10 +1,10 @@
-import { products } from "@/lib/data";
+import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
 export const metadata = { title: "Kids" };
 
-export default function KidsPage() {
-  const items = products.filter((p) => p.category === "kids-formal");
+export default async function KidsPage() {
+  const items = await getProducts({ category: "kids-formal", status: "active" }).catch(() => []);
   return (
     <CollectionTemplate
       crumbs={[{ label: "Home", href: "/" }, { label: "Kids" }]}

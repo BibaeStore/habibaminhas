@@ -125,6 +125,17 @@ export async function updateOrder(id: string, payload: TablesUpdate<"orders">) {
   return data;
 }
 
+export async function getOrdersByEmail(email: string) {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("orders")
+    .select("*, order_items(*)")
+    .eq("customer_email", email)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 export async function getOrderStats() {
   const sb = createAdminClient();
   const { data, error } = await sb

@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import { products } from "@/lib/data";
+import { getProducts } from "@/lib/actions/products";
 import { ProductCard } from "@/components/product/product-card";
+import type { CardProduct } from "@/components/product/product-card";
+import { useSearchParams } from "next/navigation";
 
 const categories = ["All", "Ladies", "Kids", "Baby", "Accessories"];
+const categoryMap: Record<string, string> = {
+  Ladies: "ladies-suits",
+  Kids: "kids-formal",
+  Baby: "baby-products",
+  Accessories: "accessories",
+};
 const sortOptions = [
   { label: "Relevance", value: "relevance" },
   { label: "Price: Low to High", value: "price-asc" },
@@ -13,29 +21,44 @@ const sortOptions = [
   { label: "Newest", value: "newest" },
 ];
 
-export default function SearchPage() {
-  const [query, setQuery] = useState("");
+function SearchInner() {
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("relevance");
+  const [allProducts, setAllProducts] = useState<CardProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const results = useMemo(() => {
-    let filtered = products.filter((p) => {
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const catFilter = category !== "All" ? categoryMap[category] : undefined;
+      const data = await getProducts({ status: "active", category: catFilter });
+      setAllProducts(data as CardProduct[]);
+    } catch {
+      setAllProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [category]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const results = allProducts
+    .filter((p) => {
+      if (!query) return true;
       const q = query.toLowerCase();
-      const matchesQuery =
-        !q ||
+      return (
         p.title.toLowerCase().includes(q) ||
-        p.collection.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q);
-      const matchesCat =
-        category === "All" || p.category.toLowerCase().includes(category.toLowerCase());
-      return matchesQuery && matchesCat;
+        (p.subcategory ?? "").toLowerCase().includes(q) ||
+        (p.badge ?? "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (sort === "price-asc")  return a.price - b.price;
+      if (sort === "price-desc") return b.price - a.price;
+      return 0;
     });
-
-    if (sort === "price-asc") filtered = [...filtered].sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") filtered = [...filtered].sort((a, b) => b.price - a.price);
-
-    return filtered;
-  }, [query, category, sort]);
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
@@ -91,7 +114,9 @@ export default function SearchPage() {
 
       {/* Results count */}
       <div className="mt-6 border-b border-border-soft pb-4">
-        {query ? (
+        {loading ? (
+          <p className="text-[13px] text-ink-soft">Searching…</p>
+        ) : query ? (
           <p className="text-[13px] text-ink-soft">
             {results.length === 0
               ? `No results for "${query}"`
@@ -106,10 +131,20 @@ export default function SearchPage() {
       </div>
 
       {/* Results grid */}
-      {results.length > 0 ? (
+      {loading ? (
         <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-          {results.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex flex-col gap-3">
+              <div className="aspect-[3/4] animate-pulse bg-cream" />
+              <div className="h-3 w-3/4 animate-pulse bg-cream" />
+              <div className="h-3 w-1/2 animate-pulse bg-cream" />
+            </div>
+          ))}
+        </div>
+      ) : results.length > 0 ? (
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+          {results.map((p, i) => (
+            <ProductCard key={p.id} product={p} index={i} />
           ))}
         </div>
       ) : (
@@ -133,5 +168,13 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense>
+      <SearchInner />
+    </Suspense>
   );
 }

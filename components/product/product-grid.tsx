@@ -1,5 +1,5 @@
 import { ProductCard } from "./product-card";
-import type { Product } from "@/lib/data";
+import type { CardProduct } from "./product-card";
 import { cn } from "@/lib/utils";
 
 export function ProductGrid({
@@ -7,7 +7,7 @@ export function ProductGrid({
   cols = "4",
   className,
 }: {
-  products: Product[];
+  products: CardProduct[];
   cols?: "2" | "3" | "4";
   className?: string;
 }) {

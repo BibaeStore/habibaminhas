@@ -10,6 +10,8 @@ export async function getProducts(filters?: {
   subtype?: string;
   status?: string;
   featured?: boolean;
+  onSale?: boolean;
+  search?: string;
 }) {
   const sb = createAdminClient();
   let q = sb.from("products").select("*").order("created_at", { ascending: false });
@@ -19,6 +21,8 @@ export async function getProducts(filters?: {
   if (filters?.subtype)     q = q.eq("subtype",     filters.subtype);
   if (filters?.status)      q = q.eq("status",      filters.status);
   if (filters?.featured)    q = q.eq("featured",    true);
+  if (filters?.onSale)      q = q.not("compare_at", "is", null);
+  if (filters?.search)      q = q.ilike("title",    `%${filters.search}%`);
 
   const { data, error } = await q;
   if (error) throw new Error(error.message);

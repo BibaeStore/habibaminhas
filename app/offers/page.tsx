@@ -1,14 +1,10 @@
-import { products } from "@/lib/data";
+import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
 export const metadata = { title: "Sale" };
 
-export default function OffersPage() {
-  const items = products.map((p) =>
-    p.compareAt
-      ? p
-      : { ...p, compareAt: Math.round((p.price * 1.4) / 10) * 10 },
-  );
+export default async function OffersPage() {
+  const items = await getProducts({ status: "active", onSale: true }).catch(() => []);
   return (
     <CollectionTemplate
       crumbs={[{ label: "Home", href: "/" }, { label: "Sale" }]}

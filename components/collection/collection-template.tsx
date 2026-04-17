@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, SlidersHorizontal, ArrowDownAZ } from "lucide-react";
-import type { Product } from "@/lib/data";
+import type { CardProduct } from "@/components/product/product-card";
 import { ProductGrid } from "@/components/product/product-grid";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 
@@ -26,7 +26,7 @@ export function CollectionTemplate({
   tone?: [string, string, string];
   motif?: "lattice" | "floral" | "ogee" | "stripes" | "arch";
   image?: string;
-  products: Product[];
+  products: CardProduct[];
   filters?: { colour?: Filter[]; size?: Filter[]; piece?: Filter[]; price?: Filter[] };
 }) {
   return (

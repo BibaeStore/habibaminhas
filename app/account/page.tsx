@@ -1,34 +1,10 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Package, MapPin, CreditCard, Heart, User, LogOut, Settings } from "lucide-react";
-import Image from "next/image";
-import { products } from "@/lib/data";
+import { getOrdersByEmail } from "@/lib/actions/orders";
 import { formatPrice } from "@/lib/utils";
-
-export const metadata = { title: "Account" };
-
-const recentOrders = [
-  {
-    id: "HM-20260412",
-    date: "12 Apr 2026",
-    status: "Delivered",
-    total: 12890,
-    items: 3,
-  },
-  {
-    id: "HM-20260328",
-    date: "28 Mar 2026",
-    status: "In transit",
-    total: 5490,
-    items: 1,
-  },
-  {
-    id: "HM-20260302",
-    date: "02 Mar 2026",
-    status: "Delivered",
-    total: 8240,
-    items: 2,
-  },
-];
 
 const sidebar = [
   { label: "Overview", href: "/account", icon: User, active: true },
@@ -39,18 +15,99 @@ const sidebar = [
   { label: "Settings", href: "/account/settings", icon: Settings },
 ];
 
+const statusColor: Record<string, string> = {
+  pending:    "text-gold-dark",
+  processing: "text-gold-dark",
+  dispatched: "text-gold-dark",
+  delivered:  "text-sage",
+  cancelled:  "text-sale",
+};
+
+type Order = Awaited<ReturnType<typeof getOrdersByEmail>>[number];
+
 export default function AccountPage() {
-  const saved = products.slice(2, 6);
+  const [email, setEmail] = useState("");
+  const [inputEmail, setInputEmail] = useState("");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem("hm_customer_email");
+    if (saved) {
+      setEmail(saved);
+      setLoading(true);
+      getOrdersByEmail(saved)
+        .then(setOrders)
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, []);
+
+  const handleLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputEmail) return;
+    setLoading(true);
+    const data = await getOrdersByEmail(inputEmail).catch(() => []);
+    localStorage.setItem("hm_customer_email", inputEmail);
+    setEmail(inputEmail);
+    setOrders(data);
+    setLoading(false);
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem("hm_customer_email");
+    setEmail("");
+    setOrders([]);
+  };
+
+  if (!mounted) return null;
+
+  if (!email) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col justify-center px-4 py-16">
+        <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Your account</span>
+        <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Order lookup.</h1>
+        <p className="mt-2 text-[13px] text-ink-soft">Enter the email address you used when placing your order.</p>
+        <form onSubmit={handleLookup} className="mt-8 flex flex-col gap-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Email address</span>
+            <input
+              type="email"
+              required
+              autoFocus
+              value={inputEmail}
+              onChange={(e) => setInputEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="h-12 border border-border-soft bg-ivory px-4 text-[14px] outline-none focus:border-ink"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={loading}
+            className="h-12 bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark disabled:opacity-60 transition-colors"
+          >
+            {loading ? "Looking up…" : "View my orders"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  const recentOrders = orders.slice(0, 3);
+  const inTransit = orders.filter((o) => ["pending", "processing", "dispatched"].includes(o.status)).length;
+  const name = orders[0]?.customer_name ?? email.split("@")[0];
+
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
-      <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
-        Your account
-      </span>
+      <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Your account</span>
       <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">
-        Good morning, Ayesha.
+        Welcome, {name.split(" ")[0]}.
       </h1>
       <p className="mt-2 text-[13px] text-ink-soft">
-        Two orders in flight, three pieces on your wishlist.
+        {orders.length} order{orders.length !== 1 ? "s" : ""} placed
+        {inTransit > 0 ? `, ${inTransit} in transit` : ""}.
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
@@ -67,25 +124,25 @@ export default function AccountPage() {
                 <Icon className="h-4 w-4" /> {label}
               </Link>
             ))}
-            <button className="mt-auto flex items-center gap-3 px-4 py-3 text-[12px] uppercase tracking-[0.24em] text-sale hover:bg-cream">
+            <button
+              onClick={handleSignOut}
+              className="mt-auto flex items-center gap-3 px-4 py-3 text-[12px] uppercase tracking-[0.24em] text-sale hover:bg-cream"
+            >
               <LogOut className="h-4 w-4" /> Sign out
             </button>
           </nav>
         </aside>
 
         <div className="lg:col-span-9">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {[
-              { label: "Orders", value: "12" },
-              { label: "In transit", value: "2" },
-              { label: "Wishlist", value: "5" },
-              { label: "Points", value: "1,240" },
+              { label: "Orders", value: String(orders.length) },
+              { label: "In transit", value: String(inTransit) },
+              { label: "Total spent", value: formatPrice(orders.reduce((s, o) => s + o.total, 0)) },
             ].map((s) => (
               <div key={s.label} className="border border-border-soft bg-cream p-5">
-                <div className="text-[11px] uppercase tracking-[0.24em] text-muted">
-                  {s.label}
-                </div>
-                <div className="mt-2 font-display text-3xl italic">{s.value}</div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-muted">{s.label}</div>
+                <div className="mt-2 font-display text-2xl italic">{s.value}</div>
               </div>
             ))}
           </div>
@@ -97,71 +154,45 @@ export default function AccountPage() {
                 View all
               </Link>
             </div>
-            <div className="mt-4 overflow-hidden border border-border-soft">
-              <table className="w-full text-left">
-                <thead className="bg-cream text-[11px] uppercase tracking-[0.22em] text-muted">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Order</th>
-                    <th className="px-4 py-3 font-medium">Date</th>
-                    <th className="px-4 py-3 font-medium">Items</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 text-right font-medium">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-soft text-[13px]">
-                  {recentOrders.map((o) => (
-                    <tr key={o.id} className="hover:bg-cream/60">
-                      <td className="px-4 py-4 font-medium">{o.id}</td>
-                      <td className="px-4 py-4 text-ink-soft">{o.date}</td>
-                      <td className="px-4 py-4 text-ink-soft">{o.items}</td>
-                      <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] ${
-                            o.status === "Delivered" ? "text-sage" : "text-gold-dark"
-                          }`}
-                        >
-                          <span
-                            className="h-1.5 w-1.5 rounded-full"
-                            style={{
-                              background:
-                                o.status === "Delivered" ? "#8c9b7e" : "#a8804b",
-                            }}
-                          />
-                          {o.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-right font-medium">
-                        {formatPrice(o.total)}
-                      </td>
+            {loading ? (
+              <div className="mt-4 space-y-2">
+                {[...Array(3)].map((_, i) => <div key={i} className="h-14 animate-pulse bg-cream" />)}
+              </div>
+            ) : recentOrders.length === 0 ? (
+              <div className="mt-4 border border-border-soft bg-cream px-6 py-10 text-center text-[13px] text-ink-soft">
+                No orders found for {email}.
+              </div>
+            ) : (
+              <div className="mt-4 overflow-hidden border border-border-soft">
+                <table className="w-full text-left">
+                  <thead className="bg-cream text-[11px] uppercase tracking-[0.22em] text-muted">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Order</th>
+                      <th className="px-4 py-3 font-medium hidden sm:table-cell">Date</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 text-right font-medium">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="mt-12">
-            <div className="flex items-end justify-between">
-              <h2 className="font-display text-2xl italic sm:text-3xl">On your wishlist</h2>
-              <Link href="/wishlist" className="text-[12px] uppercase tracking-[0.24em] text-gold-dark">
-                View all
-              </Link>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-              {saved.map((p) => (
-                <Link key={p.id} href={`/product/${p.slug}`} className="block group">
-                  <div className="relative aspect-[3/4] overflow-hidden bg-cream">
-                    {p.image ? (
-                      <Image src={p.image} alt={p.title} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover object-top transition-transform duration-500 group-hover:scale-105" />
-                    ) : (
-                      <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${p.palette[0]}, ${p.palette[1]})` }} />
-                    )}
-                  </div>
-                  <div className="mt-3 line-clamp-1 text-[12px]">{p.title}</div>
-                  <div className="text-[12px] text-ink-soft">{formatPrice(p.price)}</div>
-                </Link>
-              ))}
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border-soft text-[13px]">
+                    {recentOrders.map((o) => (
+                      <tr key={o.id} className="hover:bg-cream/60">
+                        <td className="px-4 py-4 font-medium">{o.order_number}</td>
+                        <td className="px-4 py-4 text-ink-soft hidden sm:table-cell">
+                          {new Date(o.created_at).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] ${statusColor[o.status] ?? "text-ink-soft"}`}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                            {o.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-right font-medium">{formatPrice(o.total)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         </div>
       </div>

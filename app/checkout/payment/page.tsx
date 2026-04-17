@@ -81,6 +81,7 @@ export default function PaymentPage() {
         orderItems
       );
 
+      localStorage.setItem("hm_customer_email", shipping.email);
       clearCart();
       clearCheckout();
       router.push(`/order/${newOrder.order_number}`);

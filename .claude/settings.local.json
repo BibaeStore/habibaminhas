@@ -71,7 +71,8 @@
       "Bash(echo \"Products fetched: $\\(node -e \"console.log\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('/tmp/biba_products.json'\\)\\).length\\)\"\\)\")",
       "Bash(node migrate-from-biba.mjs)",
       "mcp__plugin_supabase_supabase__list_projects",
-      "Bash(vercel --version)"
+      "Bash(vercel --version)",
+      "Bash(xargs ls *)"
     ]
   }
 }
