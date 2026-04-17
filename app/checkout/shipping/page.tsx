@@ -17,6 +17,9 @@ export default function ShippingPage() {
   const { items } = useCartStore();
   const { shipping: saved, setShipping } = useCheckoutStore();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const [method, setMethod] = useState<"standard" | "express">(
@@ -44,8 +47,9 @@ export default function ShippingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (!mounted) return;
     if (items.length === 0) router.replace("/cart");
-  }, [items, router]);
+  }, [mounted, items, router]);
 
   function set(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));

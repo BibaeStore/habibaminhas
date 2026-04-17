@@ -14,8 +14,18 @@ type PaymentMethod = "card" | "jazzcash" | "easypaisa" | "cod";
 
 export default function PaymentPage() {
   const { items, clearCart } = useCartStore();
-  const { shipping, setPaymentMethod, setGiftMessage, clearCheckout } = useCheckoutStore();
+  const { shipping, clearCheckout } = useCheckoutStore();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  // Only redirect after the Zustand stores have hydrated from storage
+  useEffect(() => {
+    if (!mounted) return;
+    if (items.length === 0) router.replace("/cart");
+    else if (!shipping) router.replace("/checkout/shipping");
+  }, [mounted, items, shipping, router]);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const shippingCost = shipping?.shippingCost ?? 200;
@@ -25,11 +35,6 @@ export default function PaymentPage() {
   const [giftMessage, setGiftMsg] = useState(shipping?.giftMessage ?? "");
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (items.length === 0) router.replace("/cart");
-    else if (!shipping) router.replace("/checkout/shipping");
-  }, [items, shipping, router]);
 
   async function handlePlaceOrder(e: React.FormEvent) {
     e.preventDefault();
@@ -85,6 +90,8 @@ export default function PaymentPage() {
     }
   }
 
+  // Don't render until hydrated — avoids flash of wrong state
+  if (!mounted) return null;
   if (!shipping) return null;
 
   const shipsTo = `${shipping.firstName} ${shipping.lastName} · ${shipping.street}${shipping.city ? `, ${shipping.city}` : ""}`;

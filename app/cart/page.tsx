@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, X, ShieldCheck, Truck, RotateCcw, Tag } from "lucide-react";
@@ -11,9 +12,21 @@ const FREE_SHIPPING_THRESHOLD = 3500;
 
 export default function CartPage() {
   const { items, removeItem, updateQty } = useCartStore();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING;
   const total = subtotal + shipping;
+
+  // Show loading skeleton until Zustand hydrates from localStorage
+  if (!mounted) {
+    return (
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-24 sm:px-8 text-center">
+        <div className="h-12 w-48 mx-auto bg-cream animate-pulse" />
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

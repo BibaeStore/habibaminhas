@@ -69,7 +69,8 @@
       "Bash(curl -s 'https://goykebkdqjrgbofmusjv.supabase.co/rest/v1/products?select=*&order=created_at&limit=100' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdveWtlYmtkcWpyZ2JvZm11c2p2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDY0NTI2NywiZXhwIjoyMDg2MjIxMjY3fQ.PH3R_r-xw81StuWwctT5rPFXhE7sNBOEdAwA26hGioc' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdveWtlYmtkcWpyZ2JvZm11c2p2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDY0NTI2NywiZXhwIjoyMDg2MjIxMjY3fQ.PH3R_r-xw81StuWwctT5rPFXhE7sNBOEdAwA26hGioc')",
       "Bash(node -e \"console.log\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('/tmp/biba_products.json'\\)\\).length\\)\")",
       "Bash(echo \"Products fetched: $\\(node -e \"console.log\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('/tmp/biba_products.json'\\)\\).length\\)\"\\)\")",
-      "Bash(node migrate-from-biba.mjs)"
+      "Bash(node migrate-from-biba.mjs)",
+      "mcp__plugin_supabase_supabase__list_projects"
     ]
   }
 }
