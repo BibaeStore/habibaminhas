@@ -34,7 +34,7 @@ export default function AdminCategoriesPage() {
   const [cats,         setCats]         = useState<Category[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState("");
-  const [typeFilter,   setTypeFilter]   = useState<"all" | "main" | "sub">("all");
+  const [typeFilter,   setTypeFilter]   = useState<"all" | "main" | "sub" | "featured">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [page,         setPage]         = useState(1);
   const [viewCat,      setViewCat]      = useState<Category | null>(null);
@@ -153,7 +153,7 @@ export default function AdminCategoriesPage() {
             {[
               { label: "Total categories", value: cats.length },
               { label: "Main categories",  value: cats.filter((c) => c.type === "main").length },
-              { label: "Subcategories",    value: cats.filter((c) => c.type === "sub").length },
+              { label: "Featured tiles",   value: cats.filter((c) => c.type === "featured").length },
               { label: "Inactive",         value: cats.filter((c) => c.status === "inactive").length },
             ].map((s) => (
               <div key={s.label} className="border border-border-soft bg-ivory p-4">
@@ -176,6 +176,7 @@ export default function AdminCategoriesPage() {
               <option value="all">All Types</option>
               <option value="main">Main Category</option>
               <option value="sub">Subcategory</option>
+              <option value="featured">Featured Tiles</option>
             </select>
             <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }}
               className="h-9 border border-border-soft bg-ivory px-3 text-[12px] text-ink-soft outline-none focus:border-ink">
@@ -224,9 +225,11 @@ export default function AdminCategoriesPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] ${
-                          c.type === "main" ? "bg-ink text-ivory" : "border border-border-soft bg-cream text-ink-soft"
+                          c.type === "main"     ? "bg-ink text-ivory" :
+                          c.type === "featured" ? "bg-gold-dark/20 text-gold-dark" :
+                          "border border-border-soft bg-cream text-ink-soft"
                         }`}>
-                          {c.type === "main" ? "Main Category" : "Subcategory"}
+                          {c.type === "main" ? "Main" : c.type === "featured" ? "Featured" : "Sub"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
@@ -420,8 +423,28 @@ function CategoryForm({
   onSave: () => void;
   onCancel: () => void;
 }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    setUploadError("");
+    const fd = new FormData();
+    fd.append("file", files[0]);
+    const result = await uploadCategoryImage(fd);
+    if (result.url) {
+      set("image", result.url);
+    } else {
+      setUploadError(result.error ?? "Upload failed");
+    }
+    setUploading(false);
+  };
+
+  const isFeatured = form.type === "featured";
 
   return (
     <div className="space-y-4">
@@ -433,7 +456,7 @@ function CategoryForm({
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Slug (URL)</span>
-          <input value={form.slug} onChange={(e) => set("slug", e.target.value)} placeholder="ladies/suits/silk"
+          <input value={form.slug} onChange={(e) => set("slug", e.target.value)} placeholder="ladies-suits"
             className="h-10 border border-border-soft bg-cream px-3 text-[12px] font-mono outline-none focus:border-ink" />
         </label>
       </div>
@@ -445,29 +468,61 @@ function CategoryForm({
             className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink">
             <option value="main">Main Category</option>
             <option value="sub">Subcategory</option>
+            <option value="featured">Featured (Homepage Tile)</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Parent Category</span>
-          <select value={form.parent_id ?? ""}
-            onChange={(e) => set("parent_id", e.target.value || null)}
-            className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink">
-            <option value="">— None (top level) —</option>
-            {allCats.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </label>
+        {isFeatured ? (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Link URL</span>
+            <input value={form.seo_desc ?? ""} onChange={(e) => set("seo_desc", e.target.value || null)}
+              placeholder="/ladies"
+              className="h-10 border border-border-soft bg-cream px-3 text-[12px] font-mono outline-none focus:border-ink" />
+          </label>
+        ) : (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Parent Category</span>
+            <select value={form.parent_id ?? ""}
+              onChange={(e) => set("parent_id", e.target.value || null)}
+              className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink">
+              <option value="">— None (top level) —</option>
+              {allCats.filter((c) => c.type !== "featured").map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
+      {/* Image upload */}
       <div>
-        <div className="mb-1.5 text-[11px] uppercase tracking-[0.22em] text-muted">Category Image</div>
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed border-border-soft bg-cream p-5 transition-colors hover:border-ink/30">
-          <Upload className="h-5 w-5 text-muted" />
-          <span className="text-[12px] text-ink-soft">Upload image</span>
-          <span className="text-[11px] text-muted">PNG, JPG, WebP · recommended 800×600</span>
-          <input type="file" accept="image/*" className="sr-only" />
-        </label>
+        <div className="mb-1.5 text-[11px] uppercase tracking-[0.22em] text-muted">
+          Category Image {isFeatured && <span className="ml-1 text-gold-dark">(required for homepage tile)</span>}
+        </div>
+        {uploadError && <p className="mb-2 text-[11px] text-sale">{uploadError}</p>}
+        {form.image ? (
+          <div className="group relative h-32 overflow-hidden bg-cream">
+            <Image src={form.image} alt="Preview" fill sizes="100%" className="object-cover object-center" />
+            <div className="absolute inset-0 flex items-center justify-center gap-3 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity">
+              <label className="flex cursor-pointer items-center gap-1.5 bg-ivory px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-ink hover:bg-gold-dark hover:text-ivory transition-colors">
+                <Upload className="h-3.5 w-3.5" /> Replace
+                <input type="file" accept="image/*" className="sr-only"
+                  onChange={(e) => handleImageUpload(e.target.files)} />
+              </label>
+              <button type="button" onClick={() => set("image", null)}
+                className="flex items-center gap-1.5 bg-sale px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-ivory hover:opacity-90 transition-opacity">
+                <X className="h-3.5 w-3.5" /> Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label className={`flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed border-border-soft bg-cream p-6 transition-colors hover:border-ink/30 ${uploading ? "pointer-events-none opacity-60" : ""}`}>
+            <Upload className={`h-5 w-5 ${uploading ? "animate-bounce text-gold-dark" : "text-muted"}`} />
+            <span className="text-[12px] text-ink-soft">{uploading ? "Uploading…" : "Click to upload image"}</span>
+            <span className="text-[11px] text-muted">PNG, JPG, WebP · recommended 3:4 ratio</span>
+            <input type="file" accept="image/*" className="sr-only"
+              onChange={(e) => handleImageUpload(e.target.files)} />
+          </label>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -487,31 +542,33 @@ function CategoryForm({
         </label>
       </div>
 
-      <div className="border border-border-soft bg-cream p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Layers className="h-3.5 w-3.5 text-muted" />
-          <span className="text-[11px] uppercase tracking-[0.22em] text-muted">SEO</span>
+      {!isFeatured && (
+        <div className="border border-border-soft bg-cream p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Layers className="h-3.5 w-3.5 text-muted" />
+            <span className="text-[11px] uppercase tracking-[0.22em] text-muted">SEO</span>
+          </div>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-muted">Meta Title</span>
+            <input value={form.seo_title ?? ""} onChange={(e) => set("seo_title", e.target.value || null)}
+              placeholder="Ladies Silk Suits | Habiba Minhas"
+              className="h-9 border border-border-soft bg-ivory px-3 text-[12px] outline-none focus:border-ink" />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-muted">Meta Description</span>
+            <textarea rows={2} value={form.seo_desc ?? ""} onChange={(e) => set("seo_desc", e.target.value || null)}
+              placeholder="Shop premium silk suits…"
+              className="resize-none border border-border-soft bg-ivory px-3 py-2 text-[12px] outline-none focus:border-ink" />
+          </label>
         </div>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted">Meta Title</span>
-          <input value={form.seo_title ?? ""} onChange={(e) => set("seo_title", e.target.value || null)}
-            placeholder="Ladies Silk Suits | Habiba Minhas"
-            className="h-9 border border-border-soft bg-ivory px-3 text-[12px] outline-none focus:border-ink" />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted">Meta Description</span>
-          <textarea rows={2} value={form.seo_desc ?? ""} onChange={(e) => set("seo_desc", e.target.value || null)}
-            placeholder="Shop premium silk suits…"
-            className="resize-none border border-border-soft bg-ivory px-3 py-2 text-[12px] outline-none focus:border-ink" />
-        </label>
-      </div>
+      )}
 
       <div className="flex items-center justify-end gap-3 pt-2">
         <button onClick={onCancel}
           className="h-10 border border-border-soft px-5 text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:bg-cream transition-colors">
           Cancel
         </button>
-        <button onClick={onSave} disabled={saving}
+        <button onClick={onSave} disabled={saving || uploading}
           className="h-10 bg-ink px-7 text-[11px] uppercase tracking-[0.2em] text-ivory hover:bg-gold-dark transition-colors flex items-center gap-2 disabled:opacity-60">
           <Check className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save Category"}
         </button>
