@@ -2,11 +2,19 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  // If env vars aren't set yet, skip middleware entirely to avoid crashes
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -25,22 +33,24 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh the session — this is required for SSR
-  const { data: { user } } = await supabase.auth.getUser();
+  // Refresh the session — required by @supabase/ssr
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Protect /admin routes (except /admin/login and /admin/setup)
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
   const isPublicAdminRoute =
     pathname === "/admin/login" || pathname === "/admin/setup";
 
+  // Protect admin routes — redirect unauthenticated users to login
   if (isAdminRoute && !isPublicAdminRoute && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/admin/login";
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect logged-in admin away from login page
+  // Redirect already-logged-in admin away from login/setup
   if (isPublicAdminRoute && user) {
     const dashboardUrl = request.nextUrl.clone();
     dashboardUrl.pathname = "/admin";
