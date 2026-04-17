@@ -26,8 +26,8 @@ export async function getFeaturedCategories() {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("categories")
-    .select("id, name, slug, image, color, seo_desc, sort_order")
-    .eq("type", "featured")
+    .select("id, name, slug, image, color, sort_order")
+    .eq("type", "main")
     .eq("status", "active")
     .order("sort_order", { ascending: true });
   if (error) throw new Error(error.message);

@@ -4,6 +4,15 @@ import { ArrowUpRight } from "lucide-react";
 import { SectionHeading } from "@/components/common/section-heading";
 import { getFeaturedCategories } from "@/lib/actions/categories";
 
+const SLUG_TO_HREF: Record<string, string> = {
+  "ladies-suits": "/ladies",
+  "kids-formal": "/kids",
+  "baby-bedding": "/baby",
+  "baby-nests": "/baby",
+  accessories: "/accessories",
+  "new-arrivals": "/new",
+};
+
 export async function CategoryTiles() {
   const tiles = await getFeaturedCategories().catch(() => []);
 
@@ -26,7 +35,7 @@ export async function CategoryTiles() {
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-6">
         {tiles.map((t) => {
-          const href = t.seo_desc?.startsWith("/") ? t.seo_desc : `/${t.slug}`;
+          const href = SLUG_TO_HREF[t.slug] ?? `/${t.slug}`;
           return (
             <Link key={t.id} href={href} className="group relative block overflow-hidden">
               <div className="relative aspect-[3/4] w-full overflow-hidden">
