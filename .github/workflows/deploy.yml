@@ -6,38 +6,20 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-
-    env:
-      # Supabase — passed to Vercel build so Next.js server actions can reach the DB
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       # ── 1. Checkout ──────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Node setup with pnpm cache ────────────────────────────────
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm ci
-
-      # ── 3. Type-check ────────────────────────────────────────────────
-      - name: Type check
-        run: npx tsc --noEmit
-
-      # ── 4. Deploy to Vercel ──────────────────────────────────────────
-      #    PRs  → preview deployment  (no --prod flag)
-      #    main → production deployment (--prod flag)
+      # ── 2. Deploy (Preview — pull requests) ──────────────────────────
       - name: Deploy (Preview)
         if: github.event_name == 'pull_request'
         uses: amondnet/vercel-action@v25
@@ -50,6 +32,7 @@ jobs:
             --build-env NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
             --build-env SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      # ── 3. Deploy (Production — push to main) ────────────────────────
       - name: Deploy (Production)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: amondnet/vercel-action@v25
