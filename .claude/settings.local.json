@@ -73,7 +73,14 @@
       "mcp__plugin_supabase_supabase__list_projects",
       "Bash(vercel --version)",
       "Bash(xargs ls *)",
-      "mcp__plugin_supabase_supabase__list_organizations"
+      "mcp__plugin_supabase_supabase__list_organizations",
+      "Bash(magick --version)",
+      "Bash(cwebp -version)",
+      "Bash(ffmpeg -version)",
+      "Bash(where magick *)",
+      "Bash(where ffmpeg *)",
+      "Bash(node -e \"require\\('sharp'\\)\")",
+      "Bash(node *)"
     ]
   }
 }
