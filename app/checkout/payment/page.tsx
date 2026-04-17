@@ -4,13 +4,28 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ShieldCheck, Truck, RotateCcw, Lock } from "lucide-react";
+import { ChevronRight, ShieldCheck, Truck, RotateCcw, Lock, Check } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { createOrder } from "@/lib/actions/orders";
 import { formatPrice } from "@/lib/utils";
+import { ProductImage } from "@/components/common/product-image";
 
 type PaymentMethod = "card" | "jazzcash" | "easypaisa" | "cod";
+
+const PAYMENT_OPTIONS: {
+  value: PaymentMethod;
+  label: string;
+  subtitle: string;
+  logo: string;
+  logoW: number;
+  logoH: number;
+}[] = [
+  { value: "cod",       label: "Cash on Delivery",   subtitle: "Pay when your order arrives",    logo: "/logos/payments/cod.webp",          logoW: 56, logoH: 32 },
+  { value: "card",      label: "Debit / Credit Card", subtitle: "Visa · Mastercard · Bank transfer", logo: "/logos/payments/bank-transfer.webp", logoW: 32, logoH: 32 },
+  { value: "jazzcash",  label: "JazzCash",            subtitle: "Pay with your JazzCash account",  logo: "/logos/payments/jazzcash.webp",     logoW: 72, logoH: 36 },
+  { value: "easypaisa", label: "Easypaisa",           subtitle: "Pay with your Easypaisa account", logo: "/logos/payments/easypaisa.webp",    logoW: 72, logoH: 36 },
+];
 
 export default function PaymentPage() {
   const { items, clearCart } = useCartStore();
@@ -20,7 +35,6 @@ export default function PaymentPage() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Only redirect after the Zustand stores have hydrated from storage
   useEffect(() => {
     if (!mounted) return;
     if (items.length === 0) router.replace("/cart");
@@ -39,10 +53,8 @@ export default function PaymentPage() {
   async function handlePlaceOrder(e: React.FormEvent) {
     e.preventDefault();
     if (!shipping || items.length === 0) return;
-
     setPlacing(true);
     setError(null);
-
     try {
       const address = {
         street: shipping.street,
@@ -52,7 +64,6 @@ export default function PaymentPage() {
         postalCode: shipping.postalCode,
         country: "Pakistan",
       };
-
       const orderItems = items.map((item) => ({
         product_id: item.id,
         product_title: item.title,
@@ -63,7 +74,6 @@ export default function PaymentPage() {
         unit_price: item.price,
         total_price: item.price * item.qty,
       }));
-
       const newOrder = await createOrder(
         {
           customer_name: `${shipping.firstName} ${shipping.lastName}`,
@@ -80,7 +90,6 @@ export default function PaymentPage() {
         },
         orderItems
       );
-
       localStorage.setItem("hm_customer_email", shipping.email);
       clearCart();
       clearCheckout();
@@ -91,176 +100,196 @@ export default function PaymentPage() {
     }
   }
 
-  // Don't render until hydrated — avoids flash of wrong state
-  if (!mounted) return null;
-  if (!shipping) return null;
+  if (!mounted || !shipping) return null;
 
-  const shipsTo = `${shipping.firstName} ${shipping.lastName} · ${shipping.street}${shipping.city ? `, ${shipping.city}` : ""}`;
+  const shipName = `${shipping.firstName} ${shipping.lastName}`;
+  const shipAddr = [shipping.street, shipping.city].filter(Boolean).join(", ");
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-10 sm:px-8 lg:py-16">
+
       {/* Step indicator */}
-      <div className="mb-10 flex items-center gap-0">
+      <nav className="mb-12 flex items-center gap-0">
         {[
-          { n: 1, label: "Bag", href: "/cart", done: true },
-          { n: 2, label: "Shipping", href: "/checkout/shipping", done: true },
-          { n: 3, label: "Payment", href: "/checkout/payment", active: true },
+          { n: 1, label: "Bag",      done: true  },
+          { n: 2, label: "Shipping", done: true  },
+          { n: 3, label: "Payment",  done: false, active: true },
         ].map((step, i) => (
           <div key={step.n} className="flex items-center">
-            <div className="flex flex-col items-center">
-              <div className={`flex h-8 w-8 items-center justify-center text-[12px] font-medium transition-colors ${
-                step.done ? "bg-sage text-ivory" : step.active ? "bg-ink text-ivory" : "border border-border-soft bg-cream text-muted"
+            <div className="flex flex-col items-center gap-1.5">
+              <div className={`flex h-8 w-8 items-center justify-center text-[11px] font-medium transition-colors ${
+                step.done
+                  ? "bg-sage text-ivory"
+                  : step.active
+                  ? "bg-ink text-ivory"
+                  : "border border-border-soft bg-cream text-muted"
               }`}>
-                {step.done ? "✓" : step.n}
+                {step.done ? <Check className="h-3.5 w-3.5" /> : step.n}
               </div>
-              <span className={`mt-1.5 hidden text-[10px] uppercase tracking-[0.24em] sm:block ${
-                step.active ? "text-ink" : "text-muted"
+              <span className={`hidden text-[10px] uppercase tracking-[0.26em] sm:block ${
+                step.active ? "text-ink font-medium" : "text-muted"
               }`}>{step.label}</span>
             </div>
-            {i < 2 && <div className="mx-3 h-px w-12 bg-border-soft sm:w-20" />}
+            {i < 2 && <div className="mx-3 mb-5 h-px w-14 bg-border-soft sm:w-24" />}
           </div>
         ))}
-      </div>
+      </nav>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
+
+        {/* ── Left: payment form ─────────────────────────────────────── */}
         <div className="lg:col-span-7">
-          <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Step 3 of 3</span>
-          <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Payment.</h1>
+          <p className="text-[11px] uppercase tracking-[0.36em] text-gold-dark">Step 3 of 3</p>
+          <h1 className="mt-2 font-display text-5xl italic sm:text-6xl">Payment.</h1>
+          <p className="mt-2 text-[13px] text-ink-soft">
+            All transactions are secure and encrypted.
+          </p>
 
-          <form onSubmit={handlePlaceOrder} className="mt-8 flex flex-col gap-6">
-            {/* Payment method selection */}
-            <div className="flex flex-col gap-3">
-              {/* Cash on Delivery — default */}
-              <label className={`flex cursor-pointer items-center gap-3 border px-4 py-4 ${payMethod === "cod" ? "border-ink bg-cream" : "border-border-soft bg-ivory"}`}>
-                <input type="radio" name="payment" checked={payMethod === "cod"} onChange={() => setPayMethod("cod")} className="accent-ink" />
-                <div className="flex h-10 w-16 shrink-0 items-center justify-center">
-                  <Image src="/logos/payments/cod.webp" alt="Cash on Delivery" width={64} height={36} className="object-contain" />
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium">Cash on Delivery</div>
-                  <div className="text-[11px] text-ink-soft">Pay when your order arrives</div>
-                </div>
-              </label>
+          <form onSubmit={handlePlaceOrder} className="mt-8 flex flex-col gap-4">
 
-              {/* Bank Transfer / Card */}
-              <label className={`flex cursor-pointer items-center gap-3 border px-4 py-4 ${payMethod === "card" ? "border-ink bg-cream" : "border-border-soft bg-ivory"}`}>
-                <input type="radio" name="payment" checked={payMethod === "card"} onChange={() => setPayMethod("card")} className="accent-ink" />
-                <div className="flex h-10 w-16 shrink-0 items-center justify-center">
-                  <Image src="/logos/payments/bank-transfer.webp" alt="Bank Transfer" width={40} height={40} className="object-contain" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium">Debit / Credit Card</div>
-                  <div className="text-[11px] text-ink-soft">Secure bank transfer</div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Image src="/logos/payments/visa.webp" alt="Visa" width={38} height={24} className="object-contain" />
-                  <Image src="/logos/payments/mastercard.webp" alt="Mastercard" width={30} height={24} className="object-contain" />
-                </div>
-              </label>
-
-              {payMethod === "card" && (
-                <div className="border border-border-soft bg-ivory p-5">
-                  <div className="flex flex-col gap-4">
-                    <label className="flex flex-col gap-2">
-                      <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Card number</span>
-                      <input placeholder="1234 5678 9012 3456" maxLength={19} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                    </label>
-                    <label className="flex flex-col gap-2">
-                      <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Name on card</span>
-                      <input placeholder="As it appears on card" className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <label className="flex flex-col gap-2">
-                        <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Expiry</span>
-                        <input placeholder="MM / YY" maxLength={7} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                      </label>
-                      <label className="flex flex-col gap-2">
-                        <span className="text-[11px] uppercase tracking-[0.22em] text-muted">CVV</span>
-                        <input type="password" placeholder="•••" maxLength={4} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
-                      </label>
+            {/* Payment method cards */}
+            <div className="flex flex-col gap-2">
+              {PAYMENT_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex cursor-pointer items-center gap-4 border px-5 py-4 transition-colors ${
+                    payMethod === opt.value
+                      ? "border-ink bg-cream"
+                      : "border-border-soft bg-ivory hover:border-ink/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    checked={payMethod === opt.value}
+                    onChange={() => setPayMethod(opt.value)}
+                    className="accent-ink"
+                  />
+                  {/* Logo */}
+                  <div className="flex h-10 w-20 shrink-0 items-center">
+                    <Image
+                      src={opt.logo}
+                      alt={opt.label}
+                      width={opt.logoW}
+                      height={opt.logoH}
+                      className="object-contain"
+                    />
+                  </div>
+                  {/* Label */}
+                  <div className="flex-1">
+                    <div className="text-[13px] font-medium text-ink">{opt.label}</div>
+                    <div className="text-[11px] text-ink-soft">{opt.subtitle}</div>
+                  </div>
+                  {/* Visa + Mastercard badge on card option */}
+                  {opt.value === "card" && (
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <Image src="/logos/payments/visa.webp"       alt="Visa"       width={36} height={22} className="object-contain" />
+                      <Image src="/logos/payments/mastercard.webp" alt="Mastercard" width={28} height={22} className="object-contain" />
                     </div>
+                  )}
+                  {/* Active indicator dot */}
+                  {payMethod === opt.value && (
+                    <div className="ml-auto h-2 w-2 shrink-0 rounded-full bg-ink" />
+                  )}
+                </label>
+              ))}
+            </div>
+
+            {/* Card fields (shown when card selected) */}
+            {payMethod === "card" && (
+              <div className="border border-border-soft bg-ivory p-5">
+                <div className="flex flex-col gap-4">
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-[10px] uppercase tracking-[0.24em] text-muted">Card number</span>
+                    <input placeholder="1234 5678 9012 3456" maxLength={19} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-[10px] uppercase tracking-[0.24em] text-muted">Name on card</span>
+                    <input placeholder="As it appears on card" className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.24em] text-muted">Expiry</span>
+                      <input placeholder="MM / YY" maxLength={7} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.24em] text-muted">CVV</span>
+                      <input type="password" placeholder="•••" maxLength={4} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
+                    </label>
                   </div>
                 </div>
-              )}
-
-              {/* JazzCash */}
-              <label className={`flex cursor-pointer items-center gap-3 border px-4 py-4 ${payMethod === "jazzcash" ? "border-ink bg-cream" : "border-border-soft bg-ivory"}`}>
-                <input type="radio" name="payment" checked={payMethod === "jazzcash"} onChange={() => setPayMethod("jazzcash")} className="accent-ink" />
-                <div className="flex h-10 w-16 shrink-0 items-center justify-center">
-                  <Image src="/logos/payments/jazzcash.webp" alt="JazzCash" width={64} height={64} className="object-contain" />
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium">JazzCash</div>
-                  <div className="text-[11px] text-ink-soft">Pay with your JazzCash account</div>
-                </div>
-              </label>
-
-              {/* Easypaisa */}
-              <label className={`flex cursor-pointer items-center gap-3 border px-4 py-4 ${payMethod === "easypaisa" ? "border-ink bg-cream" : "border-border-soft bg-ivory"}`}>
-                <input type="radio" name="payment" checked={payMethod === "easypaisa"} onChange={() => setPayMethod("easypaisa")} className="accent-ink" />
-                <div className="flex h-10 w-16 shrink-0 items-center justify-center">
-                  <Image src="/logos/payments/easypaisa.webp" alt="Easypaisa" width={64} height={64} className="object-contain" />
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium">Easypaisa</div>
-                  <div className="text-[11px] text-ink-soft">Pay with your Easypaisa account</div>
-                </div>
-              </label>
-            </div>
+              </div>
+            )}
 
             {/* Gift note */}
             <div className="border border-border-soft bg-ivory p-5">
-              <div className="text-[11px] uppercase tracking-[0.24em] text-muted mb-3">Gift message (optional)</div>
+              <div className="mb-2 text-[10px] uppercase tracking-[0.26em] text-muted">Gift message <span className="normal-case tracking-normal">(optional)</span></div>
               <textarea
                 rows={3}
                 value={giftMessage}
                 onChange={(e) => setGiftMsg(e.target.value)}
                 placeholder="Add a personal note — included with complimentary gift wrapping."
-                className="w-full border border-border-soft bg-transparent px-3 py-2.5 text-[13px] outline-none focus:border-ink resize-none"
+                className="w-full resize-none border border-border-soft bg-transparent px-3 py-2.5 text-[13px] outline-none focus:border-ink"
               />
             </div>
 
             {/* Security note */}
-            <div className="flex items-start gap-3 border border-border-soft bg-cream p-4 text-[12px] text-ink-soft">
-              <Lock className="mt-0.5 h-4 w-4 text-gold-dark shrink-0" />
-              Your payment information is encrypted and never stored on our servers.
+            <div className="flex items-center gap-3 border border-border-soft bg-cream px-4 py-3 text-[12px] text-ink-soft">
+              <Lock className="h-3.5 w-3.5 shrink-0 text-gold-dark" />
+              Your payment is encrypted with 256-bit SSL security.
             </div>
 
             {error && (
-              <div className="border border-sale bg-sale/5 p-4 text-[13px] text-sale">
+              <div className="border border-sale/40 bg-sale/5 p-4 text-[13px] text-sale">
                 {error}
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-4 border-t border-border-soft pt-4">
-              <Link href="/checkout/shipping" className="text-[12px] uppercase tracking-[0.24em] text-ink-soft hover:text-ink">
-                ← Back to shipping
+            <div className="flex items-center justify-between gap-4 border-t border-border-soft pt-5">
+              <Link href="/checkout/shipping" className="text-[11px] uppercase tracking-[0.26em] text-ink-soft hover:text-ink transition-colors">
+                ← Back
               </Link>
               <button
                 type="submit"
                 disabled={placing}
-                className="flex h-14 items-center gap-2 bg-ink px-10 text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="group flex h-14 items-center gap-2.5 bg-ink px-10 text-[12px] uppercase tracking-[0.3em] text-ivory transition-colors hover:bg-gold-dark disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {placing ? "Placing order…" : "Place order"}
-                {!placing && <ChevronRight className="h-3.5 w-3.5" />}
+                {placing ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ivory/30 border-t-ivory" />
+                    Placing order…
+                  </>
+                ) : (
+                  <>
+                    Place order
+                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </>
+                )}
               </button>
             </div>
           </form>
         </div>
 
-        {/* Order summary */}
+        {/* ── Right: order summary ───────────────────────────────────── */}
         <aside className="lg:col-span-5">
-          <div className="sticky top-28 flex flex-col gap-5 border border-border-soft bg-cream p-6">
-            <h2 className="font-display text-2xl italic">Order summary</h2>
-            <ul className="flex flex-col gap-4 border-b border-border-soft pb-5">
+          <div className="sticky top-28 flex flex-col gap-0 border border-border-soft bg-cream">
+
+            {/* Header */}
+            <div className="border-b border-border-soft px-6 py-5">
+              <h2 className="font-display text-2xl italic">Order summary</h2>
+            </div>
+
+            {/* Items */}
+            <ul className="flex flex-col divide-y divide-border-soft px-6">
               {items.map((item) => (
-                <li key={item.cartKey} className="flex gap-4">
-                  <div className="relative w-14 flex-none aspect-[3/4] bg-ivory overflow-hidden">
-                    {item.image ? (
-                      <Image src={item.image} alt={item.title} fill sizes="56px" className="object-cover object-top" />
-                    ) : (
-                      <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${item.palette[0]}, ${item.palette[1] ?? item.palette[0]})` }} />
-                    )}
+                <li key={item.cartKey} className="flex gap-4 py-4">
+                  <div className="relative w-14 flex-none aspect-[3/4] overflow-hidden bg-ivory">
+                    <ProductImage
+                      src={item.image}
+                      alt={item.title}
+                      palette={item.palette}
+                      sizes="56px"
+                    />
                     <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[10px] text-ivory">
                       {item.qty}
                     </span>
@@ -269,7 +298,7 @@ export default function PaymentPage() {
                     <div>
                       <div className="font-medium leading-snug">{item.title}</div>
                       {item.size && item.size !== "onesize" && (
-                        <div className="mt-0.5 text-[11px] text-muted">{item.size}</div>
+                        <div className="mt-0.5 text-[11px] uppercase tracking-[0.16em] text-muted">{item.size}</div>
                       )}
                     </div>
                     <div className="shrink-0 font-medium">{formatPrice(item.price * item.qty)}</div>
@@ -278,42 +307,50 @@ export default function PaymentPage() {
               ))}
             </ul>
 
-            {/* Shipping address summary */}
-            <div className="border-b border-border-soft pb-4 text-[12px]">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-muted mb-1">Ships to</div>
-              <div className="text-ink-soft">{shipsTo}</div>
-              <Link href="/checkout/shipping" className="mt-1 inline-block text-gold-dark hover:text-ink">Edit</Link>
+            {/* Ships to */}
+            <div className="border-t border-border-soft px-6 py-4 text-[12px]">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.24em] text-muted">Ships to</div>
+                  <div className="mt-1 font-medium text-ink">{shipName}</div>
+                  <div className="mt-0.5 text-ink-soft">{shipAddr}</div>
+                </div>
+                <Link href="/checkout/shipping" className="shrink-0 text-[11px] text-gold-dark hover:text-ink transition-colors">
+                  Edit
+                </Link>
+              </div>
             </div>
 
-            <dl className="flex flex-col gap-2 text-[13px]">
-              <div className="flex justify-between">
-                <dt className="text-ink-soft">Subtotal</dt>
-                <dd>{formatPrice(subtotal)}</dd>
+            {/* Totals */}
+            <div className="border-t border-border-soft px-6 py-5">
+              <dl className="flex flex-col gap-2.5 text-[13px]">
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">Subtotal</dt>
+                  <dd>{formatPrice(subtotal)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">Shipping</dt>
+                  <dd>{shippingCost === 0 ? <span className="text-gold-dark">Complimentary</span> : formatPrice(shippingCost)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">Gift wrap</dt>
+                  <dd>Free</dd>
+                </div>
+              </dl>
+              <div className="mt-4 flex items-center justify-between border-t border-border-soft pt-4">
+                <span className="text-[14px] font-medium">Total</span>
+                <span className="font-display text-3xl">{formatPrice(total)}</span>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-ink-soft">Shipping</dt>
-                <dd>
-                  {shippingCost === 0 ? (
-                    <span className="text-gold-dark">Complimentary</span>
-                  ) : (
-                    formatPrice(shippingCost)
-                  )}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-ink-soft">Gift wrap</dt>
-                <dd>Free</dd>
-              </div>
-            </dl>
-            <div className="flex items-center justify-between border-t border-border-soft pt-4 text-[15px] font-medium">
-              <span>Total</span>
-              <span className="font-display text-2xl">{formatPrice(total)}</span>
             </div>
-            <ul className="grid grid-cols-1 gap-2 pt-1 text-[11px] text-ink-soft">
-              <li className="flex items-center gap-2"><Truck className="h-3.5 w-3.5 text-gold-dark" /> Free shipping over Rs. 3,500</li>
-              <li className="flex items-center gap-2"><RotateCcw className="h-3.5 w-3.5 text-gold-dark" /> 14-day hassle-free returns</li>
-              <li className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-gold-dark" /> Secure encrypted checkout</li>
-            </ul>
+
+            {/* Trust badges */}
+            <div className="border-t border-border-soft px-6 py-4">
+              <ul className="flex flex-col gap-2 text-[11px] text-ink-soft">
+                <li className="flex items-center gap-2"><Truck      className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Flat Rs. 200 delivery nationwide</li>
+                <li className="flex items-center gap-2"><RotateCcw  className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> 14-day hassle-free returns</li>
+                <li className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Secure encrypted checkout</li>
+              </ul>
+            </div>
           </div>
         </aside>
       </div>

@@ -79,7 +79,7 @@ export default function StoresPage() {
                   <MapPin className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Delivery to all cities in Pakistan
                 </li>
                 <li className="flex items-start gap-2">
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Free shipping on orders over Rs. 5,000
+                  <MapPin className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Flat Rs. 200 delivery nationwide
                 </li>
               </ul>
             </div>

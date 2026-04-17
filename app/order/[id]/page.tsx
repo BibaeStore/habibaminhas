@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
+import { ProductImage } from "@/components/common/product-image";
 import { CheckCircle2, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
 import { getOrderByNumber } from "@/lib/actions/orders";
 import { formatPrice } from "@/lib/utils";
@@ -128,12 +128,12 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
             <ul className="mt-5 flex flex-col gap-4 border-b border-border-soft pb-5">
               {items.map((item) => (
                 <li key={item.id} className="flex gap-4">
-                  <div className="relative w-14 flex-none aspect-[3/4] bg-ivory overflow-hidden">
-                    {item.product_image ? (
-                      <Image src={item.product_image} alt={item.product_title} fill sizes="56px" className="object-cover object-top" />
-                    ) : (
-                      <div className="h-full w-full bg-cream" />
-                    )}
+                  <div className="relative w-14 flex-none aspect-[3/4] bg-cream overflow-hidden">
+                    <ProductImage
+                      src={item.product_image}
+                      alt={item.product_title}
+                      sizes="56px"
+                    />
                   </div>
                   <div className="flex flex-1 items-start justify-between gap-2 text-[13px]">
                     <div>

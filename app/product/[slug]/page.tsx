@@ -192,7 +192,7 @@ export default async function ProductPage({
             ) : null}
           </div>
           <p className="mt-1 text-[12px] text-muted">
-            Inclusive of all taxes. Free shipping in Pakistan over Rs. 3,500.
+            Inclusive of all taxes. Flat Rs. 200 delivery across Pakistan.
           </p>
 
           {/* Colour swatches */}
@@ -244,7 +244,7 @@ export default async function ProductPage({
 
           <ul className="mt-10 grid grid-cols-2 gap-3 border-y border-border-soft py-6">
             {[
-              { icon: Truck, label: "Free PK Shipping", sub: "Orders over Rs. 3,500" },
+              { icon: Truck, label: "Flat Rs. 200 Delivery", sub: "Nationwide across Pakistan" },
               { icon: Package, label: "Ships in 24h", sub: "From our Karachi studio" },
               { icon: RotateCcw, label: "14-day Returns", sub: "Hassle-free exchanges" },
               { icon: Ruler, label: "Finished by Hand", sub: "Small-batch construction" },
