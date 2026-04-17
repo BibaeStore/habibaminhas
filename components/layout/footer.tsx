@@ -214,12 +214,15 @@ export function Footer() {
 
         <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border-soft pt-6 text-[11px] uppercase tracking-[0.22em] text-muted sm:flex-row sm:items-center">
           <div>© 2026 Habiba Minhas Atelier — All rights reserved</div>
-          <div className="flex items-center gap-3">
-            <PayIcon label="Visa" />
-            <PayIcon label="Master" />
-            <PayIcon label="JazzCash" />
-            <PayIcon label="Easypaisa" />
-            <PayIcon label="COD" />
+          <div className="flex flex-wrap items-center gap-2">
+            {paymentLogos.map(({ src, alt, w, h }) => (
+              <div
+                key={alt}
+                className="flex h-8 items-center justify-center rounded border border-border-soft bg-ivory px-2"
+              >
+                <Image src={src} alt={alt} width={w} height={h} className="object-contain" style={{ maxHeight: 22 }} />
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -227,10 +230,10 @@ export function Footer() {
   );
 }
 
-function PayIcon({ label }: { label: string }) {
-  return (
-    <span className="flex h-7 items-center justify-center border border-border-soft bg-ivory px-2 text-[10px] font-semibold tracking-[0.16em] text-ink-soft">
-      {label}
-    </span>
-  );
-}
+const paymentLogos = [
+  { src: "/logos/payments/visa.webp",         alt: "Visa",         w: 48, h: 30 },
+  { src: "/logos/payments/mastercard.webp",   alt: "Mastercard",   w: 36, h: 28 },
+  { src: "/logos/payments/jazzcash.webp",     alt: "JazzCash",     w: 48, h: 48 },
+  { src: "/logos/payments/easypaisa.webp",    alt: "Easypaisa",    w: 48, h: 48 },
+  { src: "/logos/payments/cod.webp",          alt: "Cash on Delivery", w: 48, h: 28 },
+];

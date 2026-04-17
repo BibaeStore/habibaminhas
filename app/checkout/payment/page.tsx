@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ShieldCheck, Truck, RotateCcw, Lock, CreditCard } from "lucide-react";
+import { ChevronRight, ShieldCheck, Truck, RotateCcw, Lock } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { createOrder } from "@/lib/actions/orders";
@@ -133,18 +133,29 @@ export default function PaymentPage() {
               {/* Cash on Delivery — default */}
               <label className={`flex cursor-pointer items-center gap-3 border px-4 py-4 ${payMethod === "cod" ? "border-ink bg-cream" : "border-border-soft bg-ivory"}`}>
                 <input type="radio" name="payment" checked={payMethod === "cod"} onChange={() => setPayMethod("cod")} className="accent-ink" />
-                <div className="flex h-6 w-6 items-center justify-center border border-border-soft bg-cream text-[11px]">₨</div>
+                <div className="flex h-10 w-16 shrink-0 items-center justify-center">
+                  <Image src="/logos/payments/cod.webp" alt="Cash on Delivery" width={64} height={36} className="object-contain" />
+                </div>
                 <div>
-                  <div className="text-[13px]">Cash on Delivery</div>
+                  <div className="text-[13px] font-medium">Cash on Delivery</div>
                   <div className="text-[11px] text-ink-soft">Pay when your order arrives</div>
                 </div>
               </label>
 
-              {/* Card */}
+              {/* Bank Transfer / Card */}
               <label className={`flex cursor-pointer items-center gap-3 border px-4 py-4 ${payMethod === "card" ? "border-ink bg-cream" : "border-border-soft bg-ivory"}`}>
                 <input type="radio" name="payment" checked={payMethod === "card"} onChange={() => setPayMethod("card")} className="accent-ink" />
-                <CreditCard className="h-4 w-4 text-gold-dark" />
-                <span className="text-[13px] font-medium">Debit / Credit Card</span>
+                <div className="flex h-10 w-16 shrink-0 items-center justify-center">
+                  <Image src="/logos/payments/bank-transfer.webp" alt="Bank Transfer" width={40} height={40} className="object-contain" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[13px] font-medium">Debit / Credit Card</div>
+                  <div className="text-[11px] text-ink-soft">Secure bank transfer</div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Image src="/logos/payments/visa.webp" alt="Visa" width={38} height={24} className="object-contain" />
+                  <Image src="/logos/payments/mastercard.webp" alt="Mastercard" width={30} height={24} className="object-contain" />
+                </div>
               </label>
 
               {payMethod === "card" && (
@@ -175,15 +186,25 @@ export default function PaymentPage() {
               {/* JazzCash */}
               <label className={`flex cursor-pointer items-center gap-3 border px-4 py-4 ${payMethod === "jazzcash" ? "border-ink bg-cream" : "border-border-soft bg-ivory"}`}>
                 <input type="radio" name="payment" checked={payMethod === "jazzcash"} onChange={() => setPayMethod("jazzcash")} className="accent-ink" />
-                <span className="flex h-6 w-16 items-center justify-center bg-[#e8192c] text-[10px] font-bold text-white">JazzCash</span>
-                <span className="text-[13px]">JazzCash</span>
+                <div className="flex h-10 w-16 shrink-0 items-center justify-center">
+                  <Image src="/logos/payments/jazzcash.webp" alt="JazzCash" width={64} height={64} className="object-contain" />
+                </div>
+                <div>
+                  <div className="text-[13px] font-medium">JazzCash</div>
+                  <div className="text-[11px] text-ink-soft">Pay with your JazzCash account</div>
+                </div>
               </label>
 
               {/* Easypaisa */}
               <label className={`flex cursor-pointer items-center gap-3 border px-4 py-4 ${payMethod === "easypaisa" ? "border-ink bg-cream" : "border-border-soft bg-ivory"}`}>
                 <input type="radio" name="payment" checked={payMethod === "easypaisa"} onChange={() => setPayMethod("easypaisa")} className="accent-ink" />
-                <span className="flex h-6 w-16 items-center justify-center bg-[#00a651] text-[10px] font-bold text-white">Easypaisa</span>
-                <span className="text-[13px]">Easypaisa</span>
+                <div className="flex h-10 w-16 shrink-0 items-center justify-center">
+                  <Image src="/logos/payments/easypaisa.webp" alt="Easypaisa" width={64} height={64} className="object-contain" />
+                </div>
+                <div>
+                  <div className="text-[13px] font-medium">Easypaisa</div>
+                  <div className="text-[11px] text-ink-soft">Pay with your Easypaisa account</div>
+                </div>
               </label>
             </div>
 

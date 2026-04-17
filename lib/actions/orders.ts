@@ -40,11 +40,24 @@ export async function getOrderByNumber(orderNumber: string) {
   return data;
 }
 
+const PAYMENT_METHOD_MAP: Record<string, string> = {
+  cod:        "COD",
+  jazzcash:   "JazzCash",
+  easypaisa:  "Easypaisa",
+  card:       "Bank Transfer",
+  "bank transfer": "Bank Transfer",
+};
+
 export async function createOrder(
   order: Omit<TablesInsert<"orders">, "order_number">,
   items: Omit<TablesInsert<"order_items">, "order_id">[]
 ) {
   const sb = createAdminClient();
+
+  // Normalize payment_method to match DB CHECK constraint
+  const payment_method =
+    PAYMENT_METHOD_MAP[(order.payment_method ?? "").toLowerCase()] ??
+    order.payment_method;
 
   // Generate order number
   const year = new Date().getFullYear();
@@ -54,7 +67,7 @@ export async function createOrder(
 
   const { data: newOrder, error: orderError } = await sb
     .from("orders")
-    .insert({ ...order, order_number })
+    .insert({ ...order, order_number, payment_method })
     .select()
     .single();
   if (orderError) throw new Error(orderError.message);
