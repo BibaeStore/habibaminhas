@@ -223,9 +223,23 @@ export default function PaymentPage() {
 
             {/* Gift note */}
             <div className="border border-border-soft bg-ivory p-5">
-              <div className="mb-2 text-[10px] uppercase tracking-[0.26em] text-muted">Gift message <span className="normal-case tracking-normal">(optional)</span></div>
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-[10px] uppercase tracking-[0.26em] text-muted">
+                  Gift message <span className="normal-case tracking-normal">(optional)</span>
+                </div>
+                <span className={`text-[11px] tabular-nums transition-colors ${
+                  giftMessage.length >= 140
+                    ? "text-sale"
+                    : giftMessage.length >= 100
+                    ? "text-gold-dark"
+                    : "text-muted"
+                }`}>
+                  {giftMessage.length}/150
+                </span>
+              </div>
               <textarea
                 rows={3}
+                maxLength={150}
                 value={giftMessage}
                 onChange={(e) => setGiftMsg(e.target.value)}
                 placeholder="Add a personal note — included with complimentary gift wrapping."
