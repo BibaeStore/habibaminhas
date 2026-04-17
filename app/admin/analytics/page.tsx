@@ -65,7 +65,7 @@ function BarChart({ data, highlight = "#a8804b", h = 100 }: { data: { day: strin
   const totalW = visible.length * (bw + gap) + padX * 2;
 
   return (
-    <svg viewBox={`0 0 ${totalW} ${h + 28}`} className="w-full" preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${totalW} ${h + 28}`} className="w-full" style={{ display: "block", height: "100%" }} preserveAspectRatio="none">
       {visible.map((d, i) => {
         const barH  = (d.amount / max) * h;
         const x     = padX + i * (bw + gap);
@@ -204,7 +204,7 @@ export default function AdminAnalyticsPage() {
                 </div>
                 <BarChart2 className="h-4 w-4 text-muted" />
               </div>
-              <div style={{ height: 148 }}>
+              <div style={{ height: 148, overflow: "hidden" }}>
                 <BarChart data={revenueData} h={100} />
               </div>
             </section>
