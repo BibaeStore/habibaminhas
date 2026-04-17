@@ -4,6 +4,24 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 
+export async function uploadProductImage(formData: FormData) {
+  const file = formData.get("file") as File | null;
+  if (!file) return { url: null, error: "No file provided" };
+
+  const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").substring(0, 60);
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+
+  const sb = createAdminClient();
+  const { error } = await sb.storage
+    .from("products")
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (error) return { url: null, error: error.message };
+
+  const { data: { publicUrl } } = sb.storage.from("products").getPublicUrl(path);
+  return { url: publicUrl, error: null };
+}
+
 export async function getProducts(filters?: {
   category?: string;
   subcategory?: string;

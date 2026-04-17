@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
-  getCategories, createCategory, updateCategory, deleteCategory,
+  getCategories, createCategory, updateCategory, deleteCategory, uploadCategoryImage,
 } from "@/lib/actions/categories";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -101,7 +101,7 @@ export default function AdminCategoriesPage() {
         name: form.name.trim(), slug: form.slug.trim(), color: form.color,
         type: form.type, parent_id: form.parent_id || null, status: form.status,
         sort_order: form.sort_order, seo_title: form.seo_title || null,
-        seo_desc: form.seo_desc || null,
+        seo_desc: form.seo_desc || null, image: form.image,
       });
       loadCats();
       setEditCat(null);

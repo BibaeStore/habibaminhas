@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Check, AlertTriangle, Star,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { getProducts, updateProduct, deleteProduct, createProduct } from "@/lib/actions/products";
+import { getProducts, updateProduct, deleteProduct, createProduct, uploadProductImage } from "@/lib/actions/products";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -280,8 +280,25 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [price,    setPrice]    = useState("0");
   const [salePrice,setSalePrice]= useState("");
   const [stock,    setStock]    = useState("0");
+  const [images,   setImages]   = useState<string[]>([]);
+  const [uploading,setUploading]= useState(false);
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState("");
+
+  const handleImageFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const uploaded: string[] = [];
+    for (const file of Array.from(files)) {
+      const fd = new FormData();
+      fd.append("file", file);
+      const result = await uploadProductImage(fd);
+      if (result.url) uploaded.push(result.url);
+      else setError(`Upload failed: ${result.error}`);
+    }
+    setImages((prev) => [...prev, ...uploaded]);
+    setUploading(false);
+  };
 
   const sizes    = sizeType === "adult" ? adultSizes : kidsSizes;
   const setSizes = sizeType === "adult" ? setAdultSizes : setKidsSizes;
@@ -318,7 +335,7 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
       stock: totalStock,
       featured,
       size_guide: includeSizeGuide,
-      images: [],
+      images,
       palette: ["#f2e0d8", "#c97a86", "#5a2030"],
     });
 
@@ -378,11 +395,36 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
           <div>
             <div className="mb-2 text-[11px] uppercase tracking-[0.22em] text-muted">Product Images</div>
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed border-border-soft bg-cream px-6 py-8 transition-colors hover:border-ink/30">
-              <Upload className="h-6 w-6 text-muted" />
-              <span className="text-[12px] text-ink-soft">Add Images</span>
-              <span className="text-[11px] text-muted">PNG, JPG up to 10 MB each</span>
-              <input type="file" accept="image/*" multiple className="sr-only" />
+            {images.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {images.map((url, i) => (
+                  <div key={i} className="group relative h-20 w-16 overflow-hidden bg-cream">
+                    <Image src={url} alt="" fill sizes="64px" className="object-cover object-top" />
+                    <button
+                      type="button"
+                      onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="absolute inset-0 flex items-center justify-center bg-ink/50 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <X className="h-4 w-4 text-ivory" />
+                    </button>
+                    {i === 0 && (
+                      <span className="absolute bottom-0 left-0 right-0 bg-ink/60 py-0.5 text-center text-[9px] uppercase tracking-wide text-ivory">Main</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className={`flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed border-border-soft bg-cream px-6 py-6 transition-colors hover:border-ink/30 ${uploading ? "opacity-60 pointer-events-none" : ""}`}>
+              <Upload className={`h-6 w-6 ${uploading ? "animate-bounce text-gold-dark" : "text-muted"}`} />
+              <span className="text-[12px] text-ink-soft">{uploading ? "Uploading…" : "Click to add images"}</span>
+              <span className="text-[11px] text-muted">PNG, JPG, WEBP up to 10 MB each</span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                onChange={(e) => handleImageFiles(e.target.files)}
+              />
             </label>
           </div>
 
@@ -577,9 +619,26 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [stockVal,    setStockVal]    = useState(String(product.stock));
   const [statusVal,   setStatusVal]   = useState(product.status);
   const [featuredVal, setFeaturedVal] = useState(product.featured);
+  const [images,      setImages]      = useState<string[]>(product.images ?? []);
+  const [uploading,   setUploading]   = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);
   const [error,       setError]       = useState("");
+
+  const handleImageFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const uploaded: string[] = [];
+    for (const file of Array.from(files)) {
+      const fd = new FormData();
+      fd.append("file", file);
+      const result = await uploadProductImage(fd);
+      if (result.url) uploaded.push(result.url);
+      else setError(`Upload failed: ${result.error}`);
+    }
+    setImages((prev) => [...prev, ...uploaded]);
+    setUploading(false);
+  };
 
   const handleSave = async () => {
     const parsedPrice    = parseInt(price) || 0;
@@ -595,6 +654,7 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
       stock:      parseInt(stockVal) || 0,
       status:     statusVal,
       featured:   featuredVal,
+      images,
     });
     setSaving(false);
     if (result.error) { setError(result.error); return; }
@@ -617,18 +677,36 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
         <div className="space-y-4 px-6 py-5">
           {error && <div className="border border-sale/40 bg-sale/10 px-4 py-3 text-[12px] text-sale">{error}</div>}
 
-          <div className="flex items-center gap-4">
-            <div className="relative h-16 w-12 shrink-0 overflow-hidden bg-cream">
-              {product.images?.[0] ? (
-                <Image src={product.images[0]} alt={product.title} fill sizes="48px" className="object-cover object-top" />
-              ) : (
-                <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${product.palette[0] ?? "#f0ece4"}, ${product.palette[1] ?? "#c9a96e"})` }} />
-              )}
+          <div>
+            <div className="mb-2 text-[11px] uppercase tracking-[0.22em] text-muted">Product Images</div>
+            <div className="flex flex-wrap gap-2">
+              {images.map((url, i) => (
+                <div key={i} className="group relative h-20 w-16 overflow-hidden bg-cream">
+                  <Image src={url} alt="" fill sizes="64px" className="object-cover object-top" />
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="absolute inset-0 flex items-center justify-center bg-ink/50 opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <X className="h-4 w-4 text-ivory" />
+                  </button>
+                  {i === 0 && (
+                    <span className="absolute bottom-0 left-0 right-0 bg-ink/60 py-0.5 text-center text-[9px] uppercase tracking-wide text-ivory">Main</span>
+                  )}
+                </div>
+              ))}
+              <label className={`flex h-20 w-16 cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-border-soft bg-cream text-muted transition-colors hover:border-ink/40 ${uploading ? "opacity-60 pointer-events-none" : ""}`}>
+                <Upload className={`h-4 w-4 ${uploading ? "animate-bounce text-gold-dark" : ""}`} />
+                <span className="text-[9px] uppercase tracking-wide">{uploading ? "…" : "Add"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={(e) => handleImageFiles(e.target.files)}
+                />
+              </label>
             </div>
-            <label className="flex cursor-pointer items-center gap-2 border border-dashed border-border-soft bg-cream px-4 py-2.5 text-[11px] uppercase tracking-[0.18em] text-ink-soft transition-colors hover:border-ink/40">
-              <Upload className="h-3.5 w-3.5" /> Change Image
-              <input type="file" accept="image/*" className="sr-only" />
-            </label>
           </div>
 
           <label className="flex flex-col gap-1.5">
