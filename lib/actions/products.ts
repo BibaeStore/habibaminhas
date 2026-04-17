@@ -47,10 +47,10 @@ export async function createProduct(payload: TablesInsert<"products">) {
     .insert(payload)
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) return { data: null, error: error.message };
   revalidatePath("/admin/products");
   revalidatePath("/shop");
-  return data;
+  return { data, error: null };
 }
 
 export async function updateProduct(id: string, payload: TablesUpdate<"products">) {
@@ -61,10 +61,10 @@ export async function updateProduct(id: string, payload: TablesUpdate<"products"
     .eq("id", id)
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) return { data: null, error: error.message };
   revalidatePath("/admin/products");
   revalidatePath("/shop");
-  return data;
+  return { data, error: null };
 }
 
 export async function deleteProduct(id: string) {

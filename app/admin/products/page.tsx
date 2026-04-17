@@ -295,34 +295,37 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
   const handleCreate = async () => {
     if (!name.trim()) { setError("Product name is required."); return; }
+    const parsedPrice    = parseInt(price) || 0;
+    const parsedSalePrice = salePrice ? parseInt(salePrice) : null;
+    if (parsedPrice <= 0) { setError("Price must be greater than 0."); return; }
+    if (parsedSalePrice !== null && parsedSalePrice <= 0) { setError("Sale price must be greater than 0."); return; }
+    if (parsedSalePrice !== null && parsedSalePrice >= parsedPrice) { setError("Sale price must be less than the regular price."); return; }
+
     setSaving(true); setError("");
-    try {
-      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").substring(0, 80) + "-" + Date.now();
-      const totalStock = anySizeEnabled
-        ? Object.values(sizes).filter((v) => v.enabled).reduce((s, v) => s + v.stock, 0)
-        : parseInt(stock) || 0;
-      await createProduct({
-        title: name.trim(),
-        slug,
-        sku: sku.trim() || null,
-        category,
-        status,
-        price: parseInt(price) || 0,
-        compare_at: salePrice ? parseInt(price) || 0 : null,
-        ...(salePrice ? { price: parseInt(salePrice) || 0, compare_at: parseInt(price) || 0 } : {}),
-        stock: totalStock,
-        featured,
-        size_guide: includeSizeGuide,
-        images: [],
-        palette: ["#f2e0d8", "#c97a86", "#5a2030"],
-      });
-      onSaved();
-      onClose();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to create product.");
-    } finally {
-      setSaving(false);
-    }
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").substring(0, 80) + "-" + Date.now();
+    const totalStock = anySizeEnabled
+      ? Object.values(sizes).filter((v) => v.enabled).reduce((s, v) => s + v.stock, 0)
+      : parseInt(stock) || 0;
+
+    const result = await createProduct({
+      title: name.trim(),
+      slug,
+      sku: sku.trim() || null,
+      category,
+      status,
+      price: parsedSalePrice ?? parsedPrice,
+      compare_at: parsedSalePrice ? parsedPrice : null,
+      stock: totalStock,
+      featured,
+      size_guide: includeSizeGuide,
+      images: [],
+      palette: ["#f2e0d8", "#c97a86", "#5a2030"],
+    });
+
+    setSaving(false);
+    if (result.error) { setError(result.error); return; }
+    onSaved();
+    onClose();
   };
 
   return (
@@ -579,24 +582,25 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [error,       setError]       = useState("");
 
   const handleSave = async () => {
+    const parsedPrice    = parseInt(price) || 0;
+    const parsedCompare  = compareAt ? parseInt(compareAt) : null;
+    if (parsedPrice <= 0) { setError("Price must be greater than 0."); return; }
+    if (parsedCompare !== null && parsedCompare <= 0) { setError("Compare-at price must be greater than 0."); return; }
+
     setSaving(true); setError("");
-    try {
-      await updateProduct(product.id, {
-        title:      name.trim(),
-        price:      parseInt(price) || 0,
-        compare_at: compareAt ? parseInt(compareAt) : null,
-        stock:      parseInt(stockVal) || 0,
-        status:     statusVal,
-        featured:   featuredVal,
-      });
-      setSaved(true);
-      onSaved();
-      setTimeout(() => { setSaved(false); onClose(); }, 1200);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to save.");
-    } finally {
-      setSaving(false);
-    }
+    const result = await updateProduct(product.id, {
+      title:      name.trim(),
+      price:      parsedPrice,
+      compare_at: parsedCompare,
+      stock:      parseInt(stockVal) || 0,
+      status:     statusVal,
+      featured:   featuredVal,
+    });
+    setSaving(false);
+    if (result.error) { setError(result.error); return; }
+    setSaved(true);
+    onSaved();
+    setTimeout(() => { setSaved(false); onClose(); }, 1200);
   };
 
   return (
