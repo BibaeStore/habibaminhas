@@ -80,7 +80,10 @@
       "Bash(where magick *)",
       "Bash(where ffmpeg *)",
       "Bash(node -e \"require\\('sharp'\\)\")",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(cat)",
+      "Read(//tmp/**)",
+      "Bash(grep -v \"^D:/web/habibaminhas/app/[^/]*/page.tsx$\")"
     ]
   }
 }
