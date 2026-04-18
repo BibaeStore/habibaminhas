@@ -1,28 +1,103 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
-  LayoutDashboard, Package, ShoppingBag, Users, Settings,
-  LogOut, ChevronRight, TrendingUp,
-  LayoutGrid, Megaphone, X, Bell,
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  Users,
+  Settings,
+  LogOut,
+  TrendingUp,
+  LayoutGrid,
+  Megaphone,
+  X,
+  Bell,
 } from "lucide-react";
 import { adminLogout } from "@/lib/actions/auth";
 import { getOrderStats } from "@/lib/actions/orders";
+import { AdminButton } from "./ui/button";
 
-const NAV_ITEMS = [
-  { label: "Dashboard",      href: "/admin",               icon: LayoutDashboard },
-  { label: "Orders",         href: "/admin/orders",        icon: ShoppingBag, dynamicBadge: true },
-  { label: "Products",       href: "/admin/products",      icon: Package },
-  { label: "Categories",     href: "/admin/categories",    icon: LayoutGrid },
-  { label: "Customers",      href: "/admin/customers",     icon: Users },
-  { label: "Analytics",      href: "/admin/analytics",     icon: TrendingUp },
-  { label: "Marketing",      href: "/admin/marketing",     icon: Megaphone },
-  { label: "Notifications",  href: "/admin/notifications", icon: Bell },
-  { label: "Settings",       href: "/admin/settings",      icon: Settings },
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  dynamicBadge?: boolean;
+}
+
+const DAILY: NavItem[] = [
+  { label: "Orders", href: "/admin/orders", icon: ShoppingBag, dynamicBadge: true },
+  { label: "Products", href: "/admin/products", icon: Package },
+  { label: "Customers", href: "/admin/customers", icon: Users },
+  { label: "Notifications", href: "/admin/notifications", icon: Bell },
 ];
+
+const SETUP: NavItem[] = [
+  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { label: "Categories", href: "/admin/categories", icon: LayoutGrid },
+  { label: "Analytics", href: "/admin/analytics", icon: TrendingUp },
+  { label: "Marketing", href: "/admin/marketing", icon: Megaphone },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
+];
+
+function NavGroup({
+  title,
+  items,
+  pathname,
+  pendingOrders,
+  onItemClick,
+}: {
+  title: string;
+  items: NavItem[];
+  pathname: string | null;
+  pendingOrders: number | null;
+  onItemClick?: () => void;
+}) {
+  return (
+    <div>
+      <div className="px-3 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--admin-text-muted)]">
+        {title}
+      </div>
+      <ul className="flex flex-col gap-1">
+        {items.map(({ label, href, icon: Icon, dynamicBadge }) => {
+          const active =
+            pathname === href ||
+            (href !== "/admin" && pathname?.startsWith(href));
+          const badge =
+            dynamicBadge && pendingOrders && pendingOrders > 0
+              ? String(pendingOrders)
+              : null;
+          return (
+            <li key={href}>
+              <Link
+                href={href}
+                onClick={onItemClick}
+                className={`relative flex h-12 items-center gap-3 rounded-[var(--admin-radius)] px-4 text-[15px] font-medium transition-colors ${
+                  active
+                    ? "bg-[var(--admin-primary-soft)] text-[var(--admin-primary)]"
+                    : "text-[var(--admin-text-soft)] hover:bg-[var(--admin-surface-alt)]"
+                }`}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-[var(--admin-primary)]" />
+                )}
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className="flex-1">{label}</span>
+                {badge && (
+                  <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--admin-primary)] px-1.5 text-[11px] font-bold text-white">
+                    {badge}
+                  </span>
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 export function AdminSidebar({
   isOpen = false,
@@ -42,90 +117,88 @@ export function AdminSidebar({
   }, []);
 
   function handleLogout() {
-    startTransition(() => { adminLogout(); });
+    startTransition(() => {
+      adminLogout();
+    });
   }
 
   return (
     <>
-      {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-ink/60 md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
           onClick={onClose}
         />
       )}
-    <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-72 flex-col bg-ink text-ivory shrink-0 transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
-      {/* Mobile close button */}
-      <button
-        onClick={onClose}
-        className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center text-ivory/40 hover:text-ivory md:hidden"
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[264px] shrink-0 flex-col border-r border-[var(--admin-border)] bg-[var(--admin-surface)] transition-transform duration-200 ease-out md:static md:z-auto md:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
       >
-        <X className="h-6 w-6" />
-      </button>
+        <button
+          onClick={onClose}
+          className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center text-[var(--admin-text-muted)] hover:text-[var(--admin-text)] md:hidden"
+          aria-label="Close menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-      {/* Brand */}
-      <div className="flex items-center gap-3 border-b border-ivory/10 px-6 py-5">
-        <div className="relative h-10 w-10 shrink-0 bg-gold-dark p-1 overflow-hidden">
-          <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="40px" className="object-contain p-0.5" />
-        </div>
-        <div>
-          <div className="font-display text-lg italic text-ivory leading-none">Habiba Minhas</div>
-          <div className="mt-0.5 text-xs uppercase tracking-[0.32em] text-gold-dark">Admin</div>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-        {NAV_ITEMS.map(({ label, href, icon: Icon, dynamicBadge }) => {
-          const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
-          const badge = dynamicBadge && pendingOrders ? String(pendingOrders) : null;
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={`group flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium tracking-wide transition-all ${
-                active
-                  ? "bg-gold-dark/15 text-gold-dark"
-                  : "text-ivory/60 hover:bg-ivory/5 hover:text-ivory"
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <Icon className="h-5 w-5 shrink-0" />
-                {label}
-              </span>
-              {badge && (
-                <span className="flex h-6 min-w-6 items-center justify-center bg-gold-dark px-1.5 text-xs font-bold text-ink">
-                  {badge}
-                </span>
-              )}
-              {active && !badge && <ChevronRight className="ml-auto h-4 w-4 text-gold-dark" />}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* User */}
-      <div className="border-t border-ivory/10 px-4 py-4">
-        <div className="flex items-center gap-3">
-          <div className="relative h-10 w-10 overflow-hidden bg-gold-dark/20 flex items-center justify-center">
-            <span className="font-display text-base italic text-gold-dark">H</span>
+        <div className="flex items-center gap-3 border-b border-[var(--admin-border)] px-5 py-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] text-[var(--admin-primary)] font-bold">
+            HM
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="truncate text-sm font-medium text-ivory">Habiba Minhas</div>
-            <div className="truncate text-xs text-ivory/40">Super Admin</div>
+          <div>
+            <div className="text-[16px] font-semibold text-[var(--admin-text)] leading-none">
+              Habiba Minhas
+            </div>
+            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--admin-text-muted)]">
+              Admin
+            </div>
           </div>
-          <button
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-3 pb-3">
+          <NavGroup
+            title="Daily tasks"
+            items={DAILY}
+            pathname={pathname}
+            pendingOrders={pendingOrders}
+            onItemClick={onClose}
+          />
+          <NavGroup
+            title="Setup & reports"
+            items={SETUP}
+            pathname={pathname}
+            pendingOrders={pendingOrders}
+            onItemClick={onClose}
+          />
+        </nav>
+
+        <div className="border-t border-[var(--admin-border)] p-3">
+          <div className="flex items-center gap-3 px-1 pb-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--admin-primary-soft)] text-sm font-bold text-[var(--admin-primary)]">
+              H
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-[var(--admin-text)]">
+                Habiba Minhas
+              </div>
+              <div className="truncate text-xs text-[var(--admin-text-muted)]">
+                Super admin
+              </div>
+            </div>
+          </div>
+          <AdminButton
+            variant="outline"
+            fullWidth
             onClick={handleLogout}
-            disabled={isPending}
-            className="flex h-10 w-10 items-center justify-center text-ivory/30 hover:text-sale hover:bg-ivory/10 transition-colors disabled:opacity-40"
-            title="Sign out"
+            loading={isPending}
+            leadingIcon={<LogOut className="h-4 w-4" />}
           >
-            <LogOut className={`h-5 w-5 ${isPending ? "animate-pulse" : ""}`} />
-          </button>
+            Sign out
+          </AdminButton>
         </div>
-      </div>
-    </aside>
+      </aside>
     </>
   );
 }
