@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { createFirstAdmin } from "@/lib/actions/auth";
 import { useRouter } from "next/navigation";
+import { AdminCard } from "@/components/admin/ui/card";
+import { AdminButton } from "@/components/admin/ui/button";
 
 export default function AdminSetupPage() {
   const router = useRouter();
@@ -24,78 +26,99 @@ export default function AdminSetupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cream px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center bg-ink">
-            <ShieldCheck className="h-5 w-5 text-ivory" />
+    <div className="flex min-h-screen items-start justify-center bg-[var(--admin-surface-alt)] px-4 py-10">
+      <div className="w-full max-w-[640px]">
+
+        {/* Header */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--admin-primary-soft)] text-[var(--admin-primary)]">
+            <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
-            <div className="font-display text-xl italic">Habiba Minhas</div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted">Admin Setup</div>
+            <div className="text-[18px] font-semibold text-[var(--admin-text)]">Habiba Minhas</div>
+            <div className="text-[12px] text-[var(--admin-text-muted)]">Admin Setup</div>
           </div>
         </div>
 
-        <div className="border border-border-soft bg-ivory p-8">
-          <h1 className="font-display text-2xl italic mb-1">Create Admin Account</h1>
-          <p className="text-[12px] text-muted mb-6">Set up the first super-admin for your store. This page is only available once.</p>
+        <AdminCard>
+          <h2 className="text-[20px] font-semibold text-[var(--admin-text)]">Create Admin Account</h2>
+          <p className="mt-1 text-[14px] text-[var(--admin-text-muted)]">
+            Set up the first super-admin for your store. This page is only available once.
+          </p>
 
           {error && (
-            <div className="mb-4 border border-sale/30 bg-sale/10 px-4 py-3 text-[12px] text-sale">
+            <div
+              role="alert"
+              className="mt-4 rounded-[var(--admin-radius)] border border-[var(--admin-danger-soft)] bg-[var(--admin-danger-soft)] px-3 py-2 text-[14px] text-[var(--admin-danger)]"
+            >
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Full Name</span>
+          <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
+            <div>
+              <label className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">
+                Full Name
+              </label>
               <input
                 required
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="Habiba Minhas"
-                className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink"
+                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] text-[var(--admin-text)] outline-none focus:border-[var(--admin-primary)]"
               />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Email Address</span>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">
+                Email Address
+              </label>
               <input
-                required type="email"
+                required
+                type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 placeholder="admin@habibaminhas.com"
-                className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink"
+                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] text-[var(--admin-text)] outline-none focus:border-[var(--admin-primary)]"
               />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Password</span>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">
+                Password
+              </label>
               <input
-                required type="password"
+                required
+                type="password"
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 placeholder="Min. 8 characters"
-                className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink"
+                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] text-[var(--admin-text)] outline-none focus:border-[var(--admin-primary)]"
               />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Confirm Password</span>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">
+                Confirm Password
+              </label>
               <input
-                required type="password"
+                required
+                type="password"
                 value={form.confirm}
                 onChange={(e) => setForm((f) => ({ ...f, confirm: e.target.value }))}
                 placeholder="Repeat password"
-                className="h-10 border border-border-soft bg-cream px-3 text-[13px] outline-none focus:border-ink"
+                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] text-[var(--admin-text)] outline-none focus:border-[var(--admin-primary)]"
               />
-            </label>
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 h-11 w-full bg-ink text-[11px] uppercase tracking-[0.24em] text-ivory transition-colors hover:bg-gold-dark disabled:opacity-60"
-            >
-              {loading ? "Creating…" : "Create Admin Account"}
-            </button>
+            </div>
+
+            <div className="mt-2">
+              <AdminButton type="submit" fullWidth loading={loading}>
+                Create Admin Account
+              </AdminButton>
+            </div>
           </form>
-        </div>
+        </AdminCard>
+
       </div>
     </div>
   );
