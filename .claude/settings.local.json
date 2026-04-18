@@ -83,7 +83,8 @@
       "Bash(node *)",
       "Bash(cat)",
       "Read(//tmp/**)",
-      "Bash(grep -v \"^D:/web/habibaminhas/app/[^/]*/page.tsx$\")"
+      "Bash(grep -v \"^D:/web/habibaminhas/app/[^/]*/page.tsx$\")",
+      "Bash(find /f/web/habibaminhas -type f -name *admin*)"
     ]
   }
 }

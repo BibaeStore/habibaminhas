@@ -54,28 +54,28 @@ export function AdminSidebar({
           onClick={onClose}
         />
       )}
-    <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col bg-ink text-ivory shrink-0 transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+    <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-72 flex-col bg-ink text-ivory shrink-0 transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
       {/* Mobile close button */}
       <button
         onClick={onClose}
-        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center text-ivory/40 hover:text-ivory md:hidden"
+        className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center text-ivory/40 hover:text-ivory md:hidden"
       >
-        <X className="h-4 w-4" />
+        <X className="h-6 w-6" />
       </button>
 
       {/* Brand */}
       <div className="flex items-center gap-3 border-b border-ivory/10 px-6 py-5">
-        <div className="relative h-9 w-9 shrink-0 bg-gold-dark p-1 overflow-hidden">
-          <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="36px" className="object-contain p-0.5" />
+        <div className="relative h-10 w-10 shrink-0 bg-gold-dark p-1 overflow-hidden">
+          <Image src="/logo/habiba-minhas-icon-t.png" alt="Habiba Minhas" fill sizes="40px" className="object-contain p-0.5" />
         </div>
         <div>
-          <div className="font-display text-[14px] italic text-ivory leading-none">Habiba Minhas</div>
-          <div className="mt-0.5 text-[9px] uppercase tracking-[0.32em] text-gold-dark">Admin</div>
+          <div className="font-display text-lg italic text-ivory leading-none">Habiba Minhas</div>
+          <div className="mt-0.5 text-xs uppercase tracking-[0.32em] text-gold-dark">Admin</div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
         {NAV_ITEMS.map(({ label, href, icon: Icon, dynamicBadge }) => {
           const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
           const badge = dynamicBadge && pendingOrders ? String(pendingOrders) : null;
@@ -83,22 +83,23 @@ export function AdminSidebar({
             <Link
               key={href}
               href={href}
-              className={`group flex items-center justify-between gap-3 px-3 py-2.5 text-[12px] uppercase tracking-[0.2em] transition-all ${
+              onClick={onClose}
+              className={`group flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium tracking-wide transition-all ${
                 active
                   ? "bg-gold-dark/15 text-gold-dark"
-                  : "text-ivory/50 hover:bg-ivory/5 hover:text-ivory"
+                  : "text-ivory/60 hover:bg-ivory/5 hover:text-ivory"
               }`}
             >
               <span className="flex items-center gap-3">
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-5 w-5 shrink-0" />
                 {label}
               </span>
               {badge && (
-                <span className="flex h-5 min-w-5 items-center justify-center bg-gold-dark px-1 text-[10px] font-medium text-ink">
+                <span className="flex h-6 min-w-6 items-center justify-center bg-gold-dark px-1.5 text-xs font-bold text-ink">
                   {badge}
                 </span>
               )}
-              {active && !badge && <ChevronRight className="ml-auto h-3 w-3 text-gold-dark" />}
+              {active && !badge && <ChevronRight className="ml-auto h-4 w-4 text-gold-dark" />}
             </Link>
           );
         })}
@@ -107,20 +108,20 @@ export function AdminSidebar({
       {/* User */}
       <div className="border-t border-ivory/10 px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="relative h-8 w-8 overflow-hidden bg-gold-dark/20 flex items-center justify-center">
-            <span className="font-display text-[13px] italic text-gold-dark">H</span>
+          <div className="relative h-10 w-10 overflow-hidden bg-gold-dark/20 flex items-center justify-center">
+            <span className="font-display text-base italic text-gold-dark">H</span>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="truncate text-[12px] font-medium text-ivory">Habiba Minhas</div>
-            <div className="truncate text-[10px] text-ivory/40">Super Admin</div>
+            <div className="truncate text-sm font-medium text-ivory">Habiba Minhas</div>
+            <div className="truncate text-xs text-ivory/40">Super Admin</div>
           </div>
           <button
             onClick={handleLogout}
             disabled={isPending}
-            className="text-ivory/30 hover:text-sale transition-colors disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center text-ivory/30 hover:text-sale hover:bg-ivory/10 transition-colors disabled:opacity-40"
             title="Sign out"
           >
-            <LogOut className={`h-4 w-4 ${isPending ? "animate-pulse" : ""}`} />
+            <LogOut className={`h-5 w-5 ${isPending ? "animate-pulse" : ""}`} />
           </button>
         </div>
       </div>
