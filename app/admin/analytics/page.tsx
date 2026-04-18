@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, BarChart2, ShoppingBag, Users, DollarSign } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminCard } from "@/components/admin/ui/card";
+import { PageHeader } from "@/components/admin/ui/page-header";
 import { getOrderStats } from "@/lib/actions/orders";
 import { getCustomerStats } from "@/lib/actions/customers";
 import { formatPrice } from "@/lib/utils";
@@ -33,8 +35,8 @@ const ORDERS_SPARKLINE_7D  = [4,  7,  5,  9,  6,  11, 8];
 const ORDERS_SPARKLINE_30D = [4,7,5,9,6,11,8,12,7,14,9,13,10,7,11,8,15,12,9,13,11,16,10,14,9,12,17,13,11,8];
 
 const CAT_BREAKDOWN = [
-  { label: "Ladies Stitched",  revenue: 828000, pct: 54, color: "#a8804b" },
-  { label: "Baby Products",    revenue: 431200, pct: 28, color: "#8c9b7e" },
+  { label: "Ladies Stitched",  revenue: 828000, pct: 54, color: "#2563eb" },
+  { label: "Baby Products",    revenue: 431200, pct: 28, color: "#eff6ff" },
   { label: "Kids Formal",      revenue: 184800, pct: 12, color: "#5c6dab" },
   { label: "Accessories",      revenue: 18300,  pct: 6,  color: "#c97a86" },
 ];
@@ -48,8 +50,8 @@ const TOP_PRODUCTS = [
 ];
 
 const PAYMENT_SPLIT = [
-  { label: "Cash on Delivery", pct: 58, color: "#a8804b" },
-  { label: "JazzCash",         pct: 24, color: "#8c9b7e" },
+  { label: "Cash on Delivery", pct: 58, color: "#2563eb" },
+  { label: "JazzCash",         pct: 24, color: "#eff6ff" },
   { label: "Easypaisa",        pct: 12, color: "#5c6dab" },
   { label: "Bank / Card",      pct: 6,  color: "#c97a86" },
 ];
@@ -58,7 +60,7 @@ type Period = "7d" | "30d" | "90d";
 
 // ─── Inline SVG bar chart ──────────────────────────────────────────────────────
 
-function BarChart({ data, highlight = "#a8804b", h = 100 }: { data: { day: string; amount: number }[]; highlight?: string; h?: number }) {
+function BarChart({ data, highlight = "#2563eb", h = 100 }: { data: { day: string; amount: number }[]; highlight?: string; h?: number }) {
   const visible = data.slice(-14); // show last 14 in 30d view
   const max = Math.max(...visible.map((d) => d.amount));
   const bw = 28; const gap = 8; const padX = 6;
@@ -75,7 +77,7 @@ function BarChart({ data, highlight = "#a8804b", h = 100 }: { data: { day: strin
           <g key={i}>
             <rect x={x} y={y} width={bw} height={barH} fill={shade} rx="1" />
             {i % Math.ceil(visible.length / 7) === 0 && (
-              <text x={x + bw / 2} y={h + 16} textAnchor="middle" fontSize="8" fill="#9a9080" fontFamily="inherit">
+              <text x={x + bw / 2} y={h + 16} textAnchor="middle" fontSize="8" fill="#9ca3af" fontFamily="inherit">
                 {d.day}
               </text>
             )}
@@ -86,7 +88,7 @@ function BarChart({ data, highlight = "#a8804b", h = 100 }: { data: { day: strin
   );
 }
 
-function Sparkline({ data, color = "#8c9b7e" }: { data: number[]; color?: string }) {
+function Sparkline({ data, color = "#2563eb" }: { data: number[]; color?: string }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const w = 280; const h = 48;
@@ -140,178 +142,187 @@ export default function AdminAnalyticsPage() {
 
   return (
     <AdminShell title="Analytics">
-        <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
 
-          {/* Header */}
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="font-display text-3xl italic">Analytics</h1>
-              <p className="mt-0.5 text-[10px] uppercase tracking-[0.28em] text-muted">Habiba Minhas · Performance overview</p>
-            </div>
+        <PageHeader
+          title="Analytics"
+          subtitle="Habiba Minhas · Performance overview"
+          actions={
             <div className="flex gap-0">
               {(["7d", "30d", "90d"] as Period[]).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
-                  className={`h-9 px-5 text-[11px] uppercase tracking-[0.2em] border transition-colors ${
+                  className={`h-9 px-5 text-[11px] font-semibold uppercase tracking-wide border transition-colors rounded-none ${
                     p === period
-                      ? "bg-ink border-ink text-ivory"
-                      : "border-border-soft text-ink-soft hover:bg-cream"
+                      ? "bg-[var(--admin-primary)] border-[var(--admin-primary)] text-white"
+                      : "border-[var(--admin-border)] text-[var(--admin-text-soft)] bg-[var(--admin-surface)] hover:bg-[var(--admin-surface-alt)]"
                   } ${p !== "7d" ? "border-l-0" : ""}`}
                 >
                   {p}
                 </button>
               ))}
             </div>
-          </div>
+          }
+        />
 
-          {/* KPI cards */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: DollarSign, label: "Total Revenue",    value: realStats ? formatPrice(realStats.totalRevenue)    : kpi.revenue,    change: kpi.rChange,   up: kpi.rUp,   sub: "all time" },
-              { icon: ShoppingBag,label: "Total Orders",     value: realStats ? String(realStats.totalOrders)          : String(kpi.orders),  change: kpi.oChange,   up: kpi.oUp,   sub: "all time" },
-              { icon: Users,       label: "Total Customers", value: realStats ? String(realStats.totalCustomers)       : String(kpi.customers),change: kpi.cChange,  up: kpi.cUp,   sub: "registered" },
-              { icon: BarChart2,   label: "Avg. Order Value",value: realStats ? formatPrice(realStats.avgOrderValue)   : kpi.aov,        change: kpi.aovChange, up: kpi.aovUp, sub: "per order" },
-            ].map(({ icon: Icon, label, value, change, up, sub }) => (
-              <div key={label} className="border border-border-soft bg-ivory p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] uppercase tracking-[0.26em] text-muted">{label}</span>
-                  <Icon className="h-4 w-4 text-muted" />
-                </div>
-                <div className="font-display text-2xl italic">{value}</div>
-                <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${up ? "text-sage" : "text-sale"}`}>
-                  {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  <span className="font-medium">{change}</span>
-                  <span className="text-muted">{sub}</span>
-                </div>
+        {/* KPI cards */}
+        <div className="mt-6 mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { icon: DollarSign, label: "Total Revenue",    value: realStats ? formatPrice(realStats.totalRevenue)    : kpi.revenue,    change: kpi.rChange,   up: kpi.rUp,   sub: "all time" },
+            { icon: ShoppingBag,label: "Total Orders",     value: realStats ? String(realStats.totalOrders)          : String(kpi.orders),  change: kpi.oChange,   up: kpi.oUp,   sub: "all time" },
+            { icon: Users,       label: "Total Customers", value: realStats ? String(realStats.totalCustomers)       : String(kpi.customers),change: kpi.cChange,  up: kpi.cUp,   sub: "registered" },
+            { icon: BarChart2,   label: "Avg. Order Value",value: realStats ? formatPrice(realStats.avgOrderValue)   : kpi.aov,        change: kpi.aovChange, up: kpi.aovUp, sub: "per order" },
+          ].map(({ icon: Icon, label, value, change, up, sub }) => (
+            <AdminCard key={label}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[13px] font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">{label}</div>
+                <Icon className="h-4 w-4 text-[var(--admin-text-muted)]" />
               </div>
-            ))}
-          </div>
+              <div className="mt-2 text-[28px] font-bold tabular-nums text-[var(--admin-text)]">{value}</div>
+              <div className={`mt-1.5 flex items-center gap-1 text-[13px] ${up ? "text-green-600" : "text-red-600"}`}>
+                {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                <span className="font-medium">{change}</span>
+                <span className="text-[var(--admin-text-muted)]">{sub}</span>
+              </div>
+            </AdminCard>
+          ))}
+        </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
 
-            {/* Revenue chart */}
-            <section className="lg:col-span-8 border border-border-soft bg-ivory p-5">
+          {/* Revenue chart */}
+          <div className="lg:col-span-8">
+            <AdminCard>
               <div className="mb-4 flex items-start justify-between">
                 <div>
-                  <h2 className="font-display text-xl italic">Revenue</h2>
-                  <p className="mt-0.5 text-[11px] text-muted">
+                  <h2 className="text-[18px] font-semibold text-[var(--admin-text)]">Revenue</h2>
+                  <p className="mt-0.5 text-[13px] text-[var(--admin-text-muted)]">
                     Total: {formatPrice(revenueData.reduce((a, d) => a + d.amount, 0))}
-                    <span className="ml-2 text-sage">
+                    <span className="ml-2 text-green-600">
                       {kpi.rChange} vs prev. period
                     </span>
                   </p>
                 </div>
-                <BarChart2 className="h-4 w-4 text-muted" />
+                <BarChart2 className="h-4 w-4 text-[var(--admin-text-muted)]" />
               </div>
               <div style={{ height: 148, overflow: "hidden" }}>
                 <BarChart data={revenueData} h={100} />
               </div>
-            </section>
+            </AdminCard>
+          </div>
 
-            {/* Category breakdown */}
-            <section className="lg:col-span-4 border border-border-soft bg-ivory p-5">
-              <h2 className="font-display text-xl italic mb-4">Revenue by category</h2>
+          {/* Category breakdown */}
+          <div className="lg:col-span-4">
+            <AdminCard>
+              <h2 className="text-[18px] font-semibold text-[var(--admin-text)] mb-4">Revenue by category</h2>
               <ul className="space-y-4">
                 {CAT_BREAKDOWN.map((c) => (
                   <li key={c.label}>
                     <div className="mb-1.5 flex items-center justify-between">
-                      <span className="text-[12px] font-medium">{c.label}</span>
-                      <span className="text-[11px] text-muted">{c.pct}%</span>
+                      <span className="text-[12px] font-medium text-[var(--admin-text)]">{c.label}</span>
+                      <span className="text-[11px] text-[var(--admin-text-muted)]">{c.pct}%</span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden bg-cream">
+                    <div className="h-1.5 w-full overflow-hidden bg-[var(--admin-surface-alt)]">
                       <div className="h-full transition-all" style={{ width: `${c.pct}%`, background: c.color }} />
                     </div>
-                    <div className="mt-1 text-[11px] text-ink-soft">{formatPrice(c.revenue)}</div>
+                    <div className="mt-1 text-[11px] text-[var(--admin-text-soft)]">{formatPrice(c.revenue)}</div>
                   </li>
                 ))}
               </ul>
-            </section>
-
+            </AdminCard>
           </div>
 
-          {/* Orders sparkline + Payment split */}
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <section className="lg:col-span-7 border border-border-soft bg-ivory p-5">
+        </div>
+
+        {/* Orders sparkline + Payment split */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <AdminCard>
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <h2 className="font-display text-xl italic">Daily order volume</h2>
-                  <p className="text-[11px] text-muted mt-0.5">
+                  <h2 className="text-[18px] font-semibold text-[var(--admin-text)]">Daily order volume</h2>
+                  <p className="text-[13px] text-[var(--admin-text-muted)] mt-0.5">
                     Total: {sparkData.reduce((a, n) => a + n, 0)} orders · Peak: {Math.max(...sparkData)}
                   </p>
                 </div>
               </div>
-              <Sparkline data={sparkData} color="#8c9b7e" />
-              <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted">
+              <Sparkline data={sparkData} color="#2563eb" />
+              <div className="mt-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">
                 <span>{period === "7d" ? "Mon" : "Day 1"}</span>
                 <span>{period === "7d" ? "Sun" : `Day ${sparkData.length}`}</span>
               </div>
-            </section>
+            </AdminCard>
+          </div>
 
-            <section className="lg:col-span-5 border border-border-soft bg-ivory p-5">
-              <h2 className="font-display text-xl italic mb-4">Payment methods</h2>
+          <div className="lg:col-span-5">
+            <AdminCard>
+              <h2 className="text-[18px] font-semibold text-[var(--admin-text)] mb-4">Payment methods</h2>
               <ul className="space-y-3">
                 {PAYMENT_SPLIT.map((p) => (
                   <li key={p.label} className="flex items-center gap-3">
                     <div className="w-2.5 h-2.5 shrink-0 rounded-full" style={{ background: p.color }} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[12px]">{p.label}</span>
-                        <span className="text-[12px] font-medium">{p.pct}%</span>
+                        <span className="text-[12px] text-[var(--admin-text)]">{p.label}</span>
+                        <span className="text-[12px] font-medium text-[var(--admin-text)]">{p.pct}%</span>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden bg-cream">
+                      <div className="h-1.5 w-full overflow-hidden bg-[var(--admin-surface-alt)]">
                         <div className="h-full" style={{ width: `${p.pct}%`, background: p.color }} />
                       </div>
                     </div>
                   </li>
                 ))}
               </ul>
-            </section>
+            </AdminCard>
           </div>
+        </div>
 
-          {/* Top products */}
-          <section className="mt-6 border border-border-soft bg-ivory">
-            <div className="flex items-center justify-between border-b border-border-soft px-5 py-4">
-              <h2 className="font-display text-xl italic">Top selling products</h2>
-              <Link href="/admin/products" className="text-[11px] uppercase tracking-[0.22em] text-gold-dark hover:text-ink transition-colors">
+        {/* Top products */}
+        <div className="mt-6">
+          <AdminCard padded={false}>
+            <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-5 py-4">
+              <h2 className="text-[18px] font-semibold text-[var(--admin-text)]">Top selling products</h2>
+              <Link href="/admin/products" className="text-[13px] font-medium text-[var(--admin-primary)] hover:text-[var(--admin-text)] transition-colors">
                 View all →
               </Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-cream text-[10px] uppercase tracking-[0.22em] text-muted">
+                <thead className="bg-[var(--admin-surface-alt)] text-[13px] font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">
                   <tr>
-                    <th className="px-5 py-3 font-medium w-8">#</th>
-                    <th className="px-5 py-3 font-medium">Product</th>
-                    <th className="px-5 py-3 font-medium">Category</th>
-                    <th className="px-5 py-3 text-center font-medium">Units sold</th>
-                    <th className="px-5 py-3 text-right font-medium">Revenue</th>
-                    <th className="px-5 py-3 text-right font-medium">Growth</th>
+                    <th className="px-5 py-3 font-semibold w-8">#</th>
+                    <th className="px-5 py-3 font-semibold">Product</th>
+                    <th className="px-5 py-3 font-semibold">Category</th>
+                    <th className="px-5 py-3 text-center font-semibold">Units sold</th>
+                    <th className="px-5 py-3 text-right font-semibold">Revenue</th>
+                    <th className="px-5 py-3 text-right font-semibold">Growth</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border-soft">
+                <tbody className="divide-y divide-[var(--admin-border)]">
                   {TOP_PRODUCTS.map((p, i) => (
-                    <tr key={p.name} className="hover:bg-cream/50 transition-colors">
-                      <td className="px-5 py-3.5 text-[12px] text-muted font-medium">{i + 1}</td>
-                      <td className="px-5 py-3.5 text-[12px] font-medium max-w-[280px]">
+                    <tr key={p.name} className="hover:bg-[var(--admin-surface-alt)] transition-colors">
+                      <td className="px-5 py-3.5 text-[12px] text-[var(--admin-text-muted)] font-medium">{i + 1}</td>
+                      <td className="px-5 py-3.5 text-[12px] font-medium max-w-[280px] text-[var(--admin-text)]">
                         <span className="line-clamp-1">{p.name}</span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="border border-border-soft bg-cream px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-ink-soft">{p.category}</span>
+                        <span className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-2 py-0.5 text-[11px] font-medium text-[var(--admin-text-soft)]">{p.category}</span>
                       </td>
-                      <td className="px-5 py-3.5 text-center text-[12px] tabular-nums">{p.sold}</td>
-                      <td className="px-5 py-3.5 text-right text-[12px] font-medium">{formatPrice(p.revenue)}</td>
+                      <td className="px-5 py-3.5 text-center text-[12px] tabular-nums text-[var(--admin-text)]">{p.sold}</td>
+                      <td className="px-5 py-3.5 text-right text-[12px] font-medium text-[var(--admin-text)]">{formatPrice(p.revenue)}</td>
                       <td className="px-5 py-3.5 text-right">
-                        <span className="text-[11px] font-medium text-sage">{p.growth}</span>
+                        <span className="text-[11px] font-medium text-green-600">{p.growth}</span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </section>
-
+          </AdminCard>
         </div>
+
+      </div>
     </AdminShell>
   );
 }
