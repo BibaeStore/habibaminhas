@@ -4,9 +4,13 @@ import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Eye, X, Check, Upload,
-  Search, ChevronLeft, ChevronRight, AlertTriangle, Layers,
+  Search, ChevronLeft, ChevronRight, Layers,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminCard } from "@/components/admin/ui/card";
+import { AdminButton } from "@/components/admin/ui/button";
+import { PageHeader } from "@/components/admin/ui/page-header";
+import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
 import {
   getCategories, createCategory, updateCategory, deleteCategory, uploadCategoryImage,
 } from "@/lib/actions/categories";
@@ -156,322 +160,354 @@ export default function AdminCategoriesPage() {
 
   return (
     <AdminShell title="Categories">
-        <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
 
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="font-display text-4xl italic">Categories</h1>
-              <p className="mt-0.5 text-sm tracking-[0.28em] text-muted">Manage store hierarchy</p>
-            </div>
-            <button onClick={openAdd}
-              className="flex h-14 items-center gap-2 bg-ink px-6 text-sm uppercase tracking-[0.24em] text-ivory transition-colors hover:bg-gold-dark">
-              <Plus className="h-5 w-5" /> Add Category
-            </button>
+        <PageHeader
+          title="Categories"
+          subtitle={`${cats.length} total`}
+          actions={
+            <AdminButton
+              variant="primary"
+              leadingIcon={<Plus className="h-4 w-4" />}
+              onClick={openAdd}
+            >
+              Add category
+            </AdminButton>
+          }
+        />
+
+        {/* Summary tiles */}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Total categories", value: cats.length },
+            { label: "Main categories",  value: cats.filter((c) => c.type === "main").length },
+            { label: "Featured tiles",   value: cats.filter((c) => c.type === "featured").length },
+            { label: "Inactive",         value: cats.filter((c) => c.status === "inactive").length },
+          ].map((s) => (
+            <AdminCard key={s.label} padded={false} className="p-4">
+              <div className="text-[13px] text-[var(--admin-text-muted)]">{s.label}</div>
+              <div className="mt-1 text-3xl font-semibold text-[var(--admin-text)]">{s.value}</div>
+            </AdminCard>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="mt-5 mb-4 flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--admin-text-muted)]" />
+            <input
+              type="search"
+              placeholder="Search categories…"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="h-10 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] pl-9 pr-3 text-[15px] outline-none focus:border-[var(--admin-primary)] sm:w-56"
+            />
           </div>
+          <select
+            value={typeFilter}
+            onChange={(e) => { setTypeFilter(e.target.value as typeof typeFilter); setPage(1); }}
+            className="h-10 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] text-[var(--admin-text)] outline-none focus:border-[var(--admin-primary)]"
+          >
+            <option value="all">All Types</option>
+            <option value="main">Main Category</option>
+            <option value="sub">Subcategory</option>
+            <option value="featured">Featured Tiles</option>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }}
+            className="h-10 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] text-[var(--admin-text)] outline-none focus:border-[var(--admin-primary)]"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <span className="ml-auto text-[14px] text-[var(--admin-text-muted)]">{filtered.length} categories</span>
+        </div>
 
-          {/* Summary tiles */}
-          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { label: "Total categories", value: cats.length },
-              { label: "Main categories",  value: cats.filter((c) => c.type === "main").length },
-              { label: "Featured tiles",   value: cats.filter((c) => c.type === "featured").length },
-              { label: "Inactive",         value: cats.filter((c) => c.status === "inactive").length },
-            ].map((s) => (
-              <div key={s.label} className="border border-border-soft bg-ivory p-4">
-                <div className="text-sm tracking-[0.24em] text-muted">{s.label}</div>
-                <div className="mt-1 font-display text-3xl italic">{s.value}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Filters */}
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-              <input type="search" placeholder="Search categories…" value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="h-12 w-full border border-border-soft bg-ivory pl-9 pr-3 text-base outline-none focus:border-ink sm:w-56" />
-            </div>
-            <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value as typeof typeFilter); setPage(1); }}
-              className="h-12 border border-border-soft bg-ivory px-3 text-base text-ink-soft outline-none focus:border-ink">
-              <option value="all">All Types</option>
-              <option value="main">Main Category</option>
-              <option value="sub">Subcategory</option>
-              <option value="featured">Featured Tiles</option>
-            </select>
-            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }}
-              className="h-12 border border-border-soft bg-ivory px-3 text-base text-ink-soft outline-none focus:border-ink">
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <span className="ml-auto text-base text-muted">{filtered.length} categories</span>
-          </div>
-
-          {/* Bulk delete bar */}
-          {selectedIds.size > 0 && (
-            <div className="mb-4 flex items-center gap-4 border-2 border-sale/30 bg-sale/5 px-5 py-4">
-              <span className="text-base font-semibold text-ink">
-                {selectedIds.size} item{selectedIds.size > 1 ? "s" : ""} selected
-              </span>
-              <button onClick={async () => {
+        {/* Bulk delete bar */}
+        {selectedIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-4 rounded-[var(--admin-radius)] border border-[var(--admin-danger)] bg-[var(--admin-danger-soft)] px-5 py-3">
+            <span className="text-[15px] font-semibold text-[var(--admin-text)]">
+              {selectedIds.size} item{selectedIds.size > 1 ? "s" : ""} selected
+            </span>
+            <AdminButton
+              variant="danger"
+              size="sm"
+              leadingIcon={<Trash2 className="h-4 w-4" />}
+              disabled={bulkDeleting}
+              loading={bulkDeleting}
+              onClick={async () => {
                 if (!confirm(`Delete ${selectedIds.size} item(s)?`)) return;
                 setBulkDeleting(true);
                 for (const id of selectedIds) { await deleteCategory(id); }
                 setSelectedIds(new Set());
                 setBulkDeleting(false);
                 loadCats();
-              }} disabled={bulkDeleting}
-                className="flex h-12 items-center gap-2 bg-sale px-6 text-base font-semibold text-ivory hover:opacity-90 disabled:opacity-60">
-                <Trash2 className="h-5 w-5" /> {bulkDeleting ? "Deleting..." : "Delete Selected"}
-              </button>
-              <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-base text-ink-soft hover:text-ink">
-                Clear selection
-              </button>
-            </div>
-          )}
+              }}
+            >
+              {bulkDeleting ? "Deleting..." : "Delete Selected"}
+            </AdminButton>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="ml-auto text-[14px] text-[var(--admin-text-soft)] hover:text-[var(--admin-text)]"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
 
-          {/* Table */}
-          <div className="border border-border-soft bg-ivory">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-cream text-sm font-semibold uppercase tracking-[0.22em] text-muted">
-                  <tr>
-                    <th className="px-5 py-4 font-medium">
-                      <input type="checkbox" className="h-5 w-5 accent-ink cursor-pointer"
-                        checked={allPagedSelected}
-                        onChange={toggleSelectAll} />
-                    </th>
-                    <th className="w-14 px-5 py-4 font-medium">Image</th>
-                    <th className="px-5 py-4 font-medium">Name</th>
-                    <th className="px-5 py-4 font-medium">Type</th>
-                    <th className="px-5 py-4 font-medium">Status</th>
-                    <th className="px-5 py-4 text-center font-medium">Sort</th>
-                    <th className="px-5 py-4 font-medium">Parent</th>
-                    <th className="px-5 py-4 text-center font-medium">Products</th>
-                    <th className="px-5 py-4 text-right font-medium">Actions</th>
+        {/* Table */}
+        <AdminCard padded={false} className="mt-2">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-[var(--admin-surface-alt)] text-[13px] font-semibold text-[var(--admin-text-muted)]">
+                <tr>
+                  <th className="px-5 py-3 font-medium">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 cursor-pointer accent-[var(--admin-primary)]"
+                      checked={allPagedSelected}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
+                  <th className="w-14 px-5 py-3 font-medium">Image</th>
+                  <th className="px-5 py-3 font-medium">Name</th>
+                  <th className="px-5 py-3 font-medium">Type</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 text-center font-medium">Sort</th>
+                  <th className="px-5 py-3 font-medium">Parent</th>
+                  <th className="px-5 py-3 text-center font-medium">Products</th>
+                  <th className="px-5 py-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--admin-border)]">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-5 py-5"><div className="skeleton h-4 w-4" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-14 w-14" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-4 w-28" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-4 w-16" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-4 w-16" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-4 w-10 mx-auto" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-4 w-20" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-4 w-10 mx-auto" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-4 w-32 ml-auto" /></td>
+                    </tr>
+                  ))
+                ) : paged.map((c) => (
+                  <tr key={c.id} className="transition-colors hover:bg-[var(--admin-surface-alt)]">
+                    <td className="px-5 py-4">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 cursor-pointer accent-[var(--admin-primary)]"
+                        checked={selectedIds.has(c.id)}
+                        onChange={() => toggleSelect(c.id)}
+                      />
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="relative h-14 w-14 overflow-hidden rounded-[var(--admin-radius)] bg-[var(--admin-surface-alt)]">
+                        {c.image ? (
+                          <Image src={c.image} alt={c.name} fill sizes="56px" className="object-cover object-center" />
+                        ) : (
+                          <div className="h-full w-full" style={{ background: c.color ?? "#f0ece4" }} />
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="text-[15px] font-medium text-[var(--admin-text)]">{c.name}</div>
+                      <div className="mt-0.5 font-mono text-[13px] text-[var(--admin-text-muted)]">/{c.slug}</div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${
+                        c.type === "main"     ? "bg-[var(--admin-primary)] text-white" :
+                        c.type === "featured" ? "bg-[var(--admin-warning-soft)] text-[var(--admin-warning)]" :
+                        "border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] text-[var(--admin-text-soft)]"
+                      }`}>
+                        {c.type === "main" ? "Main" : c.type === "featured" ? "Featured" : "Sub"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <button
+                        onClick={() => toggleStatus(c)}
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors ${
+                          c.status === "active"
+                            ? "bg-[var(--admin-success-soft)] text-[var(--admin-success)] hover:opacity-80"
+                            : "bg-[var(--admin-danger-soft)] text-[var(--admin-danger)] hover:opacity-80"
+                        }`}
+                      >
+                        {c.status}
+                      </button>
+                    </td>
+                    <td className="px-5 py-4 text-center text-[15px] tabular-nums text-[var(--admin-text-soft)]">{c.sort_order}</td>
+                    <td className="px-5 py-4 text-[15px] text-[var(--admin-text-soft)]">{parentName(c.parent_id)}</td>
+                    <td className="px-5 py-4 text-center">
+                      <span className={`text-[15px] font-medium tabular-nums ${c.product_count === 0 ? "text-[var(--admin-text-muted)]" : "text-[var(--admin-text)]"}`}>
+                        {c.product_count}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <AdminButton variant="ghost" size="sm" onClick={() => setViewCat(c)} title="View" leadingIcon={<Eye className="h-3.5 w-3.5" />}>
+                          View
+                        </AdminButton>
+                        <AdminButton variant="outline" size="sm" onClick={() => openEdit(c)} title="Edit" leadingIcon={<Pencil className="h-3.5 w-3.5" />}>
+                          Edit
+                        </AdminButton>
+                        <AdminButton variant="danger" size="sm" onClick={() => setDeleteTarget(c)} title="Delete" leadingIcon={<Trash2 className="h-3.5 w-3.5" />}>
+                          Delete
+                        </AdminButton>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border-soft">
-                  {loading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i}>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-5" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-14 w-14" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-28" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-16" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-16" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-10 mx-auto" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-20" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-10 mx-auto" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-32 ml-auto" /></td>
-                      </tr>
-                    ))
-                  ) : paged.map((c) => (
-                    <tr key={c.id} className="transition-colors hover:bg-cream/40">
-                      <td className="px-5 py-5">
-                        <input type="checkbox" className="h-5 w-5 accent-ink cursor-pointer"
-                          checked={selectedIds.has(c.id)}
-                          onChange={() => toggleSelect(c.id)} />
-                      </td>
-                      <td className="px-5 py-5">
-                        <div className="relative h-14 w-14 overflow-hidden bg-cream">
-                          {c.image ? (
-                            <Image src={c.image} alt={c.name} fill sizes="56px" className="object-cover object-center" />
-                          ) : (
-                            <div className="h-full w-full" style={{ background: c.color ?? "#f0ece4" }} />
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-5">
-                        <div className="text-base font-medium">{c.name}</div>
-                        <div className="mt-0.5 font-mono text-sm text-muted">/{c.slug}</div>
-                      </td>
-                      <td className="px-5 py-5">
-                        <span className={`px-2.5 py-1 text-sm uppercase tracking-[0.16em] ${
-                          c.type === "main"     ? "bg-ink text-ivory" :
-                          c.type === "featured" ? "bg-gold-dark/20 text-gold-dark" :
-                          "border border-border-soft bg-cream text-ink-soft"
-                        }`}>
-                          {c.type === "main" ? "Main" : c.type === "featured" ? "Featured" : "Sub"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-5">
-                        <button onClick={() => toggleStatus(c)}
-                          className={`px-2.5 py-1 text-sm uppercase tracking-[0.16em] transition-colors ${
-                            c.status === "active"
-                              ? "bg-sage/15 text-sage hover:bg-sage/25"
-                              : "bg-sale/10 text-sale hover:bg-sale/20"
-                          }`}>
-                          {c.status}
-                        </button>
-                      </td>
-                      <td className="px-5 py-5 text-center text-base tabular-nums text-ink-soft">{c.sort_order}</td>
-                      <td className="px-5 py-5 text-base text-ink-soft">{parentName(c.parent_id)}</td>
-                      <td className="px-5 py-5 text-center">
-                        <span className={`text-base font-medium tabular-nums ${c.product_count === 0 ? "text-muted" : "text-ink"}`}>
-                          {c.product_count}
-                        </span>
-                      </td>
-                      <td className="px-5 py-5">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button onClick={() => setViewCat(c)} title="View"
-                            className="flex h-10 items-center gap-2 px-3 text-sm bg-cream text-ink hover:bg-ink hover:text-ivory transition-colors">
-                            <Eye className="h-5 w-5" /> View
-                          </button>
-                          <button onClick={() => openEdit(c)} title="Edit"
-                            className="flex h-10 items-center gap-2 px-3 text-sm bg-gold/20 text-gold-dark hover:bg-gold-dark hover:text-ivory transition-colors">
-                            <Pencil className="h-5 w-5" /> Edit
-                          </button>
-                          <button onClick={() => setDeleteTarget(c)} title="Delete"
-                            className="flex h-10 items-center gap-2 px-3 text-sm bg-sale/10 text-sale hover:bg-sale hover:text-ivory transition-colors">
-                            <Trash2 className="h-5 w-5" /> Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {!loading && paged.length === 0 && (
-                    <tr>
-                      <td colSpan={9} className="px-5 py-12 text-center text-base text-muted">No categories found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-border-soft px-5 py-3">
-              <span className="text-base text-muted">
-                Showing {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
-              </span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1}
-                  className="flex h-10 w-10 items-center justify-center border border-border-soft text-ink-soft hover:bg-cream disabled:opacity-30">
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                  <button key={n} onClick={() => setPage(n)}
-                    className={`flex h-10 w-10 items-center justify-center text-base transition-colors ${n === safePage ? "bg-ink text-ivory" : "text-ink-soft hover:bg-cream"}`}>
-                    {n}
-                  </button>
                 ))}
-                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                  className="flex h-10 w-10 items-center justify-center border border-border-soft text-ink-soft hover:bg-cream disabled:opacity-30">
-                  <ChevronRight className="h-5 w-5" />
+                {!loading && paged.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-5 py-12 text-center text-[15px] text-[var(--admin-text-muted)]">No categories found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-[var(--admin-border)] px-5 py-3">
+            <span className="text-[14px] text-[var(--admin-text-muted)]">
+              Showing {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="flex h-9 w-9 items-center justify-center rounded-[var(--admin-radius)] border border-[var(--admin-border)] text-[var(--admin-text-soft)] hover:bg-[var(--admin-surface-alt)] disabled:opacity-30"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setPage(n)}
+                  className={`flex h-9 w-9 items-center justify-center rounded-[var(--admin-radius)] text-[14px] transition-colors ${
+                    n === safePage
+                      ? "bg-[var(--admin-primary)] text-white"
+                      : "text-[var(--admin-text-soft)] hover:bg-[var(--admin-surface-alt)]"
+                  }`}
+                >
+                  {n}
                 </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="flex h-9 w-9 items-center justify-center rounded-[var(--admin-radius)] border border-[var(--admin-border)] text-[var(--admin-text-soft)] hover:bg-[var(--admin-surface-alt)] disabled:opacity-30"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </AdminCard>
+      </div>
+
+      {/* View modal */}
+      {viewCat && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 py-8">
+          <div className="relative w-full max-w-lg rounded-[var(--admin-radius)] bg-[var(--admin-surface)] shadow-lg">
+            <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-6 py-5">
+              <h2 className="text-lg font-semibold text-[var(--admin-text)]">Category Details</h2>
+              <button
+                onClick={() => setViewCat(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-[var(--admin-radius)] text-[var(--admin-text-muted)] hover:bg-[var(--admin-surface-alt)] hover:text-[var(--admin-text)] transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5 max-h-[75vh] overflow-y-auto space-y-4">
+              <div className="relative h-32 w-full overflow-hidden rounded-[var(--admin-radius)] bg-[var(--admin-surface-alt)]">
+                {viewCat.image
+                  ? <Image src={viewCat.image} alt={viewCat.name} fill sizes="100%" className="object-cover object-center" />
+                  : <div className="h-full w-full" style={{ background: viewCat.color ?? "#f0ece4" }} />
+                }
+              </div>
+              <div className="flex items-center gap-3">
+                <h3 className="text-xl font-semibold text-[var(--admin-text)] flex-1">{viewCat.name}</h3>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${viewCat.type === "main" ? "bg-[var(--admin-primary)] text-white" : "border border-[var(--admin-border)] text-[var(--admin-text-soft)]"}`}>
+                  {viewCat.type === "main" ? "Main" : "Sub"}
+                </span>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${viewCat.status === "active" ? "bg-[var(--admin-success-soft)] text-[var(--admin-success)]" : "bg-[var(--admin-danger-soft)] text-[var(--admin-danger)]"}`}>
+                  {viewCat.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-[15px]">
+                {[
+                  { label: "Slug",       val: `/${viewCat.slug}` },
+                  { label: "Sort Order", val: String(viewCat.sort_order) },
+                  { label: "Parent",     val: parentName(viewCat.parent_id) },
+                  { label: "Products",   val: String(viewCat.product_count) },
+                ].map(({ label, val }) => (
+                  <div key={label} className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-3">
+                    <div className="text-[12px] font-semibold text-[var(--admin-text-muted)] mb-1">{label}</div>
+                    <div className="font-mono text-[var(--admin-text)]">{val}</div>
+                  </div>
+                ))}
+              </div>
+              {viewCat.seo_title && (
+                <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-3 text-[15px]">
+                  <div className="text-[12px] font-semibold text-[var(--admin-text-muted)] mb-1">SEO Title</div>
+                  <div className="text-[var(--admin-text)]">{viewCat.seo_title}</div>
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-1">
+                <AdminButton variant="outline" onClick={() => { setViewCat(null); openEdit(viewCat); }}>
+                  Edit
+                </AdminButton>
+                <AdminButton variant="primary" onClick={() => setViewCat(null)}>
+                  Close
+                </AdminButton>
               </div>
             </div>
           </div>
         </div>
-
-      {/* View modal */}
-      {viewCat && (
-        <Modal title="Category Details" onClose={() => setViewCat(null)}>
-          <div className="space-y-4">
-            <div className="relative h-32 w-full overflow-hidden bg-cream">
-              {viewCat.image
-                ? <Image src={viewCat.image} alt={viewCat.name} fill sizes="100%" className="object-cover object-center" />
-                : <div className="h-full w-full" style={{ background: viewCat.color ?? "#f0ece4" }} />
-              }
-            </div>
-            <div className="flex items-center gap-3">
-              <h3 className="font-display text-3xl italic flex-1">{viewCat.name}</h3>
-              <span className={`px-2.5 py-1 text-sm uppercase tracking-[0.16em] ${viewCat.type === "main" ? "bg-ink text-ivory" : "border border-border-soft text-ink-soft"}`}>
-                {viewCat.type === "main" ? "Main" : "Sub"}
-              </span>
-              <span className={`px-2.5 py-1 text-sm uppercase tracking-[0.16em] ${viewCat.status === "active" ? "bg-sage/15 text-sage" : "bg-sale/10 text-sale"}`}>
-                {viewCat.status}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-base">
-              {[
-                { label: "Slug",       val: `/${viewCat.slug}` },
-                { label: "Sort Order", val: String(viewCat.sort_order) },
-                { label: "Parent",     val: parentName(viewCat.parent_id) },
-                { label: "Products",   val: String(viewCat.product_count) },
-              ].map(({ label, val }) => (
-                <div key={label} className="border border-border-soft bg-cream p-3">
-                  <div className="text-sm uppercase tracking-[0.2em] text-muted mb-1">{label}</div>
-                  <div className="font-mono">{val}</div>
-                </div>
-              ))}
-            </div>
-            {viewCat.seo_title && (
-              <div className="border border-border-soft bg-cream p-3 text-base">
-                <div className="text-sm uppercase tracking-[0.2em] text-muted mb-1">SEO Title</div>
-                <div>{viewCat.seo_title}</div>
-              </div>
-            )}
-          </div>
-          <div className="mt-5 flex justify-end gap-2">
-            <button onClick={() => { setViewCat(null); openEdit(viewCat); }}
-              className="h-12 border border-border-soft px-5 text-sm uppercase tracking-[0.2em] text-ink-soft hover:bg-cream transition-colors">
-              Edit
-            </button>
-            <button onClick={() => setViewCat(null)}
-              className="h-12 bg-ink px-6 text-sm uppercase tracking-[0.2em] text-ivory hover:bg-gold-dark transition-colors">
-              Close
-            </button>
-          </div>
-        </Modal>
       )}
 
       {/* Add / Edit modal */}
       {(addOpen || editCat) && (
-        <Modal title={addOpen ? "Add Category" : "Edit Category"}
-          onClose={() => { setAddOpen(false); setEditCat(null); }}>
-          <CategoryForm form={form} setForm={setForm} allCats={cats}
-            saving={saving}
-            onSave={addOpen ? handleSaveAdd : handleSaveEdit}
-            onCancel={() => { setAddOpen(false); setEditCat(null); }} />
-        </Modal>
-      )}
-
-      {/* Delete confirm */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4">
-          <div className="w-full max-w-sm bg-ivory shadow-2xl">
-            <div className="px-6 pt-6 pb-4">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center bg-sale/10">
-                <AlertTriangle className="h-7 w-7 text-sale" />
-              </div>
-              <h2 className="font-display text-2xl italic">Delete category?</h2>
-              <p className="mt-2 text-base leading-relaxed text-ink-soft">
-                Permanently delete <strong>{deleteTarget.name}</strong>? Subcategories or products linked to it will need to be reassigned.
-              </p>
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 py-8">
+          <div className="relative w-full max-w-lg rounded-[var(--admin-radius)] bg-[var(--admin-surface)] shadow-lg">
+            <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-6 py-5">
+              <h2 className="text-lg font-semibold text-[var(--admin-text)]">{addOpen ? "Add Category" : "Edit Category"}</h2>
+              <button
+                onClick={() => { setAddOpen(false); setEditCat(null); }}
+                className="flex h-9 w-9 items-center justify-center rounded-[var(--admin-radius)] text-[var(--admin-text-muted)] hover:bg-[var(--admin-surface-alt)] hover:text-[var(--admin-text)] transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <div className="flex items-center justify-end gap-3 border-t border-border-soft px-6 py-4">
-              <button onClick={() => setDeleteTarget(null)}
-                className="h-12 border border-border-soft px-5 text-sm uppercase tracking-[0.2em] text-ink-soft hover:bg-cream transition-colors">
-                Cancel
-              </button>
-              <button onClick={handleDelete} disabled={deleting}
-                className="h-12 bg-sale px-6 text-sm uppercase tracking-[0.2em] text-ivory hover:opacity-90 transition-opacity disabled:opacity-60">
-                {deleting ? "Deleting…" : "Delete"}
-              </button>
+            <div className="px-6 py-5 max-h-[75vh] overflow-y-auto">
+              <CategoryForm
+                form={form}
+                setForm={setForm}
+                allCats={cats}
+                saving={saving}
+                onSave={addOpen ? handleSaveAdd : handleSaveEdit}
+                onCancel={() => { setAddOpen(false); setEditCat(null); }}
+              />
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete confirm */}
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title={deleteTarget ? `Delete "${deleteTarget.name}"?` : ""}
+        description="Products in this category will become uncategorized. This cannot be undone."
+        confirmLabel="Delete category"
+        destructive
+        loading={deleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </AdminShell>
-  );
-}
-
-// ─── Modal wrapper ────────────────────────────────────────────────────────────
-
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/50 px-4 py-8">
-      <div className="relative w-full max-w-lg bg-ivory shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border-soft px-6 py-5">
-          <h2 className="font-display text-2xl italic">{title}</h2>
-          <button onClick={onClose} className="flex h-10 w-10 items-center justify-center text-muted hover:bg-cream hover:text-ink transition-colors">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="px-6 py-5 max-h-[75vh] overflow-y-auto">{children}</div>
-      </div>
-    </div>
   );
 }
 
@@ -510,79 +546,101 @@ function CategoryForm({
 
   const isFeatured = form.type === "featured";
 
+  const inputCls = "h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]";
+  const labelCls = "mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]";
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm uppercase tracking-[0.22em] text-muted">Name *</span>
-          <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Silk Suits"
-            className="h-12 border border-border-soft bg-cream px-3 text-base outline-none focus:border-ink" />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm uppercase tracking-[0.22em] text-muted">Slug (URL)</span>
-          <input value={form.slug} onChange={(e) => set("slug", e.target.value)} placeholder="ladies-suits"
-            className="h-12 border border-border-soft bg-cream px-3 text-base font-mono outline-none focus:border-ink" />
-        </label>
+        <div>
+          <label className={labelCls}>Name *</label>
+          <input
+            value={form.name}
+            onChange={(e) => set("name", e.target.value)}
+            placeholder="e.g. Silk Suits"
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Slug (URL)</label>
+          <input
+            value={form.slug}
+            onChange={(e) => set("slug", e.target.value)}
+            placeholder="ladies-suits"
+            className={`${inputCls} font-mono`}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm uppercase tracking-[0.22em] text-muted">Type</span>
-          <select value={form.type} onChange={(e) => set("type", e.target.value)}
-            className="h-12 border border-border-soft bg-cream px-3 text-base outline-none focus:border-ink">
+        <div>
+          <label className={labelCls}>Type</label>
+          <select
+            value={form.type}
+            onChange={(e) => set("type", e.target.value)}
+            className={inputCls}
+          >
             <option value="main">Main Category</option>
             <option value="sub">Subcategory</option>
             <option value="featured">Featured (Homepage Tile)</option>
           </select>
-        </label>
+        </div>
         {isFeatured ? (
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm uppercase tracking-[0.22em] text-muted">Link URL</span>
-            <input value={form.seo_desc ?? ""} onChange={(e) => set("seo_desc", e.target.value || null)}
+          <div>
+            <label className={labelCls}>Link URL</label>
+            <input
+              value={form.seo_desc ?? ""}
+              onChange={(e) => set("seo_desc", e.target.value || null)}
               placeholder="/ladies"
-              className="h-12 border border-border-soft bg-cream px-3 text-base font-mono outline-none focus:border-ink" />
-          </label>
+              className={`${inputCls} font-mono`}
+            />
+          </div>
         ) : (
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm uppercase tracking-[0.22em] text-muted">Parent Category</span>
-            <select value={form.parent_id ?? ""}
+          <div>
+            <label className={labelCls}>Parent Category</label>
+            <select
+              value={form.parent_id ?? ""}
               onChange={(e) => set("parent_id", e.target.value || null)}
-              className="h-12 border border-border-soft bg-cream px-3 text-base outline-none focus:border-ink">
+              className={inputCls}
+            >
               <option value="">— None (top level) —</option>
               {allCats.filter((c) => c.type !== "featured").map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-          </label>
+          </div>
         )}
       </div>
 
       {/* Image upload */}
       <div>
-        <div className="mb-1.5 text-sm uppercase tracking-[0.22em] text-muted">
-          Category Image {isFeatured && <span className="ml-1 text-gold-dark">(required for homepage tile)</span>}
+        <div className="mb-1.5 text-[14px] font-semibold text-[var(--admin-text)]">
+          Category Image {isFeatured && <span className="ml-1 font-normal text-[var(--admin-text-soft)]">(required for homepage tile)</span>}
         </div>
-        {uploadError && <p className="mb-2 text-sm text-sale">{uploadError}</p>}
+        {uploadError && <p className="mb-2 text-[13px] text-[var(--admin-danger)]">{uploadError}</p>}
         {form.image ? (
-          <div className="group relative h-32 overflow-hidden bg-cream">
+          <div className="group relative h-32 overflow-hidden rounded-[var(--admin-radius)] bg-[var(--admin-surface-alt)]">
             <Image src={form.image} alt="Preview" fill sizes="100%" className="object-cover object-center" />
-            <div className="absolute inset-0 flex items-center justify-center gap-3 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity">
-              <label className="flex cursor-pointer items-center gap-1.5 bg-ivory px-3 py-1.5 text-sm uppercase tracking-[0.18em] text-ink hover:bg-gold-dark hover:text-ivory transition-colors">
-                <Upload className="h-5 w-5" /> Replace
+            <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+              <label className="flex cursor-pointer items-center gap-1.5 rounded-[var(--admin-radius)] bg-[var(--admin-surface)] px-3 py-1.5 text-sm font-medium text-[var(--admin-text)] hover:bg-[var(--admin-surface-alt)] transition-colors">
+                <Upload className="h-4 w-4" /> Replace
                 <input type="file" accept="image/*" className="sr-only"
                   onChange={(e) => handleImageUpload(e.target.files)} />
               </label>
-              <button type="button" onClick={() => set("image", null)}
-                className="flex items-center gap-1.5 bg-sale px-3 py-1.5 text-sm uppercase tracking-[0.18em] text-ivory hover:opacity-90 transition-opacity">
-                <X className="h-5 w-5" /> Remove
+              <button
+                type="button"
+                onClick={() => set("image", null)}
+                className="flex items-center gap-1.5 rounded-[var(--admin-radius)] bg-[var(--admin-danger)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              >
+                <X className="h-4 w-4" /> Remove
               </button>
             </div>
           </div>
         ) : (
-          <label className={`flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed border-border-soft bg-cream p-6 transition-colors hover:border-ink/30 ${uploading ? "pointer-events-none opacity-60" : ""}`}>
-            <Upload className={`h-5 w-5 ${uploading ? "animate-bounce text-gold-dark" : "text-muted"}`} />
-            <span className="text-base text-ink-soft">{uploading ? "Uploading…" : "Click to upload image"}</span>
-            <span className="text-sm text-muted">PNG, JPG, WebP · recommended 3:4 ratio</span>
+          <label className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-6 transition-colors hover:border-[var(--admin-primary)] ${uploading ? "pointer-events-none opacity-60" : ""}`}>
+            <Upload className={`h-5 w-5 ${uploading ? "animate-bounce text-[var(--admin-primary)]" : "text-[var(--admin-text-muted)]"}`} />
+            <span className="text-[15px] text-[var(--admin-text-soft)]">{uploading ? "Uploading…" : "Click to upload image"}</span>
+            <span className="text-[13px] text-[var(--admin-text-muted)]">PNG, JPG, WebP · recommended 3:4 ratio</span>
             <input type="file" accept="image/*" className="sr-only"
               onChange={(e) => handleImageUpload(e.target.files)} />
           </label>
@@ -590,52 +648,70 @@ function CategoryForm({
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm uppercase tracking-[0.22em] text-muted">Status</span>
-          <select value={form.status} onChange={(e) => set("status", e.target.value)}
-            className="h-12 border border-border-soft bg-cream px-3 text-base outline-none focus:border-ink">
+        <div>
+          <label className={labelCls}>Status</label>
+          <select
+            value={form.status}
+            onChange={(e) => set("status", e.target.value)}
+            className={inputCls}
+          >
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm uppercase tracking-[0.22em] text-muted">Sort Order</span>
-          <input type="number" value={form.sort_order} min={1}
+        </div>
+        <div>
+          <label className={labelCls}>Sort Order</label>
+          <input
+            type="number"
+            value={form.sort_order}
+            min={1}
             onChange={(e) => set("sort_order", parseInt(e.target.value) || 1)}
-            className="h-12 border border-border-soft bg-cream px-3 text-base outline-none focus:border-ink" />
-        </label>
+            className={inputCls}
+          />
+        </div>
       </div>
 
       {!isFeatured && (
-        <div className="border border-border-soft bg-cream p-4 space-y-3">
+        <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-muted" />
-            <span className="text-sm uppercase tracking-[0.22em] text-muted">SEO</span>
+            <Layers className="h-4 w-4 text-[var(--admin-text-muted)]" />
+            <span className="text-[14px] font-semibold text-[var(--admin-text-muted)]">SEO</span>
           </div>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm uppercase tracking-[0.2em] text-muted">Meta Title</span>
-            <input value={form.seo_title ?? ""} onChange={(e) => set("seo_title", e.target.value || null)}
+          <div>
+            <label className={labelCls}>Meta Title</label>
+            <input
+              value={form.seo_title ?? ""}
+              onChange={(e) => set("seo_title", e.target.value || null)}
               placeholder="Ladies Silk Suits | Habiba Minhas"
-              className="h-12 border border-border-soft bg-ivory px-3 text-base outline-none focus:border-ink" />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm uppercase tracking-[0.2em] text-muted">Meta Description</span>
-            <textarea rows={2} value={form.seo_desc ?? ""} onChange={(e) => set("seo_desc", e.target.value || null)}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Meta Description</label>
+            <textarea
+              rows={2}
+              value={form.seo_desc ?? ""}
+              onChange={(e) => set("seo_desc", e.target.value || null)}
               placeholder="Shop premium silk suits…"
-              className="resize-none border border-border-soft bg-ivory px-3 py-2 text-base outline-none focus:border-ink" />
-          </label>
+              className="w-full resize-none rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+            />
+          </div>
         </div>
       )}
 
       <div className="flex items-center justify-end gap-3 pt-2">
-        <button onClick={onCancel}
-          className="h-12 border border-border-soft px-5 text-sm uppercase tracking-[0.2em] text-ink-soft hover:bg-cream transition-colors">
+        <AdminButton variant="outline" onClick={onCancel} disabled={saving || uploading}>
           Cancel
-        </button>
-        <button onClick={onSave} disabled={saving || uploading}
-          className="h-12 bg-ink px-7 text-sm uppercase tracking-[0.2em] text-ivory hover:bg-gold-dark transition-colors flex items-center gap-2 disabled:opacity-60">
-          <Check className="h-5 w-5" /> {saving ? "Saving…" : "Save Category"}
-        </button>
+        </AdminButton>
+        <AdminButton
+          variant="primary"
+          onClick={onSave}
+          disabled={saving || uploading}
+          loading={saving}
+          leadingIcon={<Check className="h-4 w-4" />}
+        >
+          {saving ? "Saving…" : "Save Category"}
+        </AdminButton>
       </div>
     </div>
   );

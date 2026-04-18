@@ -1,0 +1,27 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e10]:
+        - generic [ref=e11]: Habiba Minhas
+        - generic [ref=e12]: Admin Setup
+    - generic [ref=e13]:
+      - heading "Create Admin Account" [level=2] [ref=e14]
+      - paragraph [ref=e15]: Set up the first super-admin for your store. This page is only available once.
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Full Name
+          - textbox "Habiba Minhas" [ref=e19]
+        - generic [ref=e20]:
+          - generic [ref=e21]: Email Address
+          - textbox "admin@habibaminhas.com" [ref=e22]
+        - generic [ref=e23]:
+          - generic [ref=e24]: Password
+          - textbox "Min. 8 characters" [ref=e25]
+        - generic [ref=e26]:
+          - generic [ref=e27]: Confirm Password
+          - textbox "Repeat password" [ref=e28]
+        - button "Create Admin Account" [ref=e30]:
+          - generic [ref=e31]: Create Admin Account
+  - button "Open Next.js Dev Tools" [ref=e37] [cursor=pointer]:
+    - img [ref=e38]

@@ -1,443 +1,295 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  TrendingUp, AlertTriangle, ChevronRight,
-  ArrowUpRight, Calendar, DollarSign, BarChart2,
+  ShoppingBag,
+  Plus,
+  Users,
+  Settings as SettingsIcon,
+  Package,
+  AlertTriangle,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminCard } from "@/components/admin/ui/card";
+import { AdminButton } from "@/components/admin/ui/button";
+import { EmptyState } from "@/components/admin/ui/empty-state";
 import { getProducts } from "@/lib/actions/products";
-import { getOrderStats } from "@/lib/actions/orders";
+import { getOrderStats, getOrders } from "@/lib/actions/orders";
 import { getCustomerStats } from "@/lib/actions/customers";
+import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
 
 type Product = Tables<"products">;
-import { formatPrice } from "@/lib/utils";
-
-// ── Illustrative weekly data (no historical DB yet) ────────────────────────────
-const WEEK_REVENUE = [38400, 52100, 41800, 63200, 57400, 74800, 68300];
-const WEEK_LABELS  = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const WEEK_ORDERS  = [4, 7, 5, 9, 8, 12, 10];
-
-function MiniBarChart({ values, labels, color = "#a8804b" }: { values: number[]; labels: string[]; color?: string }) {
-  const max = Math.max(...values);
-  const bw = 26; const gap = 6; const padX = 4; const h = 72;
-  const totalW = values.length * (bw + gap) + padX * 2;
-  return (
-    <svg viewBox={`0 0 ${totalW} ${h + 22}`} className="w-full" style={{ display: "block", height: h + 22 }} preserveAspectRatio="none">
-      {values.map((v, i) => {
-        const barH = (v / max) * h;
-        const x = padX + i * (bw + gap);
-        const fill = i === values.length - 1 ? color : color + "99";
-        return (
-          <g key={i}>
-            <rect x={x} y={h - barH} width={bw} height={barH} fill={fill} rx="1" />
-            <text x={x + bw / 2} y={h + 14} textAnchor="middle" fontSize="7.5" fill="#9a9080" fontFamily="inherit">{labels[i]}</text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-function MiniLineChart({ values, color = "#8c9b7e" }: { values: number[]; color?: string }) {
-  const max = Math.max(...values); const min = Math.min(...values);
-  const w = 300; const h = 60;
-  const pts = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * w;
-    const y = h - ((v - min) / (max - min || 1)) * h;
-    return `${x},${y}`;
-  }).join(" ");
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ display: "block", height: h }} preserveAspectRatio="none">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {values.map((v, i) => (
-        <circle key={i} cx={(i / (values.length - 1)) * w} cy={h - ((v - min) / (max - min || 1)) * h} r="3" fill={color} />
-      ))}
-    </svg>
-  );
-}
-
-function SkeletonCard() {
-  return (
-    <div className="border border-border-soft bg-ivory p-6">
-      <div className="skeleton h-4 w-24 rounded" />
-      <div className="skeleton mt-3 h-8 w-32 rounded" />
-      <div className="skeleton mt-3 h-4 w-40 rounded" />
-    </div>
-  );
-}
-
-function SkeletonTable() {
-  return (
-    <div className="border border-border-soft bg-ivory">
-      <div className="border-b border-border-soft px-6 py-5">
-        <div className="skeleton h-6 w-40 rounded" />
-      </div>
-      <div className="space-y-4 px-6 py-5">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex items-center gap-4">
-            <div className="skeleton h-14 w-11 shrink-0 rounded" />
-            <div className="flex-1 space-y-2">
-              <div className="skeleton h-4 w-3/4 rounded" />
-              <div className="skeleton h-3 w-1/2 rounded" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SkeletonSidebar() {
-  return (
-    <div className="flex flex-col gap-5">
-      <div className="border border-border-soft bg-ivory p-6">
-        <div className="skeleton h-6 w-36 rounded" />
-        <div className="mt-4 space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i}>
-              <div className="skeleton h-4 w-full rounded" />
-              <div className="skeleton mt-2 h-2 w-full rounded" />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="border border-border-soft bg-ink p-6">
-        <div className="skeleton h-6 w-32 rounded opacity-30" />
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="skeleton h-10 w-full rounded opacity-20" />
-          <div className="skeleton h-10 w-full rounded opacity-20" />
-        </div>
-      </div>
-    </div>
-  );
-}
+type Order = Tables<"orders">;
 
 export const metadata = { title: "Dashboard | Admin" };
 
-const statusStyle: Record<string, { bg: string; text: string; dot: string }> = {
-  processing: { bg: "bg-gold/30",  text: "text-gold-dark", dot: "#a8804b" },
-  dispatched:  { bg: "bg-blue-50",  text: "text-blue-700",  dot: "#2563eb" },
-  delivered:   { bg: "bg-sage/20",  text: "text-sage",      dot: "#8c9b7e" },
-  cancelled:   { bg: "bg-sale/10",  text: "text-sale",      dot: "#9c3b2f" },
-  pending:     { bg: "bg-cream",    text: "text-ink-soft",   dot: "#a8804b" },
-};
+function TodayStat({
+  label,
+  value,
+  caption,
+  valueClass = "",
+}: {
+  label: string;
+  value: string;
+  caption: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="px-6 py-5">
+      <div className="text-[13px] font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">
+        {label}
+      </div>
+      <div className={`mt-2 text-[34px] font-bold leading-none tabular-nums text-[var(--admin-text)] ${valueClass}`}>
+        {value}
+      </div>
+      <div className="mt-2 text-[13px] text-[var(--admin-text-muted)]">
+        {caption}
+      </div>
+    </div>
+  );
+}
+
+function Tile({
+  icon,
+  label,
+  hint,
+  href,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex h-[120px] flex-col justify-between rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 transition-colors hover:border-[var(--admin-primary)] hover:bg-[var(--admin-primary-soft)]"
+    >
+      <div className="text-[var(--admin-text-soft)] group-hover:text-[var(--admin-primary)]">
+        {icon}
+      </div>
+      <div>
+        <div className="text-[16px] font-semibold text-[var(--admin-text)] group-hover:text-[var(--admin-primary)]">
+          {label}
+        </div>
+        <div className="mt-0.5 text-[13px] text-[var(--admin-text-muted)]">
+          {hint}
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default async function AdminDashboard() {
-  const [orderStats, customerStats, allProducts] = await Promise.all([
+  const [orderStats, customerStats, allProducts, allOrders] = await Promise.all([
     getOrderStats().catch(() => null),
     getCustomerStats().catch(() => null),
-    getProducts().catch(() => []),
+    getProducts().catch(() => [] as Product[]),
+    getOrders().catch(() => [] as Order[]),
   ]);
 
-  const lowStockProducts = allProducts
-    .filter((p: Product) => p.stock <= 5)
-    .sort((a: Product, b: Product) => a.stock - b.stock)
-    .slice(0, 4);
-
-  const topProducts = allProducts
-    .filter((p: Product) => p.status === "active")
-    .slice(0, 5);
-
-  const stats = [
-    {
-      label: "Total Revenue",
-      value: orderStats ? formatPrice(orderStats.totalRevenue) : "—",
-      change: "+18.4%", up: true, sub: "all time",
-    },
-    {
-      label: "Active orders",
-      value: orderStats ? String(orderStats.byStatus.pending + orderStats.byStatus.processing + orderStats.byStatus.dispatched) : "—",
-      change: `${orderStats?.todayCount ?? 0} today`, up: true, sub: "new today",
-    },
-    {
-      label: "Total Customers",
-      value: customerStats ? String(customerStats.total) : "—",
-      change: `${customerStats?.newThisMonth ?? 0} new`, up: true, sub: "this month",
-    },
-    {
-      label: "Avg. lifetime value",
-      value: customerStats ? formatPrice(customerStats.avgLifetimeValue) : "—",
-      change: `${customerStats?.vip ?? 0} VIP`, up: true, sub: "customers",
-    },
-  ];
-
-  const orderStatusDist = orderStats ? [
-    { label: "Pending",    count: orderStats.byStatus.pending,    total: orderStats.total, color: "bg-gold-dark" },
-    { label: "Processing", count: orderStats.byStatus.processing, total: orderStats.total, color: "bg-blue-400" },
-    { label: "Dispatched", count: orderStats.byStatus.dispatched, total: orderStats.total, color: "bg-ink" },
-    { label: "Delivered",  count: orderStats.byStatus.delivered,  total: orderStats.total, color: "bg-sage" },
-    { label: "Cancelled",  count: orderStats.byStatus.cancelled,  total: orderStats.total, color: "bg-sale" },
-  ] : [];
-
-  const today = new Date().toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" });
-
-  const hasNoData = !orderStats && !customerStats && allProducts.length === 0;
+  const hasNoData =
+    !orderStats && !customerStats && allProducts.length === 0;
 
   if (hasNoData) {
     return (
       <AdminShell title="Dashboard">
-        <div className="flex-1 overflow-y-auto px-5 py-5 md:px-8 md:py-8">
-          {/* Skeleton stats */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-          {/* Skeleton charts */}
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-8">
-              <div className="border border-border-soft bg-ivory p-6">
-                <div className="skeleton h-6 w-40 rounded" />
-                <div className="skeleton mt-4 h-24 w-full rounded" />
-              </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          <AdminCard>
+            <EmptyState
+              title="Welcome to your store"
+              description="Your store is ready. Add your first product to get started."
+            />
+            <div className="mt-2 flex justify-center">
+              <Link href="/admin/products">
+                <AdminButton variant="primary">Add product</AdminButton>
+              </Link>
             </div>
-            <div className="lg:col-span-4">
-              <div className="border border-border-soft bg-ivory p-6">
-                <div className="skeleton h-6 w-32 rounded" />
-                <div className="skeleton mt-4 h-16 w-full rounded" />
-              </div>
-            </div>
-          </div>
-          {/* Skeleton content */}
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-8">
-              <SkeletonTable />
-            </div>
-            <div className="lg:col-span-4">
-              <SkeletonSidebar />
-            </div>
-          </div>
+          </AdminCard>
         </div>
       </AdminShell>
     );
   }
 
+  const pendingShip =
+    (orderStats?.byStatus.pending ?? 0) +
+    (orderStats?.byStatus.processing ?? 0);
+
+  const pendingOrders = (allOrders as Order[])
+    .filter((o) => o.status === "pending" || o.status === "processing")
+    .slice(0, 5);
+
+  const lowStock = allProducts
+    .filter((p: Product) => p.stock <= 5)
+    .sort((a: Product, b: Product) => a.stock - b.stock)
+    .slice(0, 5);
+
   return (
     <AdminShell title="Dashboard">
-        <div className="flex-1 overflow-y-auto px-5 py-5 md:px-8 md:py-8">
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label} className="border border-border-soft bg-ivory p-6">
-                <div className="text-sm tracking-wide text-muted">{s.label}</div>
-                <div className="mt-2 font-display text-3xl italic text-ink">{s.value}</div>
-                <div className="mt-2 flex items-center gap-2 text-base text-sage">
-                  <TrendingUp className="h-5 w-5" />
-                  <span>{s.change}</span>
-                  <span className="text-muted">{s.sub}</span>
-                </div>
-              </div>
-            ))}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        {/* 1. Today panel */}
+        <AdminCard padded={false} className="overflow-hidden">
+          <div className="h-1 w-full bg-[var(--admin-primary)]" />
+          <div className="grid grid-cols-1 divide-y divide-[var(--admin-border)] md:grid-cols-3 md:divide-x md:divide-y-0">
+            <TodayStat
+              label="New orders today"
+              value={String(orderStats?.todayCount ?? 0)}
+              caption="today"
+            />
+            <TodayStat
+              label="Revenue today"
+              value={formatPrice(orderStats?.todayRevenue ?? 0)}
+              caption="today"
+            />
+            <TodayStat
+              label="Pending to ship"
+              value={String(pendingShip)}
+              caption={pendingShip > 0 ? "waiting" : "all caught up"}
+              valueClass={
+                pendingShip > 0 ? "text-[var(--admin-warning)]" : ""
+              }
+            />
           </div>
+        </AdminCard>
 
-          {/* Charts row */}
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {/* Revenue chart */}
-            <section className="lg:col-span-8 border border-border-soft bg-ivory p-6">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <h2 className="font-display text-2xl italic">Weekly Revenue</h2>
-                  <p className="mt-0.5 text-sm text-muted">
-                    {formatPrice(WEEK_REVENUE.reduce((a, v) => a + v, 0))} this week
-                    <span className="ml-2 text-sage">+18.4% vs last week</span>
-                  </p>
-                </div>
-                <BarChart2 className="h-6 w-6 text-muted" />
-              </div>
-              <MiniBarChart values={WEEK_REVENUE} labels={WEEK_LABELS} color="#a8804b" />
-            </section>
-
-            {/* Orders sparkline */}
-            <section className="lg:col-span-4 border border-border-soft bg-ivory p-6">
-              <div className="mb-3">
-                <h2 className="font-display text-2xl italic">Daily Orders</h2>
-                <p className="mt-0.5 text-sm text-muted">
-                  {WEEK_ORDERS.reduce((a, v) => a + v, 0)} orders · peak {Math.max(...WEEK_ORDERS)}
-                </p>
-              </div>
-              <MiniLineChart values={WEEK_ORDERS} color="#8c9b7e" />
-              <div className="mt-2 flex items-center justify-between text-sm tracking-wide text-muted">
-                <span>Mon</span><span>Sun</span>
-              </div>
-            </section>
+        {/* 2. Action tiles */}
+        <section className="mt-6">
+          <h2 className="mb-3 text-[18px] font-semibold text-[var(--admin-text)]">
+            What do you want to do?
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Tile
+              icon={<ShoppingBag className="h-7 w-7" />}
+              label="View orders"
+              hint={`${pendingShip} pending`}
+              href="/admin/orders"
+            />
+            <Tile
+              icon={<Plus className="h-7 w-7" />}
+              label="Add product"
+              hint={`${allProducts.length} items`}
+              href="/admin/products"
+            />
+            <Tile
+              icon={<Users className="h-7 w-7" />}
+              label="Customers"
+              hint={`${customerStats?.total ?? 0} total`}
+              href="/admin/customers"
+            />
+            <Tile
+              icon={<SettingsIcon className="h-7 w-7" />}
+              label="Settings"
+              hint="Store, shipping, payment"
+              href="/admin/settings"
+            />
           </div>
+        </section>
 
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-
-            {/* Top products */}
-            <section className="lg:col-span-8 border border-border-soft bg-ivory">
-              <div className="flex items-center justify-between border-b border-border-soft px-6 py-5">
-                <h2 className="font-display text-2xl italic">Active Products</h2>
-                <Link href="/admin/products" className="flex items-center gap-2 text-sm tracking-wide text-gold-dark hover:text-ink">
-                  View all <ChevronRight className="h-5 w-5" />
+        {/* 3. Needs your attention */}
+        <section className="mt-6">
+          <AdminCard padded={false}>
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[18px] font-semibold text-[var(--admin-text)]">
+                  Orders waiting
+                </h3>
+                <Link
+                  href="/admin/orders"
+                  className="text-sm font-medium text-[var(--admin-primary)] hover:underline"
+                >
+                  View all →
                 </Link>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-cream text-sm tracking-wide text-muted">
-                    <tr>
-                      <th className="px-5 py-4 font-medium">Product</th>
-                      <th className="px-5 py-4 font-medium">Category</th>
-                      <th className="px-5 py-4 text-center font-medium">Stock</th>
-                      <th className="px-5 py-4 text-right font-medium">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-soft">
-                    {topProducts.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-5 py-10 text-center text-base text-muted">No products yet.</td>
-                      </tr>
-                    ) : topProducts.map((p: Product) => (
-                      <tr key={p.id} className="hover:bg-cream/50 transition-colors">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="relative h-14 w-11 shrink-0 overflow-hidden bg-cream">
-                              {p.images?.[0] ? (
-                                <Image src={p.images[0]} alt={p.title} fill sizes="44px" className="object-cover object-top" />
-                              ) : (
-                                <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${p.palette[0]}, ${p.palette[1]})` }} />
-                              )}
-                            </div>
-                            <span className="text-base font-medium line-clamp-1">{p.title}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4 text-base text-ink-soft">{p.category}</td>
-                        <td className="px-5 py-4 text-center">
-                          <span className={`text-base font-medium tabular-nums ${p.stock === 0 ? "text-sale" : p.stock <= 5 ? "text-gold-dark" : "text-sage"}`}>
-                            {p.stock}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-right text-base font-medium">{formatPrice(p.price)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            {/* Right column */}
-            <div className="lg:col-span-4 flex flex-col gap-5">
-
-              {/* Order Status Distribution */}
-              <section className="border border-border-soft bg-ivory">
-                <div className="border-b border-border-soft px-6 py-5">
-                  <h2 className="font-display text-2xl italic">Order distribution</h2>
-                  <p className="mt-0.5 text-sm tracking-wide text-muted">All time · {orderStats?.total ?? 0} total</p>
-                </div>
-                {orderStatusDist.length === 0 ? (
-                  <p className="px-6 py-5 text-base text-muted">No orders yet.</p>
-                ) : (
-                  <ul className="space-y-4 px-6 py-5">
-                    {orderStatusDist.map((s) => {
-                      const pct = s.total > 0 ? Math.round((s.count / s.total) * 100) : 0;
-                      return (
-                        <li key={s.label}>
-                          <div className="mb-1.5 flex items-center justify-between">
-                            <span className="text-sm tracking-wide text-ink-soft">{s.label}</span>
-                            <span className="text-base font-medium tabular-nums">{s.count}</span>
-                          </div>
-                          <div className="h-2 w-full bg-cream overflow-hidden">
-                            <div className={`h-full ${s.color} transition-all`} style={{ width: `${pct}%` }} />
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                <div className="border-t border-border-soft px-6 py-4">
-                  <Link href="/admin/orders" className="text-sm tracking-wide text-gold-dark hover:text-ink">
-                    View all orders →
-                  </Link>
-                </div>
-              </section>
-
-              {/* Today's Activity */}
-              <section className="border border-border-soft bg-ink text-ivory">
-                <div className="border-b border-ivory/10 px-6 py-5">
-                  <h2 className="font-display text-2xl italic text-ivory">Today&apos;s activity</h2>
-                  <p className="mt-0.5 text-sm tracking-wide text-ivory/40">{today}</p>
-                </div>
-                <div className="grid grid-cols-2 divide-x divide-ivory/10">
-                  <div className="px-6 py-5">
-                    <div className="flex items-center gap-2 text-ivory/40 mb-1.5">
-                      <Calendar className="h-5 w-5" />
-                      <span className="text-sm tracking-wide">Orders</span>
-                    </div>
-                    <div className="font-display text-3xl italic text-ivory">{orderStats?.todayCount ?? 0}</div>
-                  </div>
-                  <div className="px-6 py-5">
-                    <div className="flex items-center gap-2 text-ivory/40 mb-1.5">
-                      <DollarSign className="h-5 w-5" />
-                      <span className="text-sm tracking-wide">Revenue</span>
-                    </div>
-                    <div className="font-display text-3xl italic text-ivory">{formatPrice(orderStats?.todayRevenue ?? 0)}</div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Low stock alert */}
-              <section className="border border-border-soft bg-ivory">
-                <div className="flex items-center gap-2 border-b border-border-soft px-6 py-5">
-                  <AlertTriangle className="h-6 w-6 text-gold-dark" />
-                  <h2 className="font-display text-2xl italic">Low stock</h2>
-                </div>
-                {lowStockProducts.length === 0 ? (
-                  <p className="px-6 py-5 text-base text-muted">All products well stocked.</p>
-                ) : (
-                  <ul className="divide-y divide-border-soft">
-                    {lowStockProducts.map((p: Product) => (
-                      <li key={p.id} className="flex items-center gap-3 px-6 py-4">
-                        <div className="relative h-14 w-11 shrink-0 overflow-hidden bg-cream">
-                          {p.images?.[0] ? (
-                            <Image src={p.images[0]} alt={p.title} fill sizes="44px" className="object-cover object-top" />
-                          ) : (
-                            <div className="h-full w-full" style={{ background: `linear-gradient(135deg, ${p.palette[0]}, ${p.palette[1]})` }} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate text-base font-medium">{p.title}</div>
-                          <div className={`text-sm ${p.stock === 0 ? "text-sale font-medium" : "text-gold-dark"}`}>
-                            {p.stock === 0 ? "Out of stock" : `${p.stock} left`}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="border-t border-border-soft px-6 py-4">
-                  <Link href="/admin/products" className="text-sm tracking-wide text-gold-dark hover:text-ink">
-                    Manage inventory →
-                  </Link>
-                </div>
-              </section>
-
-              {/* Quick actions */}
-              <section className="border border-border-soft bg-ivory p-6">
-                <h2 className="font-display text-2xl italic mb-4">Quick actions</h2>
-                <div className="flex flex-col gap-3">
-                  {[
-                    { label: "Add new product", href: "/admin/products" },
-                    { label: "Process pending orders", href: "/admin/orders" },
-                    { label: "View customers", href: "/admin/customers" },
-                    { label: "Update settings", href: "/admin/settings" },
-                  ].map((a) => (
-                    <Link
-                      key={a.label}
-                      href={a.href}
-                      className="flex items-center justify-between border border-border-soft px-5 py-4 text-base text-ink-soft hover:bg-cream hover:text-ink transition-colors"
+              {pendingOrders.length === 0 ? (
+                <p className="mt-4 text-[15px] text-[var(--admin-text-muted)]">
+                  No pending orders. All caught up.
+                </p>
+              ) : (
+                <ul className="mt-4 divide-y divide-[var(--admin-border)]">
+                  {pendingOrders.map((o) => (
+                    <li
+                      key={o.id}
+                      className="flex items-center justify-between gap-3 py-3 first:pt-0"
                     >
-                      {a.label}
-                      <ArrowUpRight className="h-5 w-5 text-muted" />
-                    </Link>
+                      <div className="min-w-0">
+                        <div className="text-[15px] font-semibold text-[var(--admin-text)]">
+                          #{o.order_number}
+                        </div>
+                        <div className="truncate text-[13px] text-[var(--admin-text-soft)]">
+                          {o.customer_name} · {formatPrice(o.total)}
+                        </div>
+                      </div>
+                      <Link href="/admin/orders">
+                        <AdminButton variant="outline" size="sm">
+                          Process →
+                        </AdminButton>
+                      </Link>
+                    </li>
                   ))}
-                </div>
-              </section>
+                </ul>
+              )}
             </div>
-          </div>
 
-        </div>
+            <div className="h-px bg-[var(--admin-border)]" />
+
+            <div className="p-6">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-[var(--admin-warning)]" />
+                <h3 className="text-[18px] font-semibold text-[var(--admin-text)]">
+                  Low stock
+                </h3>
+              </div>
+              {lowStock.length === 0 ? (
+                <p className="mt-4 text-[15px] text-[var(--admin-text-muted)]">
+                  All products well stocked.
+                </p>
+              ) : (
+                <ul className="mt-4 divide-y divide-[var(--admin-border)]">
+                  {lowStock.map((p: Product) => (
+                    <li
+                      key={p.id}
+                      className="flex items-center gap-3 py-3 first:pt-0"
+                    >
+                      <div className="relative h-12 w-10 shrink-0 overflow-hidden rounded bg-[var(--admin-surface-alt)]">
+                        {p.images?.[0] ? (
+                          <Image
+                            src={p.images[0]}
+                            alt={p.title}
+                            fill
+                            sizes="40px"
+                            className="object-cover object-top"
+                          />
+                        ) : (
+                          <Package className="absolute inset-0 m-auto h-5 w-5 text-[var(--admin-text-muted)]" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[15px] font-medium text-[var(--admin-text)]">
+                          {p.title}
+                        </div>
+                        <div
+                          className={`text-[13px] font-semibold ${
+                            p.stock === 0
+                              ? "text-[var(--admin-danger)]"
+                              : "text-[var(--admin-warning)]"
+                          }`}
+                        >
+                          {p.stock === 0 ? "Out of stock" : `${p.stock} left`}
+                        </div>
+                      </div>
+                      <Link href="/admin/products">
+                        <AdminButton variant="outline" size="sm">
+                          Edit
+                        </AdminButton>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </AdminCard>
+        </section>
+      </div>
     </AdminShell>
   );
 }

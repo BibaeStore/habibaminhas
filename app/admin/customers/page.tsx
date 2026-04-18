@@ -3,19 +3,28 @@
 import { useState, useMemo, useEffect } from "react";
 import { Search, Filter, Download, Mail, Phone, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminCard } from "@/components/admin/ui/card";
+import { AdminButton } from "@/components/admin/ui/button";
+import { PageHeader } from "@/components/admin/ui/page-header";
+import { StatusPill, type StatusTone } from "@/components/admin/ui/status-pill";
+import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
 import { getCustomers, getCustomerStats, updateCustomer, deleteCustomer } from "@/lib/actions/customers";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
 
 type Customer = Tables<"customers">;
 
-const tierStyle: Record<string, { bg: string; text: string }> = {
-  VIP:     { bg: "bg-gold/30",   text: "text-gold-dark" },
-  Regular: { bg: "bg-sage/15",   text: "text-sage" },
-  New:     { bg: "bg-border-soft", text: "text-ink-soft" },
+const TIER_TONE: Record<string, StatusTone> = {
+  VIP:     "warning",
+  Regular: "success",
+  New:     "neutral",
 };
 
 type Stats = { total: number; vip: number; newThisMonth: number; avgLifetimeValue: number };
+
+function initials(name: string) {
+  return name.split(" ").map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+}
 
 export default function AdminCustomersPage() {
   const [customers,    setCustomers]    = useState<Customer[]>([]);
@@ -29,6 +38,7 @@ export default function AdminCustomersPage() {
   const [deleting,     setDeleting]     = useState(false);
   const [selectedIds,  setSelectedIds]  = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const loadData = () => {
     setLoading(true);
@@ -99,233 +109,274 @@ export default function AdminCustomersPage() {
     });
   };
 
+  const newThisMonth = stats?.newThisMonth ?? 0;
+
   return (
     <AdminShell title="Customers">
-        <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
 
-          {/* Summary cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-            {statCards.map((s) => (
-              <div key={s.label} className="border border-border-soft bg-ivory p-4">
-                <div className="text-sm tracking-[0.22em] text-muted">{s.label}</div>
-                <div className="mt-1.5 font-display text-3xl italic">{s.value}</div>
-              </div>
-            ))}
+        <PageHeader
+          title="Customers"
+          subtitle={`${customers.length} total${newThisMonth ? `, ${newThisMonth} new this month` : ""}`}
+        />
+
+        {/* Summary stat tiles */}
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((s) => (
+            <AdminCard key={s.label}>
+              <div className="text-xs font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">{s.label}</div>
+              <div className="mt-1.5 text-3xl font-semibold text-[var(--admin-text)]">{s.value}</div>
+            </AdminCard>
+          ))}
+        </div>
+
+        {/* Toolbar */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--admin-text-muted)]" />
+            <input
+              type="search"
+              placeholder="Search by name, email, phone…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] pl-10 pr-3 text-[15px] outline-none focus:border-[var(--admin-primary)] sm:w-72"
+            />
           </div>
-
-          {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-              <input type="search" placeholder="Search by name, email, phone…" value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-12 w-full border border-border-soft bg-ivory pl-9 pr-3 text-base outline-none focus:border-ink sm:w-72" />
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="flex h-12 items-center gap-2 border border-border-soft bg-ivory px-4 text-sm uppercase tracking-[0.2em] text-ink-soft hover:bg-cream">
-                <Filter className="h-5 w-5" /> Filter
-              </button>
-              <button className="flex h-12 items-center gap-2 border border-border-soft bg-ivory px-4 text-sm uppercase tracking-[0.2em] text-ink-soft hover:bg-cream">
-                <Download className="h-5 w-5" /> Export
-              </button>
-            </div>
-          </div>
-
-          {/* Bulk delete bar */}
-          {selectedIds.size > 0 && (
-            <div className="mt-4 flex items-center gap-4 border-2 border-sale/30 bg-sale/5 px-5 py-4">
-              <span className="text-base font-semibold text-ink">
-                {selectedIds.size} item{selectedIds.size > 1 ? "s" : ""} selected
-              </span>
-              <button onClick={async () => {
-                if (!confirm(`Delete ${selectedIds.size} item(s)?`)) return;
-                setBulkDeleting(true);
-                for (const id of selectedIds) { await deleteCustomer(id); }
-                setSelectedIds(new Set());
-                setBulkDeleting(false);
-                loadData();
-              }} disabled={bulkDeleting}
-                className="flex h-12 items-center gap-2 bg-sale px-6 text-base font-semibold text-ivory hover:opacity-90 disabled:opacity-60">
-                <Trash2 className="h-5 w-5" /> {bulkDeleting ? "Deleting..." : "Delete Selected"}
-              </button>
-              <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-base text-ink-soft hover:text-ink">
-                Clear selection
-              </button>
-            </div>
-          )}
-
-          {/* Table */}
-          <div className="mt-4 border border-border-soft bg-ivory">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-cream text-sm font-semibold uppercase tracking-[0.22em] text-muted">
-                  <tr>
-                    <th className="px-5 py-4 font-medium">
-                      <input type="checkbox" className="h-5 w-5 accent-ink cursor-pointer"
-                        checked={allFilteredSelected}
-                        onChange={toggleSelectAll} />
-                    </th>
-                    <th className="px-5 py-4 font-medium">Customer</th>
-                    <th className="px-5 py-4 font-medium">Contact</th>
-                    <th className="px-5 py-4 font-medium">City</th>
-                    <th className="px-5 py-4 font-medium text-right">Orders</th>
-                    <th className="px-5 py-4 font-medium text-right">Total spent</th>
-                    <th className="px-5 py-4 font-medium">Joined</th>
-                    <th className="px-5 py-4 font-medium">Tier</th>
-                    <th className="px-5 py-4 font-medium" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-soft">
-                  {loading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i}>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-5" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-32" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-40" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-20" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-10 ml-auto" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-20 ml-auto" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-24" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-14" /></td>
-                        <td className="px-5 py-5"><div className="skeleton h-5 w-24" /></td>
-                      </tr>
-                    ))
-                  ) : filtered.map((c) => {
-                    const s = tierStyle[c.tier] ?? tierStyle.New;
-                    const joined = new Date(c.created_at).toLocaleDateString("en-PK", { month: "short", year: "numeric" });
-                    return (
-                      <tr key={c.id} className="hover:bg-cream/40 transition-colors">
-                        <td className="px-5 py-5">
-                          <input type="checkbox" className="h-5 w-5 accent-ink cursor-pointer"
-                            checked={selectedIds.has(c.id)}
-                            onChange={() => toggleSelect(c.id)} />
-                        </td>
-                        <td className="px-5 py-5">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-cream font-display text-lg italic text-gold-dark">
-                              {c.name[0]?.toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="text-base font-medium">{c.name}</div>
-                              <div className="text-sm text-muted truncate max-w-[160px]">{c.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-5">
-                          <div className="flex items-center gap-1.5 text-sm text-ink-soft">
-                            <Mail className="h-5 w-5 text-muted" /> {c.email}
-                          </div>
-                          {c.phone && (
-                            <div className="mt-0.5 flex items-center gap-1.5 text-sm text-ink-soft">
-                              <Phone className="h-5 w-5 text-muted" /> {c.phone}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-5 py-5 text-base text-ink-soft">{c.city ?? "—"}</td>
-                        <td className="px-5 py-5 text-right text-base">{c.total_orders}</td>
-                        <td className="px-5 py-5 text-right text-base font-medium">{formatPrice(c.total_spent)}</td>
-                        <td className="px-5 py-5 text-base text-ink-soft">{joined}</td>
-                        <td className="px-5 py-5">
-                          <span className={`px-2.5 py-1 text-sm uppercase tracking-[0.18em] ${s.bg} ${s.text}`}>
-                            {c.tier}
-                          </span>
-                        </td>
-                        <td className="px-5 py-5">
-                          <div className="flex items-center gap-1.5">
-                            <button onClick={() => openEdit(c)}
-                              className="flex h-10 items-center gap-2 px-3 text-sm bg-gold/20 text-gold-dark hover:bg-gold-dark hover:text-ivory transition-colors" title="Edit">
-                              <Pencil className="h-5 w-5" /> Edit
-                            </button>
-                            <button onClick={() => setDeleteTarget(c)}
-                              className="flex h-10 items-center gap-2 px-3 text-sm bg-sale/10 text-sale hover:bg-sale hover:text-ivory transition-colors" title="Delete">
-                              <Trash2 className="h-5 w-5" /> Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {!loading && filtered.length === 0 && (
-                    <tr>
-                      <td colSpan={9} className="px-5 py-14 text-center text-base text-muted">
-                        {search ? "No customers match your search." : "No customers yet."}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex items-center justify-between border-t border-border-soft px-5 py-3">
-              <span className="text-base text-muted">Showing {filtered.length} of {customers.length} customers</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <AdminButton variant="outline" leadingIcon={<Filter className="h-4 w-4" />}>
+              Filter
+            </AdminButton>
+            <AdminButton variant="outline" leadingIcon={<Download className="h-4 w-4" />}>
+              Export
+            </AdminButton>
           </div>
         </div>
 
+        {/* Bulk delete bar */}
+        {selectedIds.size > 0 && (
+          <div className="mt-4 flex items-center gap-4 rounded-[var(--admin-radius)] border border-red-200 bg-red-50 px-5 py-3">
+            <span className="text-sm font-semibold text-[var(--admin-text)]">
+              {selectedIds.size} item{selectedIds.size > 1 ? "s" : ""} selected
+            </span>
+            <AdminButton
+              variant="danger"
+              size="sm"
+              leadingIcon={<Trash2 className="h-4 w-4" />}
+              onClick={() => setConfirmBulkDelete(true)}
+              disabled={bulkDeleting}
+              loading={bulkDeleting}
+            >
+              {bulkDeleting ? "Deleting..." : "Delete Selected"}
+            </AdminButton>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="ml-auto text-sm text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
+
+        {/* Table */}
+        <AdminCard padded={false} className="mt-5 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-[var(--admin-surface-alt)] text-[13px] font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">
+                <tr>
+                  <th className="px-5 py-4 font-semibold">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-[var(--admin-primary)] cursor-pointer"
+                      checked={allFilteredSelected}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
+                  <th className="px-5 py-4 font-semibold">Customer</th>
+                  <th className="px-5 py-4 font-semibold">Contact</th>
+                  <th className="px-5 py-4 font-semibold">City</th>
+                  <th className="px-5 py-4 font-semibold text-right">Orders</th>
+                  <th className="px-5 py-4 font-semibold text-right">Total spent</th>
+                  <th className="px-5 py-4 font-semibold">Joined</th>
+                  <th className="px-5 py-4 font-semibold">Tier</th>
+                  <th className="px-5 py-4 font-semibold" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--admin-border)]">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-5" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-32" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-40" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-20" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-10 ml-auto" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-20 ml-auto" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-24" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-14" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-24" /></td>
+                    </tr>
+                  ))
+                ) : filtered.map((c) => {
+                  const tone = TIER_TONE[c.tier] ?? "neutral";
+                  const joined = new Date(c.created_at).toLocaleDateString("en-PK", { month: "short", year: "numeric" });
+                  return (
+                    <tr key={c.id} className="h-14 transition-colors hover:bg-[var(--admin-surface-alt)]">
+                      <td className="px-5">
+                        <input
+                          type="checkbox"
+                          className="h-5 w-5 accent-[var(--admin-primary)] cursor-pointer"
+                          checked={selectedIds.has(c.id)}
+                          onChange={() => toggleSelect(c.id)}
+                        />
+                      </td>
+                      <td className="px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--admin-primary-soft)] text-sm font-bold text-[var(--admin-primary)]">
+                            {initials(c.name)}
+                          </div>
+                          <div>
+                            <div className="font-medium text-[var(--admin-text)]">{c.name}</div>
+                            <div className="text-xs text-[var(--admin-text-muted)] truncate max-w-[160px]">{c.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5">
+                        <div className="flex items-center gap-1.5 text-sm text-[var(--admin-text-soft)]">
+                          <Mail className="h-4 w-4 text-[var(--admin-text-muted)]" /> {c.email}
+                        </div>
+                        {c.phone && (
+                          <div className="mt-0.5 flex items-center gap-1.5 text-sm text-[var(--admin-text-soft)]">
+                            <Phone className="h-4 w-4 text-[var(--admin-text-muted)]" /> {c.phone}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-5 text-sm text-[var(--admin-text-soft)]">{c.city ?? "—"}</td>
+                      <td className="px-5 text-right text-sm text-[var(--admin-text)]">{c.total_orders}</td>
+                      <td className="px-5 text-right text-sm font-medium text-[var(--admin-text)]">{formatPrice(c.total_spent)}</td>
+                      <td className="px-5 text-sm text-[var(--admin-text-soft)]">{joined}</td>
+                      <td className="px-5">
+                        <StatusPill tone={tone}>{c.tier}</StatusPill>
+                      </td>
+                      <td className="px-5">
+                        <div className="flex items-center gap-1.5">
+                          <AdminButton
+                            variant="outline"
+                            size="sm"
+                            leadingIcon={<Pencil className="h-3.5 w-3.5" />}
+                            onClick={() => openEdit(c)}
+                          >
+                            Edit
+                          </AdminButton>
+                          <AdminButton
+                            variant="danger"
+                            size="sm"
+                            leadingIcon={<Trash2 className="h-3.5 w-3.5" />}
+                            onClick={() => setDeleteTarget(c)}
+                          >
+                            Delete
+                          </AdminButton>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!loading && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-5 py-14 text-center text-sm text-[var(--admin-text-muted)]">
+                      {search ? "No customers match your search." : "No customers yet."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-between border-t border-[var(--admin-border)] px-5 py-3">
+            <span className="text-sm text-[var(--admin-text-muted)]">
+              Showing {filtered.length} of {customers.length} customers
+            </span>
+          </div>
+        </AdminCard>
+      </div>
+
       {/* Edit Customer Dialog */}
       {editTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4">
-          <div className="w-full max-w-md bg-ivory shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border-soft px-6 py-5">
-              <h2 className="font-display text-2xl italic">Edit Customer</h2>
-              <button onClick={() => setEditTarget(null)} className="flex h-10 w-10 items-center justify-center text-muted transition-colors hover:bg-cream hover:text-ink">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md bg-[var(--admin-surface)] shadow-xl rounded-[var(--admin-radius)]">
+            <div className="flex h-[72px] items-center justify-between border-b border-[var(--admin-border)] px-6">
+              <h2 className="text-xl font-semibold text-[var(--admin-text)]">Edit Customer</h2>
+              <button
+                onClick={() => setEditTarget(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-[var(--admin-radius)] text-[var(--admin-text-muted)] transition-colors hover:bg-[var(--admin-surface-alt)] hover:text-[var(--admin-text)]"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="space-y-4 px-6 py-5">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm uppercase tracking-[0.22em] text-muted">Full Name</span>
-                <input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  className="h-12 border border-border-soft bg-cream px-3 text-base outline-none focus:border-ink" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">Full Name</span>
+                <input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-3 text-sm text-[var(--admin-text)] outline-none focus:border-[var(--admin-primary)]"
+                />
               </label>
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm uppercase tracking-[0.22em] text-muted">Email</span>
-                <input defaultValue={editTarget.email} readOnly
-                  className="h-12 border border-border-soft bg-cream px-3 text-base text-muted outline-none cursor-not-allowed" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">Email</span>
+                <input
+                  defaultValue={editTarget.email}
+                  readOnly
+                  className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-3 text-sm text-[var(--admin-text-muted)] outline-none cursor-not-allowed"
+                />
               </label>
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm uppercase tracking-[0.22em] text-muted">Phone Number</span>
-                <input value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
-                  className="h-12 border border-border-soft bg-cream px-3 text-base outline-none focus:border-ink" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">Phone Number</span>
+                <input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-3 text-sm text-[var(--admin-text)] outline-none focus:border-[var(--admin-primary)]"
+                />
               </label>
             </div>
-            <div className="flex items-center justify-end gap-3 border-t border-border-soft px-6 py-4">
-              <button onClick={() => setEditTarget(null)} className="h-12 border border-border-soft px-5 text-sm uppercase tracking-[0.2em] text-ink-soft transition-colors hover:bg-cream">
+            <div className="flex items-center justify-end gap-3 border-t border-[var(--admin-border)] px-6 py-4">
+              <AdminButton variant="outline" size="sm" onClick={() => setEditTarget(null)}>
                 Cancel
-              </button>
-              <button onClick={handleSaveEdit} disabled={saving}
-                className="h-12 bg-ink px-6 text-sm uppercase tracking-[0.2em] text-ivory transition-colors hover:bg-gold-dark disabled:opacity-60">
+              </AdminButton>
+              <AdminButton variant="primary" size="sm" onClick={handleSaveEdit} disabled={saving} loading={saving}>
                 {saving ? "Saving…" : "Save Changes"}
-              </button>
+              </AdminButton>
             </div>
           </div>
         </div>
       )}
 
       {/* Delete Confirmation */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4">
-          <div className="w-full max-w-sm bg-ivory shadow-2xl">
-            <div className="px-6 pt-6 pb-4">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center bg-sale/10">
-                <AlertTriangle className="h-7 w-7 text-sale" />
-              </div>
-              <h2 className="font-display text-2xl italic">Delete account?</h2>
-              <p className="mt-2 text-base leading-relaxed text-ink-soft">
-                This will permanently delete <strong>{deleteTarget.name}&apos;s</strong> account and all associated data. This action cannot be undone.
-              </p>
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-border-soft px-6 py-4">
-              <button onClick={() => setDeleteTarget(null)} className="h-12 border border-border-soft px-5 text-sm uppercase tracking-[0.2em] text-ink-soft transition-colors hover:bg-cream">
-                Cancel
-              </button>
-              <button onClick={handleDelete} disabled={deleting}
-                className="h-12 bg-sale px-6 text-sm uppercase tracking-[0.2em] text-ivory transition-colors hover:opacity-90 disabled:opacity-60">
-                {deleting ? "Deleting…" : "Delete Account"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete account?"
+        description={deleteTarget ? `This will permanently delete ${deleteTarget.name}'s account and all associated data. This action cannot be undone.` : ""}
+        confirmLabel={deleting ? "Deleting…" : "Delete Account"}
+        destructive
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
+
+      {/* Bulk Delete Confirmation */}
+      <ConfirmModal
+        open={confirmBulkDelete}
+        title={`Delete ${selectedIds.size} customer${selectedIds.size > 1 ? "s" : ""}?`}
+        description="This will permanently delete the selected accounts and all associated data. This action cannot be undone."
+        confirmLabel={bulkDeleting ? "Deleting..." : "Delete Selected"}
+        destructive
+        onCancel={() => setConfirmBulkDelete(false)}
+        onConfirm={async () => {
+          setBulkDeleting(true);
+          setConfirmBulkDelete(false);
+          for (const id of selectedIds) { await deleteCustomer(id); }
+          setSelectedIds(new Set());
+          setBulkDeleting(false);
+          loadData();
+        }}
+      />
     </AdminShell>
   );
 }

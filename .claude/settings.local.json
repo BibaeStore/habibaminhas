@@ -84,7 +84,17 @@
       "Bash(cat)",
       "Read(//tmp/**)",
       "Bash(grep -v \"^D:/web/habibaminhas/app/[^/]*/page.tsx$\")",
-      "Bash(find /f/web/habibaminhas -type f -name *admin*)"
+      "Bash(find /f/web/habibaminhas -type f -name *admin*)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git checkout *)",
+      "Bash(git commit *)",
+      "Bash(grep *)",
+      "Bash(python3 *)",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Bash(kill %1)",
+      "Bash(pkill -f \"next dev\")",
+      "mcp__plugin_playwright_playwright__browser_wait_for"
     ]
   }
 }
