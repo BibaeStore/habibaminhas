@@ -137,3 +137,7 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Playwright MCP runtime artifacts (QA screenshots, snapshots)
+.playwright-mcp/
+qa-*.png
