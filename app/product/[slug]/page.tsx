@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   ChevronRight,
@@ -11,8 +10,8 @@ import {
 } from "lucide-react";
 import { getProductBySlug, getProducts } from "@/lib/actions/products";
 import { formatPrice } from "@/lib/utils";
-import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { Badge } from "@/components/ui/badge";
+import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductCard, type CardProduct } from "@/components/product/product-card";
 import { AddToCartSection } from "@/components/product/add-to-cart-section";
 import type { Tables } from "@/lib/supabase/types";
@@ -38,8 +37,6 @@ export async function generateMetadata({
     return { title: "Product" };
   }
 }
-
-const motifs = ["floral", "lattice", "ogee", "arch"] as const;
 
 const CATEGORY_LINKS: Record<string, { label: string; href: string }> = {
   "ladies-suits": { label: "Ladies", href: "/ladies" },
@@ -93,63 +90,15 @@ export default async function ProductPage({
       <section className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-12">
         {/* Gallery */}
         <div className="lg:col-span-7">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-6">
-            <div className="sm:col-span-6">
-              {mainImage ? (
-                <div className="relative aspect-[4/5] w-full overflow-hidden bg-cream">
-                  <Image
-                    src={mainImage}
-                    alt={product.title}
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 58vw"
-                    className="object-cover object-top"
-                  />
-                </div>
-              ) : (
-                <PlaceholderImage
-                  tone={product.palette as [string, string, string]}
-                  motif="floral"
-                  aspect="4/5"
-                  animate
-                />
-              )}
-            </div>
-            {[0, 1, 2, 3].map((i) => {
-              const img = product.images?.[i + 1] ?? null;
-              return (
-                <div
-                  key={i}
-                  className="sm:col-span-3 lg:col-span-2 xl:col-span-3"
-                >
-                  {img ?? mainImage ? (
-                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-cream opacity-70 hover:opacity-100 transition-opacity cursor-pointer">
-                      <Image
-                        src={img ?? mainImage!}
-                        alt={`${product.title} view ${i + 2}`}
-                        fill
-                        sizes="(max-width: 640px) 50vw, 20vw"
-                        className="object-cover object-top"
-                        style={{
-                          objectPosition: ["top", "center", "bottom", "top"][i],
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <PlaceholderImage
-                      tone={product.palette as [string, string, string]}
-                      motif={motifs[i]}
-                      aspect="3/4"
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <ProductGallery
+            images={product.images ?? []}
+            title={product.title}
+            palette={product.palette}
+          />
         </div>
 
         {/* Info panel */}
-        <div className="lg:col-span-5 lg:sticky lg:top-28 lg:self-start">
+        <div className="lg:col-span-5 lg:sticky lg:top-[116px] lg:self-start">
           <div className="flex flex-wrap items-center gap-2">
             {product.badge ? (
               <Badge variant={product.badge === "Bestseller" ? "gold" : "default"}>

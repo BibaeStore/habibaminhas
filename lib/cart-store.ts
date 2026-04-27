@@ -17,6 +17,9 @@ export type CartItem = {
 
 interface CartStore {
   items: CartItem[];
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
   addItem: (item: Omit<CartItem, "cartKey" | "qty">) => void;
   removeItem: (cartKey: string) => void;
   updateQty: (cartKey: string, qty: number) => void;
@@ -27,6 +30,9 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      drawerOpen: false,
+      openDrawer: () => set({ drawerOpen: true }),
+      closeDrawer: () => set({ drawerOpen: false }),
       addItem: (item) => {
         const cartKey = `${item.slug}:${item.size ?? "onesize"}`;
         const existing = get().items.find((i) => i.cartKey === cartKey);

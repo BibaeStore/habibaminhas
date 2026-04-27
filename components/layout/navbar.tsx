@@ -3,36 +3,22 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import {
-  Search,
-  User,
-  Heart,
-  ShoppingBag,
-  Menu,
-  ChevronDown,
-  Globe,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, User, Heart, Menu, ChevronDown, Globe } from "lucide-react";
+import { CartTrigger } from "@/components/cart/cart-trigger";
 import { megaMenus } from "@/lib/data";
 import { MegaPanel } from "./mega-panel";
 import { MobileMenu } from "./mobile-menu";
-import { SearchOverlay } from "./search-overlay";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
+  const router = useRouter();
   const [open, setOpen] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
 
-  // ── Close-delay timer ───────────────────────────────────────────────────
-  // The header's own bounding-box is only 74 px tall.  The mega panel sits
-  // below it via `position:absolute; top:100%`.  Without a delay the mouse
-  // crossing the 74 px edge fires mouseleave on <header> and instantly kills
-  // the panel before the cursor reaches any link inside it.
-  //
-  // Pattern: schedule close after 150 ms; cancel it the moment the mouse
-  // re-enters any nav trigger or the panel itself.
+  // Close-delay timer — prevents panel closing when mouse crosses the 74px header gap
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function scheduleClose() {
@@ -46,7 +32,6 @@ export function Navbar() {
     }
   }
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -60,7 +45,6 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Fetch category images from DB once on mount
   useEffect(() => {
     fetch("/api/categories/images")
       .then((r) => r.json())
@@ -68,10 +52,15 @@ export function Navbar() {
       .catch(() => {});
   }, []);
 
+  const goToSearch = () => {
+    setOpen(null);
+    router.push("/search");
+  };
+
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 bg-ivory/85 backdrop-blur-md transition-shadow",
+        "bg-ivory/95 backdrop-blur-md transition-shadow",
         scrolled ? "shadow-[0_1px_0_rgba(26,22,18,0.06)]" : "",
       )}
       onMouseLeave={scheduleClose}
@@ -92,14 +81,14 @@ export function Navbar() {
             <button
               type="button"
               aria-label="Search"
-              onClick={() => setSearchOpen(true)}
+              onClick={goToSearch}
               className="p-2 text-ink hover:text-gold-dark"
             >
               <Search className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Logo — left-aligned on all breakpoints */}
+          {/* Logo */}
           <Link href="/" aria-label="Habiba Minhas" onMouseEnter={cancelClose}>
             <Image
               src="/logo/habiba-minhas-logo-t.png"
@@ -154,14 +143,12 @@ export function Navbar() {
         </div>
 
         {/* Right: utility icons */}
-        <div
-          className="flex items-center gap-1 sm:gap-2"
-          onMouseEnter={cancelClose}
-        >
+        <div className="flex items-center gap-1 sm:gap-2" onMouseEnter={cancelClose}>
+          {/* Search button → navigates to /search page */}
           <button
             type="button"
             aria-label="Search"
-            onClick={() => { setOpen(null); setSearchOpen(true); }}
+            onClick={goToSearch}
             className="hidden lg:inline-flex items-center gap-2 border border-border-soft px-3 py-1.5 text-ink hover:border-ink hover:text-gold-dark transition-colors"
           >
             <Search className="h-[15px] w-[15px]" />
@@ -180,23 +167,10 @@ export function Navbar() {
           <Link href="/account" aria-label="Account" className="p-2 text-ink hover:text-gold-dark">
             <User className="h-[18px] w-[18px]" />
           </Link>
-          <Link
-            href="/wishlist"
-            aria-label="Wishlist"
-            className="p-2 text-ink hover:text-gold-dark"
-          >
+          <Link href="/wishlist" aria-label="Wishlist" className="p-2 text-ink hover:text-gold-dark">
             <Heart className="h-[18px] w-[18px]" />
           </Link>
-          <Link
-            href="/cart"
-            aria-label="Cart"
-            className="relative p-2 text-ink hover:text-gold-dark"
-          >
-            <ShoppingBag className="h-[18px] w-[18px]" />
-            <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[9px] font-semibold text-ivory">
-              2
-            </span>
-          </Link>
+          <CartTrigger />
         </div>
       </div>
 
@@ -216,7 +190,6 @@ export function Navbar() {
         : null}
 
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }

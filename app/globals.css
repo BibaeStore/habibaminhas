@@ -30,12 +30,27 @@
 
 :root {
   color-scheme: light;
+  /* PromoBar (~36px) + Navbar mobile h-16 (64px) */
+  --header-h: 100px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    /* PromoBar (~36px) + Navbar desktop h-[74px] */
+    --header-h: 110px;
+  }
 }
 
 html,
 body {
   background: var(--color-ivory);
   color: var(--color-ink);
+}
+
+/* Firefox branded scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gold-dark) var(--color-parchment);
 }
 
 body {
@@ -146,4 +161,21 @@ body {
     radial-gradient(circle at 70% 60%, #000 0.4px, transparent 1px),
     radial-gradient(circle at 40% 80%, #000 0.5px, transparent 1px);
   background-size: 3px 3px, 4px 4px, 5px 5px;
+}
+
+/* ── WebKit branded scrollbar ───────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-parchment);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-gold-dark);
+  border-radius: 4px;
+  border: 2px solid var(--color-parchment);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-soft);
 }

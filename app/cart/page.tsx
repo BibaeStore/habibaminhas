@@ -154,7 +154,7 @@ export default function CartPage() {
         </div>
 
         <aside className="lg:col-span-4">
-          <div className="sticky top-28 flex flex-col gap-5 border border-border-soft bg-cream p-6">
+          <div className="sticky top-[116px] flex flex-col gap-5 border border-border-soft bg-cream p-6">
             <h2 className="font-display text-2xl italic">Order Summary</h2>
             <dl className="flex flex-col gap-2 text-[13px]">
               <div className="flex justify-between">

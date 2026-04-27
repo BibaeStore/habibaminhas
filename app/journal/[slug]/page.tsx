@@ -211,7 +211,7 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
 
         {/* Sidebar */}
         <aside className="lg:col-span-4">
-          <div className="sticky top-28 flex flex-col gap-8">
+          <div className="sticky top-[116px] flex flex-col gap-8">
             {/* Related posts */}
             {relatedPosts.length > 0 && (
               <div>

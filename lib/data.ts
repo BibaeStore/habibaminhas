@@ -49,7 +49,7 @@ export const megaMenus: MegaMenu[] = [
       subtitle: "3-piece formal suits handcrafted with silk and artisan embroidery.",
       href: "/ladies",
       tone: "rose",
-      image: "/editorial/ladies-collection.webp",
+      image: "/HeroSection/ladies-suits.webp",
     },
   },
   {
@@ -89,7 +89,7 @@ export const megaMenus: MegaMenu[] = [
       subtitle: "Festive co-ord sets for little girls — embroidered, silk-lined, celebration-ready.",
       href: "/kids",
       tone: "gold",
-      image: "/products/royal-amethyst-gown.webp",
+      image: "/HeroSection/kids-formal.webp",
     },
   },
   {
@@ -129,7 +129,7 @@ export const megaMenus: MegaMenu[] = [
       subtitle: "10-piece deluxe plush nursery set — the complete starter for your nursery.",
       href: "/baby",
       tone: "sage",
-      image: "/products/pastel-dream-nursery.webp",
+      image: "/HeroSection/baby-bedding.webp",
     },
   },
   {
@@ -158,7 +158,7 @@ export const megaMenus: MegaMenu[] = [
       subtitle: "3-piece headband & floral clip sets — made by hand, gifted with love.",
       href: "/accessories",
       tone: "ink",
-      image: "/editorial/accessories.webp",
+      image: "/HeroSection/accessories.webp",
     },
   },
 ];

@@ -22,7 +22,7 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="relative overflow-hidden"
+      className="relative overflow-hidden w-full"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >

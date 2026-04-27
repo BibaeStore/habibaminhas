@@ -18,13 +18,11 @@ const PAYMENT_OPTIONS: {
   label: string;
   subtitle: string;
   logo: string;
-  logoW: number;
-  logoH: number;
 }[] = [
-  { value: "cod",       label: "Cash on Delivery",   subtitle: "Pay when your order arrives",    logo: "/logos/payments/cod.webp",          logoW: 56, logoH: 32 },
-  { value: "card",      label: "Debit / Credit Card", subtitle: "Visa · Mastercard · Bank transfer", logo: "/logos/payments/bank-transfer.webp", logoW: 32, logoH: 32 },
-  { value: "jazzcash",  label: "JazzCash",            subtitle: "Pay with your JazzCash account",  logo: "/logos/payments/jazzcash.webp",     logoW: 72, logoH: 36 },
-  { value: "easypaisa", label: "Easypaisa",           subtitle: "Pay with your Easypaisa account", logo: "/logos/payments/easypaisa.webp",    logoW: 72, logoH: 36 },
+  { value: "cod",       label: "Cash on Delivery",    subtitle: "Pay when your order arrives",      logo: "/logos/payments/cod.webp"          },
+  { value: "card",      label: "Debit / Credit Card",  subtitle: "Visa · Mastercard · Bank transfer", logo: "/logos/payments/bank-transfer.webp" },
+  { value: "jazzcash",  label: "JazzCash",             subtitle: "Pay with your JazzCash account",   logo: "/logos/payments/jazzcash.webp"     },
+  { value: "easypaisa", label: "Easypaisa",            subtitle: "Pay with your Easypaisa account",  logo: "/logos/payments/easypaisa.webp"    },
 ];
 
 export default function PaymentPage() {
@@ -34,6 +32,12 @@ export default function PaymentPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Scroll to top once content becomes visible (mounted flips from null to full render)
+  useEffect(() => {
+    if (!mounted) return;
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -119,7 +123,7 @@ export default function PaymentPage() {
             <div className="flex flex-col items-center gap-1.5">
               <div className={`flex h-8 w-8 items-center justify-center text-[11px] font-medium transition-colors ${
                 step.done
-                  ? "bg-sage text-ivory"
+                  ? "bg-gold-dark text-ivory"
                   : step.active
                   ? "bg-ink text-ivory"
                   : "border border-border-soft bg-cream text-muted"
@@ -130,7 +134,9 @@ export default function PaymentPage() {
                 step.active ? "text-ink font-medium" : "text-muted"
               }`}>{step.label}</span>
             </div>
-            {i < 2 && <div className="mx-3 mb-5 h-px w-14 bg-border-soft sm:w-24" />}
+            {i < 2 && (
+              <div className={`mx-3 mb-5 h-px w-14 sm:w-24 ${step.done ? "bg-gold-dark" : "bg-border-soft"}`} />
+            )}
           </div>
         ))}
       </nav>
@@ -152,26 +158,32 @@ export default function PaymentPage() {
               {PAYMENT_OPTIONS.map((opt) => (
                 <label
                   key={opt.value}
-                  className={`flex cursor-pointer items-center gap-4 border px-5 py-4 transition-colors ${
+                  className={`flex cursor-pointer items-center gap-4 border-2 px-5 py-4 transition-colors ${
                     payMethod === opt.value
                       ? "border-ink bg-cream"
                       : "border-border-soft bg-ivory hover:border-ink/40"
                   }`}
                 >
+                  {/* Custom radio */}
+                  <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                    payMethod === opt.value ? "border-ink bg-ink" : "border-border-soft"
+                  }`}>
+                    {payMethod === opt.value && <span className="h-1.5 w-1.5 rounded-full bg-ivory" />}
+                  </div>
                   <input
                     type="radio"
                     name="payment"
                     checked={payMethod === opt.value}
                     onChange={() => setPayMethod(opt.value)}
-                    className="accent-ink"
+                    className="sr-only"
                   />
-                  {/* Logo */}
-                  <div className="flex h-10 w-20 shrink-0 items-center">
+                  {/* Logo — fixed 36×52 px box, all logos same height */}
+                  <div className="relative h-9 w-[52px] shrink-0">
                     <Image
                       src={opt.logo}
                       alt={opt.label}
-                      width={opt.logoW}
-                      height={opt.logoH}
+                      fill
+                      sizes="52px"
                       className="object-contain"
                     />
                   </div>
@@ -187,10 +199,6 @@ export default function PaymentPage() {
                       <Image src="/logos/payments/mastercard.webp" alt="Mastercard" width={28} height={22} className="object-contain" />
                     </div>
                   )}
-                  {/* Active indicator dot */}
-                  {payMethod === opt.value && (
-                    <div className="ml-auto h-2 w-2 shrink-0 rounded-full bg-ink" />
-                  )}
                 </label>
               ))}
             </div>
@@ -200,21 +208,37 @@ export default function PaymentPage() {
               <div className="border border-border-soft bg-ivory p-5">
                 <div className="flex flex-col gap-4">
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] uppercase tracking-[0.24em] text-muted">Card number</span>
-                    <input placeholder="1234 5678 9012 3456" maxLength={19} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink">Card number</span>
+                    <input
+                      placeholder="1234 5678 9012 3456"
+                      maxLength={19}
+                      className="h-12 border border-border-soft bg-cream px-3 text-[14px] outline-none transition-colors placeholder:text-muted/60 focus:border-ink focus:bg-ivory"
+                    />
                   </label>
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] uppercase tracking-[0.24em] text-muted">Name on card</span>
-                    <input placeholder="As it appears on card" className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink">Name on card</span>
+                    <input
+                      placeholder="As it appears on card"
+                      className="h-12 border border-border-soft bg-cream px-3 text-[14px] outline-none transition-colors placeholder:text-muted/60 focus:border-ink focus:bg-ivory"
+                    />
                   </label>
                   <div className="grid grid-cols-2 gap-4">
                     <label className="flex flex-col gap-1.5">
-                      <span className="text-[10px] uppercase tracking-[0.24em] text-muted">Expiry</span>
-                      <input placeholder="MM / YY" maxLength={7} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink">Expiry</span>
+                      <input
+                        placeholder="MM / YY"
+                        maxLength={7}
+                        className="h-12 border border-border-soft bg-cream px-3 text-[14px] outline-none transition-colors placeholder:text-muted/60 focus:border-ink focus:bg-ivory"
+                      />
                     </label>
                     <label className="flex flex-col gap-1.5">
-                      <span className="text-[10px] uppercase tracking-[0.24em] text-muted">CVV</span>
-                      <input type="password" placeholder="•••" maxLength={4} className="h-11 border border-border-soft bg-transparent px-3 text-[14px] outline-none focus:border-ink" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink">CVV</span>
+                      <input
+                        type="password"
+                        placeholder="•••"
+                        maxLength={4}
+                        className="h-12 border border-border-soft bg-cream px-3 text-[14px] outline-none transition-colors placeholder:text-muted/60 focus:border-ink focus:bg-ivory"
+                      />
                     </label>
                   </div>
                 </div>
@@ -224,8 +248,8 @@ export default function PaymentPage() {
             {/* Gift note */}
             <div className="border border-border-soft bg-ivory p-5">
               <div className="mb-2 flex items-center justify-between">
-                <div className="text-[10px] uppercase tracking-[0.26em] text-muted">
-                  Gift message <span className="normal-case tracking-normal">(optional)</span>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink">
+                  Gift message <span className="font-normal normal-case tracking-normal text-muted">(optional)</span>
                 </div>
                 <span className={`text-[11px] tabular-nums transition-colors ${
                   giftMessage.length >= 140
@@ -243,7 +267,7 @@ export default function PaymentPage() {
                 value={giftMessage}
                 onChange={(e) => setGiftMsg(e.target.value)}
                 placeholder="Add a personal note — included with complimentary gift wrapping."
-                className="w-full resize-none border border-border-soft bg-transparent px-3 py-2.5 text-[13px] outline-none focus:border-ink"
+                className="w-full resize-none border border-border-soft bg-cream px-3 py-2.5 text-[13px] outline-none transition-colors placeholder:text-muted/60 focus:border-ink focus:bg-ivory"
               />
             </div>
 
@@ -260,7 +284,7 @@ export default function PaymentPage() {
             )}
 
             <div className="flex items-center justify-between gap-4 border-t border-border-soft pt-5">
-              <Link href="/checkout/shipping" className="text-[11px] uppercase tracking-[0.26em] text-ink-soft hover:text-ink transition-colors">
+              <Link href="/checkout/shipping" className="text-[11px] uppercase tracking-[0.26em] text-ink-soft transition-colors hover:text-ink">
                 ← Back
               </Link>
               <button
@@ -286,7 +310,10 @@ export default function PaymentPage() {
 
         {/* ── Right: order summary ───────────────────────────────────── */}
         <aside className="lg:col-span-5">
-          <div className="sticky top-28 flex flex-col gap-0 border border-border-soft bg-cream">
+          <div
+            className="sticky flex flex-col gap-0 border border-border-soft bg-cream"
+            style={{ top: "calc(var(--header-h) + 24px)" }}
+          >
 
             {/* Header */}
             <div className="border-b border-border-soft px-6 py-5">
@@ -329,7 +356,7 @@ export default function PaymentPage() {
                   <div className="mt-1 font-medium text-ink">{shipName}</div>
                   <div className="mt-0.5 text-ink-soft">{shipAddr}</div>
                 </div>
-                <Link href="/checkout/shipping" className="shrink-0 text-[11px] text-gold-dark hover:text-ink transition-colors">
+                <Link href="/checkout/shipping" className="shrink-0 text-[11px] text-gold-dark transition-colors hover:text-ink">
                   Edit
                 </Link>
               </div>
@@ -360,13 +387,15 @@ export default function PaymentPage() {
             {/* Trust badges */}
             <div className="border-t border-border-soft px-6 py-4">
               <ul className="flex flex-col gap-2 text-[11px] text-ink-soft">
-                <li className="flex items-center gap-2"><Truck      className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Flat Rs. 200 delivery nationwide</li>
-                <li className="flex items-center gap-2"><RotateCcw  className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> 14-day hassle-free returns</li>
-                <li className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Secure encrypted checkout</li>
+                <li className="flex items-center gap-2"><Truck       className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Flat Rs. 200 delivery nationwide</li>
+                <li className="flex items-center gap-2"><RotateCcw   className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> 14-day hassle-free returns</li>
+                <li className="flex items-center gap-2"><ShieldCheck  className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Secure encrypted checkout</li>
               </ul>
             </div>
+
           </div>
         </aside>
+
       </div>
     </div>
   );

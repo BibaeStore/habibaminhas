@@ -4,17 +4,46 @@ import { ArrowUpRight } from "lucide-react";
 import { SectionHeading } from "@/components/common/section-heading";
 import { getFeaturedCategories } from "@/lib/actions/categories";
 
+// Exact slugs to show, in display order. Anything not in this list is hidden.
+const ALLOWED_SLUGS = [
+  "ladies-suits",
+  "kids-formal",
+  "baby-bedding",
+  "baby-nests",
+  "accessories",
+  "new-arrivals",
+];
+
 const SLUG_TO_HREF: Record<string, string> = {
   "ladies-suits": "/ladies",
-  "kids-formal": "/kids",
+  "kids-formal":  "/kids",
   "baby-bedding": "/baby",
-  "baby-nests": "/baby",
-  accessories: "/accessories",
+  "baby-nests":   "/baby",
+  "accessories":  "/accessories",
   "new-arrivals": "/new",
 };
 
+// Static fallback for New Arrivals in case it isn't in the DB yet
+const NEW_ARRIVALS_FALLBACK = {
+  id: "new-arrivals-static",
+  name: "New Arrivals",
+  slug: "new-arrivals",
+  image: "/categories/new-arrivals.webp",
+  color: "#dde0f0",
+};
+
 export async function CategoryTiles() {
-  const tiles = await getFeaturedCategories().catch(() => []);
+  const allTiles = await getFeaturedCategories().catch(() => []);
+
+  // Keep only the allowed slugs, sort by the defined order
+  let tiles = allTiles
+    .filter((t) => ALLOWED_SLUGS.includes(t.slug))
+    .sort((a, b) => ALLOWED_SLUGS.indexOf(a.slug) - ALLOWED_SLUGS.indexOf(b.slug));
+
+  // If New Arrivals isn't in the DB, append the static fallback so it always shows
+  if (!tiles.some((t) => t.slug === "new-arrivals")) {
+    tiles = [...tiles, NEW_ARRIVALS_FALLBACK as typeof tiles[0]];
+  }
 
   if (tiles.length === 0) return null;
 

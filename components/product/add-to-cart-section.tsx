@@ -34,7 +34,8 @@ export function AddToCartSection({
     hasSizes ? null : "onesize"
   );
   const [added, setAdded] = useState(false);
-  const addItem = useCartStore((s) => s.addItem);
+  const addItem    = useCartStore((s) => s.addItem);
+  const openDrawer = useCartStore((s) => s.openDrawer);
   const router = useRouter();
 
   function handleAdd() {
@@ -42,6 +43,8 @@ export function AddToCartSection({
     addItem({ id, slug, title, image, palette, price, compare_at, size: hasSizes ? selectedSize : null, sku });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+    // Open cart drawer immediately so customer sees what they added
+    openDrawer();
   }
 
   return (

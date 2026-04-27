@@ -34,9 +34,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${manrope.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-ivory text-ink">
+      <body className="min-h-screen flex flex-col bg-ivory text-ink">
         <LayoutShell>{children}</LayoutShell>
         {/* TrustBox bootstrap script */}
         <Script

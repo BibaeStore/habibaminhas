@@ -20,9 +20,13 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     <>
       <PageLoader />
       <CookieConsent />
-      <PromoBar />
-      <Navbar />
-      <main className="flex-1">{children}</main>
+      {/* Fixed header — always pinned to the viewport top */}
+      <div className="fixed top-0 left-0 right-0 z-40">
+        <PromoBar />
+        <Navbar />
+      </div>
+      {/* Spacer pushes page content below the fixed header */}
+      <main className="flex-1" style={{ paddingTop: "var(--header-h)" }}>{children}</main>
       <Footer />
       <WhatsAppButton />
     </>

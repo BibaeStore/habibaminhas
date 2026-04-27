@@ -119,7 +119,7 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
 
         {/* Order summary */}
         <aside className="lg:col-span-5">
-          <div className="sticky top-28 border border-border-soft bg-cream p-6">
+          <div className="sticky top-[116px] border border-border-soft bg-cream p-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl italic">Order summary</h2>
               <span className="text-[11px] uppercase tracking-[0.22em] text-muted">{order.order_number}</span>

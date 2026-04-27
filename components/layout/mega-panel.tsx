@@ -44,8 +44,8 @@ export function MegaPanel({
       onMouseLeave={onMouseLeave}
     >
       <div className="border-t border-border-soft bg-ivory shadow-soft animate-fade-up">
-        <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-10 px-8 py-10">
-          <div className="col-span-8 grid grid-cols-4 gap-8">
+        <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-8 px-8 py-5">
+          <div className="col-span-8 grid grid-cols-4 gap-6">
             {menu.columns.map((col) => (
               <div key={col.heading} className="flex flex-col gap-4">
                 <span className="font-display text-lg italic text-ink">
@@ -83,13 +83,13 @@ export function MegaPanel({
               className="col-span-4 group relative block overflow-hidden"
             >
               {resolvedImage ? (
-                <div className="relative aspect-[4/5] w-full overflow-hidden">
+                <div className="relative h-[32vh] w-full overflow-hidden">
                   <Image
                     src={resolvedImage}
                     alt={menu.feature.title}
                     fill
                     sizes="320px"
-                    className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">
@@ -115,7 +115,7 @@ export function MegaPanel({
                   aspect="4/5"
                   overlay
                   animate
-                  className="h-full"
+                  className="h-[32vh]"
                 >
                   <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">
                     <span className="text-[10px] uppercase tracking-[0.32em] opacity-90">

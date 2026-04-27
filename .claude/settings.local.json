@@ -94,7 +94,9 @@
       "mcp__plugin_playwright_playwright__browser_close",
       "Bash(kill %1)",
       "Bash(pkill -f \"next dev\")",
-      "mcp__plugin_playwright_playwright__browser_wait_for"
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "Bash(git rm *)",
+      "Bash(git push *)"
     ]
   }
 }
