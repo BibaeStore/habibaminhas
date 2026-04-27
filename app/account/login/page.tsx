@@ -41,7 +41,7 @@ export default function LoginPage() {
           </p>
           <div className="mt-8 flex flex-col gap-2.5">
             {[
-              { icon: Truck,       text: "Flat Rs. 200 delivery nationwide" },
+              { icon: Truck,       text: "Flat Rs. 250 delivery nationwide" },
               { icon: RotateCcw,   text: "14-day hassle-free returns" },
               { icon: ShieldCheck, text: "Secure & encrypted checkout" },
             ].map(({ icon: Icon, text }) => (

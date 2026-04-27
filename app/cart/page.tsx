@@ -7,7 +7,7 @@ import { Minus, Plus, X, ShieldCheck, Truck, RotateCcw, Tag } from "lucide-react
 import { useCartStore } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/utils";
 
-const SHIPPING = 200;
+const SHIPPING = 250;
 const FREE_SHIPPING_THRESHOLD = 3500;
 
 export default function CartPage() {
@@ -188,7 +188,7 @@ export default function CartPage() {
             </Link>
             <ul className="grid grid-cols-1 gap-3 pt-2 text-[11px] text-ink-soft">
               <li className="flex items-center gap-2">
-                <Truck className="h-3.5 w-3.5 text-gold-dark" /> Flat Rs. 200 delivery nationwide
+                <Truck className="h-3.5 w-3.5 text-gold-dark" /> Flat Rs. 250 delivery nationwide
               </li>
               <li className="flex items-center gap-2">
                 <RotateCcw className="h-3.5 w-3.5 text-gold-dark" /> 14-day hassle-free returns

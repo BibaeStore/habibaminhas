@@ -9,7 +9,7 @@ import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { formatPrice } from "@/lib/utils";
 
-const SHIPPING_STANDARD = 200;
+const SHIPPING_STANDARD = 250;
 const SHIPPING_EXPRESS = 500;
 const FREE_THRESHOLD = 3500;
 
@@ -321,7 +321,7 @@ export default function ShippingPage() {
               <span className="font-display text-2xl">{formatPrice(total)}</span>
             </div>
             <ul className="grid grid-cols-1 gap-2 pt-1 text-[11px] text-ink-soft">
-              <li className="flex items-center gap-2"><Truck className="h-3.5 w-3.5 text-gold-dark" /> Flat Rs. 200 delivery nationwide</li>
+              <li className="flex items-center gap-2"><Truck className="h-3.5 w-3.5 text-gold-dark" /> Flat Rs. 250 delivery nationwide</li>
               <li className="flex items-center gap-2"><RotateCcw className="h-3.5 w-3.5 text-gold-dark" /> 14-day hassle-free returns</li>
               <li className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-gold-dark" /> Secure encrypted checkout</li>
             </ul>

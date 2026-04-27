@@ -81,19 +81,13 @@ export function HeroCarousel() {
             <p className="mt-6 max-w-md text-[14px] leading-relaxed text-ivory/90 sm:text-[15px]">
               {heroSlides[active].body}
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
+            <div className="mt-8">
               <Link
                 href={heroSlides[active].cta.href}
-                className="group inline-flex h-12 items-center gap-2 bg-ivory px-7 text-[12px] uppercase tracking-[0.28em] text-ink transition-colors hover:bg-gold"
+                className="group inline-flex h-12 items-center gap-2 bg-ivory px-8 text-[12px] uppercase tracking-[0.28em] text-ink transition-colors hover:bg-gold"
               >
                 {heroSlides[active].cta.label}
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                href={heroSlides[active].second.href}
-                className="inline-flex h-12 items-center border border-ivory/50 px-7 text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-ivory hover:text-ink"
-              >
-                {heroSlides[active].second.label}
               </Link>
             </div>
           </div>

@@ -3,34 +3,10 @@ import Image from "next/image";
 import { Package, RotateCcw, MapPin, ShieldCheck } from "lucide-react";
 import { Newsletter } from "./newsletter";
 import { TrustpilotWidget } from "@/components/trustpilot-widget";
-
-function InstagramIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
-    </svg>
-  );
-}
-function FacebookIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path
-        d="M14 8h2V5h-2.5A3.5 3.5 0 0 0 10 8.5V11H8v3h2v6h3v-6h2.2l.3-3H13V9a1 1 0 0 1 1-1Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-function YoutubeIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <rect x="3" y="6" width="18" height="12" rx="3" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M11 10l4 2-4 2v-4Z" fill="currentColor" />
-    </svg>
-  );
-}
+import {
+  InstagramIcon, FacebookIcon, YouTubeIcon, TikTokIcon,
+  XIcon, PinterestIcon, QuoraIcon, RedditIcon,
+} from "@/components/common/social-icons";
 
 const linkCols = [
   {
@@ -69,7 +45,7 @@ const linkCols = [
 const services = [
   {
     icon: Package,
-    title: "Flat Rs. 200 Delivery",
+    title: "Flat Rs. 250 Delivery",
     subtitle: "Nationwide shipping across all of Pakistan.",
     href: "/help/shipping",
   },
@@ -125,7 +101,7 @@ export function Footer() {
                 alt="Habiba Minhas"
                 width={240}
                 height={80}
-                className="h-[68px] w-auto"
+                className="h-[84px] w-auto"
               />
             </Link>
             <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-ink-soft">
@@ -133,43 +109,29 @@ export function Footer() {
               Pakistan. Ladies suits, kids formalwear, nursery essentials,
               and silk accessories for the modern family.
             </p>
-            <div className="mt-6 flex items-center gap-3">
-              <a
-                href="https://instagram.com/habibaminhas/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="flex h-9 w-9 items-center justify-center border border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-ivory"
-              >
-                <InstagramIcon className="h-4 w-4" />
-              </a>
-              <a
-                href="https://facebook.com/profile.php?id=61574335512818"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                className="flex h-9 w-9 items-center justify-center border border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-ivory"
-              >
-                <FacebookIcon className="h-4 w-4" />
-              </a>
-              <a
-                href="https://youtube.com/@HabibaMinhas989"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="YouTube"
-                className="flex h-9 w-9 items-center justify-center border border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-ivory"
-              >
-                <YoutubeIcon className="h-4 w-4" />
-              </a>
-              <a
-                href="https://tiktok.com/@habibaminhas_989"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="TikTok"
-                className="flex h-9 w-9 items-center justify-center border border-ink/20 text-[13px] font-semibold text-ink hover:border-ink hover:bg-ink hover:text-ivory"
-              >
-                Tt
-              </a>
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              {[
+                { href: "https://www.instagram.com/habibaminhas.official/", label: "Instagram",  Icon: InstagramIcon  },
+                { href: "https://www.facebook.com/profile.php?id=61573309750795", label: "Facebook", Icon: FacebookIcon  },
+                { href: "https://www.youtube.com/@HabibaMinhas989",         label: "YouTube",   Icon: YouTubeIcon    },
+                { href: "https://www.tiktok.com/@habibaminhas.official",    label: "TikTok",    Icon: TikTokIcon     },
+                { href: "https://x.com/HabibaMinhas989",                    label: "X",         Icon: XIcon          },
+                { href: "https://www.pinterest.com/habibaminhas989/",       label: "Pinterest", Icon: PinterestIcon  },
+                { href: "https://www.quora.com/profile/Habiba-Minhas-5",    label: "Quora",     Icon: QuoraIcon      },
+                { href: "https://www.reddit.com/user/HabibaMinhas_989/",    label: "Reddit",    Icon: RedditIcon     },
+              ].map(({ href, label, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  title={label}
+                  className="flex h-9 w-9 items-center justify-center border border-ink/20 text-ink transition-all hover:border-ink hover:bg-ink hover:text-ivory"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
             </div>
           </div>
 
@@ -201,7 +163,6 @@ export function Footer() {
               <li><a href="mailto:info@habibaminhas.com" className="hover:text-gold-dark transition-colors">info@habibaminhas.com</a></li>
               <li><a href="https://wa.me/923120295812" target="_blank" rel="noopener noreferrer" className="hover:text-gold-dark transition-colors">+92 312 0295812</a></li>
               <li>Karachi, Pakistan — 75533</li>
-              <li>Mon–Fri, 9a–6p PKT</li>
             </ul>
           </div>
         </div>

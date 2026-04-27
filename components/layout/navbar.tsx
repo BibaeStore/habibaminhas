@@ -65,7 +65,7 @@ export function Navbar() {
       )}
       onMouseLeave={scheduleClose}
     >
-      <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-4 sm:h-[74px] sm:px-8">
+      <div className="mx-auto flex h-[52px] w-full max-w-[1440px] items-center justify-between px-4 sm:h-[72px] sm:px-8">
         {/* Left: logo + desktop nav */}
         <div className="flex items-center gap-6">
           {/* Mobile: hamburger + search */}
@@ -95,7 +95,7 @@ export function Navbar() {
               alt="Habiba Minhas"
               width={260}
               height={87}
-              className="h-[58px] w-auto sm:h-[70px]"
+              className="h-[40px] w-auto sm:h-[64px]"
               priority
             />
           </Link>

@@ -35,7 +35,7 @@ export default function HomePage() {
         tone={["#f5e8c0", "#c8900c", "#5a3800"]}
         motif="ogee"
         orientation="right"
-        image="/editorial/kids-festive.webp"
+        image="/HeroSection/kids-formal.webp"
         links={[
           { label: "Shop Girls Formal", href: "/kids/girls" },
           { label: "Festive Co-Ord Sets", href: "/kids/girls/co-ord" },
@@ -49,7 +49,7 @@ export default function HomePage() {
         body="Deluxe padded crib bedding sets, baby nest pods, swaddle wraps, and nursing pillows — everything your nursery needs, made with love in Pakistan."
         tone={["#f0e0f0", "#c090c0", "#401840"]}
         motif="stripes"
-        image="/editorial/baby-nursery.webp"
+        image="/HeroSection/baby-bedding.webp"
         links={[
           { label: "Shop Crib Bedding Sets", href: "/baby/bedding" },
           { label: "Baby Nests & Loungers", href: "/baby/nests" },
@@ -64,7 +64,7 @@ export default function HomePage() {
         tone={["#eedbc4", "#b08040", "#3a2010"]}
         motif="lattice"
         orientation="right"
-        image="/editorial/accessories.webp"
+        image="/HeroSection/accessories.webp"
         links={[
           { label: "Shop Hair Accessories", href: "/accessories/hair" },
           { label: "Headband & Clip Sets", href: "/accessories/hair/sets" },

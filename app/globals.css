@@ -30,14 +30,14 @@
 
 :root {
   color-scheme: light;
-  /* PromoBar (~36px) + Navbar mobile h-16 (64px) */
-  --header-h: 100px;
+  /* PromoBar (~36px) + Navbar mobile h-[52px] */
+  --header-h: 88px;
 }
 
 @media (min-width: 640px) {
   :root {
-    /* PromoBar (~36px) + Navbar desktop h-[74px] */
-    --header-h: 110px;
+    /* PromoBar (~36px) + Navbar desktop h-[72px] */
+    --header-h: 108px;
   }
 }
 

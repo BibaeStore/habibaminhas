@@ -42,7 +42,7 @@ const helpPages: Record<
     title: "Shipping, by zone.",
     intro: "Shipping times and fees, in plain numbers.",
     faqs: [
-      { q: "Pakistan — standard", a: "1–3 business days, flat Rs. 200 nationwide." },
+      { q: "Pakistan — standard", a: "1–3 business days, flat Rs. 250 nationwide." },
       { q: "Pakistan — express", a: "Same day in Karachi, Lahore, Islamabad. Rs. 500. Order before 2pm." },
       { q: "International", a: "5–8 business days via DHL. Rates calculated at checkout by weight." },
       { q: "Order tracking", a: "A tracking link is emailed as soon as your parcel leaves the studio, and available in your account." },

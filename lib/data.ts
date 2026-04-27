@@ -57,30 +57,14 @@ export const megaMenus: MegaMenu[] = [
     href: "/kids",
     columns: [
       {
-        heading: "Girls Formal Wear",
+        heading: "Stitched Suits",
         items: [
-          { label: "All Girls Wear", href: "/kids" },
-          { label: "Festive Co-Ord Sets", href: "/kids" },
-          { label: "Formal Gowns", href: "/kids" },
-          { label: "Embroidered Gowns", href: "/kids" },
-          { label: "3-Piece Silk Suits", href: "/kids" },
-          { label: "Sharara Sets", href: "/kids" },
-        ],
-      },
-      {
-        heading: "By Age",
-        items: [
-          { label: "Newborn – 2 Years", href: "/kids" },
-          { label: "3 – 6 Years", href: "/kids" },
-          { label: "7 – 12 Years", href: "/kids" },
-        ],
-      },
-      {
-        heading: "Collections",
-        items: [
-          { label: "Eid Special", href: "/kids", badge: "New" },
-          { label: "Party Wear", href: "/kids" },
-          { label: "Kurtis & Shalwar", href: "/kids" },
+          { label: "All Kids Wear",          href: "/kids", badge: "New" },
+          { label: "3-Piece Stitched Suits", href: "/kids" },
+          { label: "Festive Co-Ord Sets",    href: "/kids" },
+          { label: "Embroidered Gowns",      href: "/kids" },
+          { label: "Eid Special Collection", href: "/kids", badge: "New" },
+          { label: "Kurtis & Shalwar",       href: "/kids" },
         ],
       },
     ],
@@ -137,19 +121,12 @@ export const megaMenus: MegaMenu[] = [
     href: "/accessories",
     columns: [
       {
-        heading: "Hair Accessories",
+        heading: "Hair Clips",
         items: [
-          { label: "All Hair Accessories", href: "/accessories" },
-          { label: "Silk Headbands", href: "/accessories" },
-          { label: "Floral Hair Clips", href: "/accessories" },
-          { label: "Headband & Clip Sets", href: "/accessories" },
-        ],
-      },
-      {
-        heading: "Gift Ideas",
-        items: [
-          { label: "Under Rs. 1,000", href: "/accessories" },
-          { label: "Gift Wrapping", href: "/accessories" },
+          { label: "All Hair Clips",      href: "/accessories" },
+          { label: "Floral Hair Clips",   href: "/accessories" },
+          { label: "Silk Headbands",      href: "/accessories" },
+          { label: "Clip & Headband Sets",href: "/accessories" },
         ],
       },
     ],
@@ -432,11 +409,11 @@ export const trendTiles = [
 ];
 
 export const promoMessages = [
-  "Flat Rs. 200 Delivery Nationwide",
   "Premium Quality — Handcrafted with Love in Pakistan",
   "14-Day Easy Return Policy",
   "Cash on Delivery Available Nationwide",
   "WhatsApp Support: +92 312 0295812",
+  "Email: info@habibaminhas.com",
 ];
 
 export type Testimonial = { quote: string; name: string; city: string; avatar: string; rating: number };

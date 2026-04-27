@@ -29,7 +29,7 @@ export default function StoresPage() {
         <SectionHeading
           eyebrow="Karachi Studio"
           title="Handcrafted in Pakistan, delivered nationwide."
-          description="We're an online-first boutique. Order from anywhere in Pakistan and receive your items within 3–5 business days with flat Rs. 200 delivery."
+          description="We're an online-first boutique. Order from anywhere in Pakistan and receive your items within 3–5 business days with flat Rs. 250 delivery."
         />
 
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -67,7 +67,7 @@ export default function StoresPage() {
               <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
                 Nationwide
               </div>
-              <h3 className="mt-1 font-display text-2xl italic">Flat Rs. 200 Delivery</h3>
+              <h3 className="mt-1 font-display text-2xl italic">Flat Rs. 250 Delivery</h3>
               <ul className="mt-4 flex flex-col gap-2 text-[13px] text-ink-soft">
                 <li className="flex items-start gap-2">
                   <Clock className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Standard: 3–5 business days
@@ -79,7 +79,7 @@ export default function StoresPage() {
                   <MapPin className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Delivery to all cities in Pakistan
                 </li>
                 <li className="flex items-start gap-2">
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Flat Rs. 200 delivery nationwide
+                  <MapPin className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Flat Rs. 250 delivery nationwide
                 </li>
               </ul>
             </div>

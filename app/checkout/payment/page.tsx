@@ -49,7 +49,7 @@ export default function PaymentPage() {
   }, [mounted, items, shipping, router]);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const shippingCost = shipping?.shippingCost ?? 200;
+  const shippingCost = shipping?.shippingCost ?? 250;
   const total = subtotal + shippingCost;
 
   const [payMethod, setPayMethod] = useState<PaymentMethod>("cod");
@@ -397,7 +397,7 @@ export default function PaymentPage() {
             {/* Trust badges */}
             <div className="border-t border-border-soft px-6 py-4">
               <ul className="flex flex-col gap-2 text-[11px] text-ink-soft">
-                <li className="flex items-center gap-2"><Truck       className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Flat Rs. 200 delivery nationwide</li>
+                <li className="flex items-center gap-2"><Truck       className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Flat Rs. 250 delivery nationwide</li>
                 <li className="flex items-center gap-2"><RotateCcw   className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> 14-day hassle-free returns</li>
                 <li className="flex items-center gap-2"><ShieldCheck  className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Secure encrypted checkout</li>
               </ul>

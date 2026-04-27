@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MobileDetailTabs } from "@/components/product/mobile-detail-tabs";
 import {
   ChevronRight,
   Ruler,
-  Package,
   RotateCcw,
   Truck,
   Star,
@@ -97,8 +97,8 @@ export default async function ProductPage({
           />
         </div>
 
-        {/* Info panel */}
-        <div className="lg:col-span-5 lg:sticky lg:top-[116px] lg:self-start">
+        {/* Info panel — pb-24 on mobile reserves space above the sticky Add to Bag bar */}
+        <div className="pb-24 lg:col-span-5 lg:pb-0 lg:sticky lg:top-[116px] lg:self-start">
           <div className="flex flex-wrap items-center gap-2">
             {product.badge ? (
               <Badge variant={product.badge === "Bestseller" ? "gold" : "default"}>
@@ -141,7 +141,7 @@ export default async function ProductPage({
             ) : null}
           </div>
           <p className="mt-1 text-[12px] text-muted">
-            Inclusive of all taxes. Flat Rs. 200 delivery across Pakistan.
+            Inclusive of all taxes. Flat Rs. 250 delivery across Pakistan.
           </p>
 
           {/* Colour swatches */}
@@ -191,12 +191,11 @@ export default async function ProductPage({
             hasSizes={hasSizes}
           />
 
-          <ul className="mt-10 grid grid-cols-2 gap-3 border-y border-border-soft py-6">
+          <ul className="mt-10 grid grid-cols-3 gap-4 border-y border-border-soft py-6">
             {[
-              { icon: Truck, label: "Flat Rs. 200 Delivery", sub: "Nationwide across Pakistan" },
-              { icon: Package, label: "Ships in 24h", sub: "From our Karachi studio" },
-              { icon: RotateCcw, label: "14-day Returns", sub: "Hassle-free exchanges" },
-              { icon: Ruler, label: "Finished by Hand", sub: "Small-batch construction" },
+              { icon: Truck,      label: "Flat Rs. 250 Delivery", sub: "Nationwide across Pakistan" },
+              { icon: RotateCcw, label: "14-day Returns",          sub: "Hassle-free exchanges"    },
+              { icon: Ruler,     label: "Finished by Hand",        sub: "Small-batch construction" },
             ].map(({ icon: Icon, label, sub }) => (
               <li key={label} className="flex items-start gap-3">
                 <Icon className="h-4 w-4 text-gold-dark" />
@@ -208,7 +207,11 @@ export default async function ProductPage({
             ))}
           </ul>
 
-          <div className="mt-8 space-y-3 text-[13px] leading-relaxed text-ink-soft">
+          {/* Mobile: Details | Description tab switcher */}
+          <MobileDetailTabs description={product.description ?? ""} />
+
+          {/* Desktop: inline details section */}
+          <div className="mt-8 hidden space-y-3 text-[13px] leading-relaxed text-ink-soft lg:block">
             <h3 className="font-display text-xl italic text-ink">Details</h3>
             {product.description ? (
               <p>{product.description}</p>

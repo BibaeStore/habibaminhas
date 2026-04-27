@@ -34,7 +34,10 @@ function timeAgo(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-PK", { day: "numeric", month: "short" });
 }
 
-type FilterType = "all" | "new_order" | "order_updated" | "contact_form" | "unread";
+/* order_updated notifications are intentionally excluded — too noisy */
+const IMPORTANT_TYPES = ["new_order", "low_stock", "contact_form"];
+
+type FilterType = "all" | "new_order" | "low_stock" | "contact_form" | "unread";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -52,13 +55,16 @@ export default function NotificationsPage() {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = notifications.filter((n) => {
+  /* Always hide order_updated — only surface important notification types */
+  const important = notifications.filter((n) => IMPORTANT_TYPES.includes(n.type));
+
+  const filtered = important.filter((n) => {
     if (filter === "unread") return !n.read;
     if (filter === "all")    return true;
     return n.type === filter;
   });
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = important.filter((n) => !n.read).length;
 
   function handleRead(id: string) {
     startTransition(async () => {
@@ -82,11 +88,11 @@ export default function NotificationsPage() {
   }
 
   const filters: { key: FilterType; label: string }[] = [
-    { key: "all",           label: "All"           },
-    { key: "unread",        label: `Unread (${unreadCount})` },
-    { key: "new_order",     label: "New Orders"    },
-    { key: "order_updated", label: "Order Updates" },
-    { key: "contact_form",  label: "Contact Forms" },
+    { key: "all",          label: "All"                      },
+    { key: "unread",       label: `Unread (${unreadCount})`  },
+    { key: "new_order",    label: "New Orders"               },
+    { key: "low_stock",    label: "Low Stock"                },
+    { key: "contact_form", label: "Contact Forms"            },
   ];
 
   return (

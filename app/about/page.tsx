@@ -56,7 +56,7 @@ export default function AboutPage() {
             <p>
               Habiba Minhas began with a simple belief: that premium quality
               fashion and baby products should be accessible to every family
-              in Pakistan. What started as a small boutique vision has grown
+              in Pakistan. What started as a small brand vision has grown
               into a destination serving over 5,000 happy customers across
               the country.
             </p>
@@ -68,7 +68,7 @@ export default function AboutPage() {
             </p>
             <p>
               Every product is made in Pakistan, shipped nationwide with flat
-              Rs. 200 delivery, and backed by our 14-day return policy. We
+              Rs. 250 delivery, and backed by our 14-day return policy. We
               believe in making things properly, and standing behind them.
             </p>
           </div>
@@ -133,7 +133,7 @@ export default function AboutPage() {
             {[
               { stat: "5,000+", label: "Happy Customers" },
               { stat: "100+", label: "Premium Products" },
-              { stat: "Rs. 200", label: "Flat Nationwide Delivery" },
+              { stat: "Rs. 250", label: "Flat Nationwide Delivery" },
             ].map(({ stat, label }) => (
               <div key={label}>
                 <div className="font-display text-5xl italic text-gold-dark">{stat}</div>
@@ -142,7 +142,7 @@ export default function AboutPage() {
             ))}
           </div>
           <p className="mx-auto mt-16 max-w-2xl font-display text-3xl font-light italic leading-tight sm:text-5xl">
-            "Pakistan's leading boutique for premium handcrafted fashion — made with love, delivered with care."
+            "Pakistan's leading brand for premium handcrafted fashion — made with love, delivered with care."
           </p>
           <p className="mt-6 text-[12px] uppercase tracking-[0.28em] text-ink-soft">
             Habiba Minhas — Karachi, Pakistan

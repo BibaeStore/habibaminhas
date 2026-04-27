@@ -15,7 +15,7 @@ export function AnnouncementStrip() {
           <span className="hidden h-4 w-px bg-border-soft sm:inline-block" />
           <span className="flex items-center gap-3">
             <span className="font-display text-2xl italic leading-none text-ink sm:text-3xl">
-              Rs. 200
+              Rs. 250
             </span>
             <span>Flat Nationwide Delivery</span>
           </span>
