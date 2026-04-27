@@ -2,34 +2,28 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Package, MapPin, CreditCard, Heart, User, LogOut, ChevronRight } from "lucide-react";
+import { Download, ChevronRight } from "lucide-react";
+import { AccountSidebar } from "@/components/account/account-sidebar";
+import { ProductImage } from "@/components/common/product-image";
 import { getOrdersByEmail } from "@/lib/actions/orders";
 import { formatPrice } from "@/lib/utils";
 
-const sidebar = [
-  { label: "Overview", href: "/account", icon: User },
-  { label: "Orders", href: "/account/orders", icon: Package, active: true },
-  { label: "Addresses", href: "/account/addresses", icon: MapPin },
-  { label: "Payments", href: "/account/payments", icon: CreditCard },
-  { label: "Wishlist", href: "/wishlist", icon: Heart },
-];
-
-const statusStyle: Record<string, { text: string; dot: string }> = {
-  pending:    { text: "text-gold-dark", dot: "#a8804b" },
-  processing: { text: "text-gold-dark", dot: "#a8804b" },
-  dispatched: { text: "text-gold-dark", dot: "#a8804b" },
-  delivered:  { text: "text-sage",      dot: "#8c9b7e" },
-  cancelled:  { text: "text-sale",      dot: "#b94a4a" },
+const STATUS_STYLE: Record<string, { text: string; dot: string; bg: string }> = {
+  pending:    { text: "text-gold-dark", dot: "#a8804b", bg: "bg-gold/20" },
+  processing: { text: "text-gold-dark", dot: "#a8804b", bg: "bg-gold/20" },
+  dispatched: { text: "text-gold-dark", dot: "#a8804b", bg: "bg-gold/20" },
+  delivered:  { text: "text-sage",      dot: "#8c9b7e", bg: "bg-sage/10" },
+  cancelled:  { text: "text-sale",      dot: "#9c3b2f", bg: "bg-sale/10" },
 };
 
 type Order = Awaited<ReturnType<typeof getOrdersByEmail>>[number];
 
 export default function OrdersPage() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail]           = useState("");
   const [inputEmail, setInputEmail] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [orders, setOrders]         = useState<Order[]>([]);
+  const [loading, setLoading]       = useState(false);
+  const [mounted, setMounted]       = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -37,10 +31,7 @@ export default function OrdersPage() {
     if (saved) {
       setEmail(saved);
       setLoading(true);
-      getOrdersByEmail(saved)
-        .then(setOrders)
-        .catch(() => {})
-        .finally(() => setLoading(false));
+      getOrdersByEmail(saved).then(setOrders).catch(() => {}).finally(() => setLoading(false));
     }
   }, []);
 
@@ -55,37 +46,29 @@ export default function OrdersPage() {
     setLoading(false);
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("hm_customer_email");
-    setEmail("");
-    setOrders([]);
-  };
-
   if (!mounted) return null;
 
+  /* ── Email lookup ───────────────────────────────────────────── */
   if (!email) {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col justify-center px-4 py-16">
         <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Your account</span>
         <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Order lookup.</h1>
-        <p className="mt-2 text-[13px] text-ink-soft">Enter the email you used at checkout.</p>
+        <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">Enter the email you used at checkout.</p>
         <form onSubmit={handleLookup} className="mt-8 flex flex-col gap-4">
           <label className="flex flex-col gap-2">
-            <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Email address</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink">Email address</span>
             <input
-              type="email"
-              required
-              autoFocus
+              type="email" required autoFocus
               value={inputEmail}
               onChange={(e) => setInputEmail(e.target.value)}
               placeholder="you@example.com"
-              className="h-12 border border-border-soft bg-ivory px-4 text-[14px] outline-none focus:border-ink"
+              className="h-12 border border-border-soft bg-cream px-4 text-[14px] outline-none placeholder:text-muted/60 transition-colors focus:border-ink focus:bg-ivory"
             />
           </label>
           <button
-            type="submit"
-            disabled={loading}
-            className="h-12 bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark disabled:opacity-60 transition-colors"
+            type="submit" disabled={loading}
+            className="h-12 bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory transition-colors hover:bg-gold-dark disabled:opacity-60"
           >
             {loading ? "Looking up…" : "View my orders"}
           </button>
@@ -94,106 +77,150 @@ export default function OrdersPage() {
     );
   }
 
+  /* ── Order history ──────────────────────────────────────────── */
   const inTransit = orders.filter((o) => ["pending", "processing", "dispatched"].includes(o.status)).length;
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
+
+      {/* Breadcrumb */}
+      <nav className="mb-6 flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-muted">
+        <Link href="/account" className="transition-colors hover:text-ink">Account</Link>
+        <ChevronRight className="h-3 w-3" />
+        <span className="text-ink-soft">Orders</span>
+      </nav>
+
       <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Your account</span>
       <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Order history.</h1>
       <p className="mt-2 text-[13px] text-ink-soft">
-        {orders.length} order{orders.length !== 1 ? "s" : ""} placed
-        {inTransit > 0 ? ` · ${inTransit} in transit` : ""}.
+        {orders.length} order{orders.length !== 1 ? "s" : ""}
+        {inTransit > 0 ? ` · ${inTransit} in transit` : ""}
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
+
+        {/* Sidebar */}
         <aside className="lg:col-span-3">
-          <nav className="flex flex-row gap-1 overflow-x-auto border border-border-soft bg-ivory p-1 lg:flex-col lg:overflow-visible">
-            {sidebar.map(({ label, href, icon: Icon, active }) => (
-              <Link
-                key={label}
-                href={href}
-                className={`flex items-center gap-3 whitespace-nowrap px-4 py-3 text-[12px] uppercase tracking-[0.24em] transition-colors ${
-                  active ? "bg-ink text-ivory" : "text-ink-soft hover:bg-cream hover:text-ink"
-                }`}
-              >
-                <Icon className="h-4 w-4" /> {label}
-              </Link>
-            ))}
-            <button
-              onClick={handleSignOut}
-              className="mt-auto flex items-center gap-3 px-4 py-3 text-[12px] uppercase tracking-[0.24em] text-sale hover:bg-cream"
-            >
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
-          </nav>
+          <AccountSidebar />
         </aside>
 
+        {/* Orders list */}
         <div className="lg:col-span-9">
           {loading ? (
             <div className="flex flex-col gap-4">
-              {[...Array(3)].map((_, i) => <div key={i} className="h-32 animate-pulse bg-cream" />)}
+              {[...Array(3)].map((_, i) => <div key={i} className="h-36 animate-pulse bg-cream" />)}
             </div>
           ) : orders.length === 0 ? (
-            <div className="border border-border-soft bg-cream px-6 py-14 text-center text-[13px] text-ink-soft">
-              No orders found for {email}.
-              <br />
-              <Link href="/shop" className="mt-3 inline-block text-gold-dark hover:text-ink uppercase tracking-[0.18em] text-[11px]">
+            <div className="border border-border-soft bg-cream px-6 py-14 text-center">
+              <p className="text-[13px] text-ink-soft">No orders found for <strong>{email}</strong>.</p>
+              <Link href="/ladies" className="mt-3 inline-block text-[11px] uppercase tracking-[0.2em] text-gold-dark hover:text-ink">
                 Browse collections →
               </Link>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              {orders.map((o) => {
-                const s = statusStyle[o.status] ?? statusStyle["processing"];
-                const items = (o.order_items ?? []) as { product_title: string; quantity: number; size: string | null; unit_price: number }[];
+            <div className="flex flex-col gap-5">
+              {orders.map((order) => {
+                const items = (order.order_items ?? []) as {
+                  product_title: string; product_image: string | null;
+                  size: string | null; quantity: number; unit_price: number;
+                }[];
+                const s = STATUS_STYLE[order.status] ?? STATUS_STYLE.processing;
+
                 return (
-                  <div key={o.id} className="border border-border-soft bg-ivory">
+                  <div key={order.id} className="overflow-hidden border border-border-soft bg-ivory">
+
+                    {/* Order header */}
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft bg-cream px-5 py-4">
                       <div className="flex flex-wrap items-center gap-6">
                         <div>
-                          <div className="text-[11px] uppercase tracking-[0.22em] text-muted">Order</div>
-                          <div className="mt-0.5 text-[13px] font-medium">{o.order_number}</div>
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">Order</div>
+                          <Link
+                            href={`/account/orders/${order.order_number}`}
+                            className="mt-0.5 block text-[13px] font-semibold text-ink transition-colors hover:text-gold-dark"
+                          >
+                            {order.order_number}
+                          </Link>
                         </div>
                         <div>
-                          <div className="text-[11px] uppercase tracking-[0.22em] text-muted">Date</div>
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">Date</div>
                           <div className="mt-0.5 text-[13px] text-ink-soft">
-                            {new Date(o.created_at).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}
+                            {new Date(order.created_at).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}
                           </div>
                         </div>
                         <div>
-                          <div className="text-[11px] uppercase tracking-[0.22em] text-muted">Total</div>
-                          <div className="mt-0.5 text-[13px] font-medium">{formatPrice(o.total)}</div>
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">Total</div>
+                          <div className="mt-0.5 text-[13px] font-semibold">{formatPrice(order.total)}</div>
                         </div>
                         <div>
-                          <div className="text-[11px] uppercase tracking-[0.22em] text-muted">Status</div>
-                          <div className={`mt-0.5 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] ${s.text}`}>
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">Status</div>
+                          <div className={`mt-0.5 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] ${s.text}`}>
                             <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />
-                            {o.status}
+                            {order.status}
                           </div>
                         </div>
                       </div>
-                      {o.tracking_number && (
-                        <div className="flex items-center gap-1 text-[12px] uppercase tracking-[0.22em] text-gold-dark">
-                          <ChevronRight className="h-3.5 w-3.5" />
-                          {o.tracking_number}
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/account/orders/${order.order_number}`}
+                          className="inline-flex items-center gap-1.5 border border-border-soft px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] text-ink transition-colors hover:bg-parchment"
+                        >
+                          View order
+                          <ChevronRight className="h-3 w-3" />
+                        </Link>
+                        <Link
+                          href={`/order/${order.order_number}/invoice`}
+                          target="_blank"
+                          className="inline-flex items-center gap-1.5 border border-border-soft px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] text-ink transition-colors hover:bg-parchment"
+                        >
+                          <Download className="h-3 w-3" />
+                          Invoice
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Product image strip + items */}
+                    <div className="px-5 py-4">
+                      {/* Thumbnail row */}
+                      {items.length > 0 && (
+                        <div className="mb-4 flex gap-2">
+                          {items.slice(0, 4).map((item, i) => (
+                            <div key={i} className="relative h-16 w-12 flex-none overflow-hidden bg-parchment">
+                              <ProductImage
+                                src={item.product_image}
+                                alt={item.product_title}
+                                sizes="48px"
+                              />
+                            </div>
+                          ))}
+                          {items.length > 4 && (
+                            <div className="flex h-16 w-12 flex-none items-center justify-center bg-cream text-[11px] text-muted">
+                              +{items.length - 4}
+                            </div>
+                          )}
                         </div>
                       )}
+
+                      {/* Item list */}
+                      <ul className="flex flex-col divide-y divide-border-soft">
+                        {items.map((item, i) => (
+                          <li key={i} className="flex items-center justify-between py-3 text-[13px]">
+                            <div>
+                              <div className="font-medium">{item.product_title}</div>
+                              {(item.size || item.quantity > 0) && (
+                                <div className="mt-0.5 text-[11px] uppercase tracking-[0.16em] text-muted">
+                                  {item.size && `Size: ${item.size}`}
+                                  {item.size && ` · `}
+                                  Qty: {item.quantity}
+                                </div>
+                              )}
+                            </div>
+                            <div className="shrink-0 pl-4 font-medium">{formatPrice(item.unit_price * item.quantity)}</div>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="divide-y divide-border-soft px-5">
-                      {items.map((item, i) => (
-                        <li key={i} className="flex items-center justify-between py-4 text-[13px]">
-                          <div>
-                            <div className="font-medium">{item.product_title}</div>
-                            {item.size && (
-                              <div className="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-muted">
-                                Size: {item.size} · Qty: {item.quantity}
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-[13px] font-medium">{formatPrice(item.unit_price * item.quantity)}</div>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 );
               })}

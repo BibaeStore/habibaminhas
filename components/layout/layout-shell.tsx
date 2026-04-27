@@ -7,12 +7,14 @@ import { Footer } from "@/components/layout/footer";
 import { PageLoader } from "@/components/common/page-loader";
 import { CookieConsent } from "@/components/common/cookie-consent";
 import { WhatsAppButton } from "@/components/common/whatsapp-button";
+import { PurchaseNotification } from "@/components/common/purchase-notification";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith("/admin");
+  const isAdmin   = pathname?.startsWith("/admin");
+  const isInvoice = pathname?.endsWith("/invoice");
 
-  if (isAdmin) {
+  if (isAdmin || isInvoice) {
     return <>{children}</>;
   }
 
@@ -29,6 +31,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1" style={{ paddingTop: "var(--header-h)" }}>{children}</main>
       <Footer />
       <WhatsAppButton />
+      <PurchaseNotification />
     </>
   );
 }

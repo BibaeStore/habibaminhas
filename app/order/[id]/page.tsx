@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductImage } from "@/components/common/product-image";
-import { CheckCircle2, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
+import { CheckCircle2, Package, Truck, RotateCcw, ArrowRight, Download } from "lucide-react";
 import { getOrderByNumber } from "@/lib/actions/orders";
 import { formatPrice } from "@/lib/utils";
 import type { Tables, Json } from "@/lib/supabase/types";
@@ -109,6 +109,14 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
+              href={`/order/${order.order_number}/invoice`}
+              target="_blank"
+              className="inline-flex h-12 items-center gap-2 border border-border-soft px-8 text-[12px] uppercase tracking-[0.28em] text-ink hover:bg-cream transition-colors group"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download Invoice
+            </Link>
+            <Link
               href="/contact"
               className="inline-flex h-12 items-center gap-2 border border-border-soft px-8 text-[12px] uppercase tracking-[0.28em] text-ink hover:bg-cream transition-colors"
             >
@@ -119,7 +127,7 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
 
         {/* Order summary */}
         <aside className="lg:col-span-5">
-          <div className="sticky top-[116px] border border-border-soft bg-cream p-6">
+          <div className="sticky border border-border-soft bg-cream p-6" style={{ top: "calc(var(--header-h) + 24px)" }}>
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl italic">Order summary</h2>
               <span className="text-[11px] uppercase tracking-[0.22em] text-muted">{order.order_number}</span>

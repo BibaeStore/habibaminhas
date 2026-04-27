@@ -2,35 +2,28 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Package, MapPin, CreditCard, Heart, User, LogOut, Settings } from "lucide-react";
+import { Download } from "lucide-react";
+import { AccountSidebar } from "@/components/account/account-sidebar";
+import { ProductImage } from "@/components/common/product-image";
 import { getOrdersByEmail } from "@/lib/actions/orders";
 import { formatPrice } from "@/lib/utils";
 
-const sidebar = [
-  { label: "Overview", href: "/account", icon: User, active: true },
-  { label: "Orders", href: "/account/orders", icon: Package },
-  { label: "Addresses", href: "/account/addresses", icon: MapPin },
-  { label: "Payments", href: "/account/payments", icon: CreditCard },
-  { label: "Wishlist", href: "/wishlist", icon: Heart },
-  { label: "Settings", href: "/account/settings", icon: Settings },
-];
-
-const statusColor: Record<string, string> = {
-  pending:    "text-gold-dark",
-  processing: "text-gold-dark",
-  dispatched: "text-gold-dark",
-  delivered:  "text-sage",
-  cancelled:  "text-sale",
+const STATUS_STYLE: Record<string, { text: string; dot: string }> = {
+  pending:    { text: "text-gold-dark", dot: "#a8804b" },
+  processing: { text: "text-gold-dark", dot: "#a8804b" },
+  dispatched: { text: "text-gold-dark", dot: "#a8804b" },
+  delivered:  { text: "text-sage",      dot: "#8c9b7e" },
+  cancelled:  { text: "text-sale",      dot: "#9c3b2f" },
 };
 
 type Order = Awaited<ReturnType<typeof getOrdersByEmail>>[number];
 
 export default function AccountPage() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail]           = useState("");
   const [inputEmail, setInputEmail] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [orders, setOrders]         = useState<Order[]>([]);
+  const [loading, setLoading]       = useState(false);
+  const [mounted, setMounted]       = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -38,10 +31,7 @@ export default function AccountPage() {
     if (saved) {
       setEmail(saved);
       setLoading(true);
-      getOrdersByEmail(saved)
-        .then(setOrders)
-        .catch(() => {})
-        .finally(() => setLoading(false));
+      getOrdersByEmail(saved).then(setOrders).catch(() => {}).finally(() => setLoading(false));
     }
   }, []);
 
@@ -56,37 +46,31 @@ export default function AccountPage() {
     setLoading(false);
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("hm_customer_email");
-    setEmail("");
-    setOrders([]);
-  };
-
   if (!mounted) return null;
 
+  /* ── Email lookup ───────────────────────────────────────────── */
   if (!email) {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col justify-center px-4 py-16">
         <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Your account</span>
         <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Order lookup.</h1>
-        <p className="mt-2 text-[13px] text-ink-soft">Enter the email address you used when placing your order.</p>
+        <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
+          Enter the email address you used when placing your order to view your history.
+        </p>
         <form onSubmit={handleLookup} className="mt-8 flex flex-col gap-4">
           <label className="flex flex-col gap-2">
-            <span className="text-[11px] uppercase tracking-[0.22em] text-muted">Email address</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink">Email address</span>
             <input
-              type="email"
-              required
-              autoFocus
+              type="email" required autoFocus
               value={inputEmail}
               onChange={(e) => setInputEmail(e.target.value)}
               placeholder="you@example.com"
-              className="h-12 border border-border-soft bg-ivory px-4 text-[14px] outline-none focus:border-ink"
+              className="h-12 border border-border-soft bg-cream px-4 text-[14px] outline-none placeholder:text-muted/60 transition-colors focus:border-ink focus:bg-ivory"
             />
           </label>
           <button
-            type="submit"
-            disabled={loading}
-            className="h-12 bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark disabled:opacity-60 transition-colors"
+            type="submit" disabled={loading}
+            className="h-12 bg-ink text-[12px] uppercase tracking-[0.28em] text-ivory transition-colors hover:bg-gold-dark disabled:opacity-60"
           >
             {loading ? "Looking up…" : "View my orders"}
           </button>
@@ -95,104 +79,135 @@ export default function AccountPage() {
     );
   }
 
+  /* ── Dashboard ──────────────────────────────────────────────── */
   const recentOrders = orders.slice(0, 3);
-  const inTransit = orders.filter((o) => ["pending", "processing", "dispatched"].includes(o.status)).length;
-  const name = orders[0]?.customer_name ?? email.split("@")[0];
+  const inTransit    = orders.filter((o) => ["pending", "processing", "dispatched"].includes(o.status)).length;
+  const totalSpent   = orders.reduce((s, o) => s + o.total, 0);
+  const name         = orders[0]?.customer_name ?? email.split("@")[0];
+  const firstName    = name.split(" ")[0];
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
       <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Your account</span>
-      <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">
-        Welcome, {name.split(" ")[0]}.
-      </h1>
+      <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Welcome, {firstName}.</h1>
       <p className="mt-2 text-[13px] text-ink-soft">
         {orders.length} order{orders.length !== 1 ? "s" : ""} placed
         {inTransit > 0 ? `, ${inTransit} in transit` : ""}.
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
+
+        {/* Sidebar */}
         <aside className="lg:col-span-3">
-          <nav className="flex flex-row gap-1 overflow-x-auto border border-border-soft bg-ivory p-1 lg:flex-col lg:overflow-visible">
-            {sidebar.map(({ label, href, icon: Icon, active }) => (
-              <Link
-                key={label}
-                href={href}
-                className={`flex items-center gap-3 whitespace-nowrap px-4 py-3 text-[12px] uppercase tracking-[0.24em] transition-colors ${
-                  active ? "bg-ink text-ivory" : "text-ink-soft hover:bg-cream hover:text-ink"
-                }`}
-              >
-                <Icon className="h-4 w-4" /> {label}
-              </Link>
-            ))}
-            <button
-              onClick={handleSignOut}
-              className="mt-auto flex items-center gap-3 px-4 py-3 text-[12px] uppercase tracking-[0.24em] text-sale hover:bg-cream"
-            >
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
-          </nav>
+          <AccountSidebar />
         </aside>
 
-        <div className="lg:col-span-9">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {[
-              { label: "Orders", value: String(orders.length) },
-              { label: "In transit", value: String(inTransit) },
-              { label: "Total spent", value: formatPrice(orders.reduce((s, o) => s + o.total, 0)) },
-            ].map((s) => (
-              <div key={s.label} className="border border-border-soft bg-cream p-5">
-                <div className="text-[11px] uppercase tracking-[0.24em] text-muted">{s.label}</div>
-                <div className="mt-2 font-display text-2xl italic">{s.value}</div>
-              </div>
-            ))}
+        {/* Main content */}
+        <div className="lg:col-span-9 flex flex-col gap-10">
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="border border-border-soft bg-cream p-5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted">Orders</div>
+              <div className="mt-2 font-display text-3xl italic">{orders.length}</div>
+            </div>
+            <div className="border border-border-soft bg-cream p-5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted">In transit</div>
+              <div className="mt-2 font-display text-3xl italic">{inTransit}</div>
+            </div>
+            <div className="border border-border-soft bg-cream p-5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted">Total spent</div>
+              <div className="mt-2 font-display text-2xl italic">{formatPrice(totalSpent)}</div>
+            </div>
           </div>
 
-          <section className="mt-10">
-            <div className="flex items-end justify-between">
+          {/* Recent orders */}
+          <section>
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="font-display text-2xl italic sm:text-3xl">Recent orders</h2>
-              <Link href="/account/orders" className="text-[12px] uppercase tracking-[0.24em] text-gold-dark">
-                View all
+              <Link href="/account/orders" className="text-[11px] uppercase tracking-[0.24em] text-gold-dark transition-colors hover:text-ink">
+                View all →
               </Link>
             </div>
+
             {loading ? (
-              <div className="mt-4 space-y-2">
-                {[...Array(3)].map((_, i) => <div key={i} className="h-14 animate-pulse bg-cream" />)}
+              <div className="flex flex-col gap-3">
+                {[...Array(3)].map((_, i) => <div key={i} className="h-20 animate-pulse bg-cream" />)}
               </div>
             ) : recentOrders.length === 0 ? (
-              <div className="mt-4 border border-border-soft bg-cream px-6 py-10 text-center text-[13px] text-ink-soft">
-                No orders found for {email}.
+              <div className="border border-border-soft bg-cream px-6 py-10 text-center">
+                <p className="text-[13px] text-ink-soft">No orders found for {email}.</p>
+                <Link href="/ladies" className="mt-3 inline-block text-[11px] uppercase tracking-[0.2em] text-gold-dark hover:text-ink">
+                  Shop now →
+                </Link>
               </div>
             ) : (
-              <div className="mt-4 overflow-hidden border border-border-soft">
-                <table className="w-full text-left">
-                  <thead className="bg-cream text-[11px] uppercase tracking-[0.22em] text-muted">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Order</th>
-                      <th className="px-4 py-3 font-medium hidden sm:table-cell">Date</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 text-right font-medium">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-soft text-[13px]">
-                    {recentOrders.map((o) => (
-                      <tr key={o.id} className="hover:bg-cream/60">
-                        <td className="px-4 py-4 font-medium">{o.order_number}</td>
-                        <td className="px-4 py-4 text-ink-soft hidden sm:table-cell">
-                          {new Date(o.created_at).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] ${statusColor[o.status] ?? "text-ink-soft"}`}>
-                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                            {o.status}
+              <div className="overflow-hidden border border-border-soft">
+                {recentOrders.map((order, idx) => {
+                  const items = (order.order_items ?? []) as {
+                    product_title: string; product_image: string | null;
+                    size: string | null; quantity: number;
+                  }[];
+                  const firstImg = items[0]?.product_image ?? null;
+                  const s = STATUS_STYLE[order.status] ?? STATUS_STYLE.processing;
+
+                  return (
+                    <Link
+                      key={order.id}
+                      href={`/account/orders/${order.order_number}`}
+                      className={`flex items-center gap-4 px-5 py-4 transition-colors hover:bg-cream/60 ${idx > 0 ? "border-t border-border-soft" : ""}`}
+                    >
+                      {/* Product thumbnail */}
+                      <div className="relative h-14 w-10 flex-none overflow-hidden bg-parchment">
+                        <ProductImage src={firstImg} alt={items[0]?.product_title ?? "Product"} sizes="40px" />
+                      </div>
+
+                      {/* Order info */}
+                      <div className="flex flex-1 flex-wrap items-center justify-between gap-x-6 gap-y-1">
+                        <div>
+                          <div className="text-[13px] font-semibold text-ink">{order.order_number}</div>
+                          <div className="text-[12px] text-ink-soft">
+                            {new Date(order.created_at).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}
+                            {items.length > 0 && ` · ${items.length} item${items.length !== 1 ? "s" : ""}`}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <span className={`inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] ${s.text}`}>
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />
+                            {order.status}
                           </span>
-                        </td>
-                        <td className="px-4 py-4 text-right font-medium">{formatPrice(o.total)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          <span className="text-[13px] font-semibold text-ink">{formatPrice(order.total)}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             )}
+          </section>
+
+          {/* Quick links */}
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Link
+              href="/account/addresses"
+              className="flex items-center justify-between border border-border-soft bg-ivory px-5 py-4 transition-colors hover:bg-cream"
+            >
+              <div>
+                <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">Delivery addresses</div>
+                <div className="mt-0.5 text-[12px] text-ink-soft">Manage your saved addresses</div>
+              </div>
+              <span className="text-gold-dark">→</span>
+            </Link>
+            <Link
+              href="/account/settings"
+              className="flex items-center justify-between border border-border-soft bg-ivory px-5 py-4 transition-colors hover:bg-cream"
+            >
+              <div>
+                <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">Account settings</div>
+                <div className="mt-0.5 text-[12px] text-ink-soft">Profile, password, notifications</div>
+              </div>
+              <span className="text-gold-dark">→</span>
+            </Link>
           </section>
         </div>
       </div>

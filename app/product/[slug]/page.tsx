@@ -81,7 +81,7 @@ export default async function ProductPage({
         {catLink ? (
           <Link href={catLink.href} className="hover:text-ink">{catLink.label}</Link>
         ) : (
-          <Link href="/shop" className="hover:text-ink">Shop</Link>
+          <Link href="/ladies" className="hover:text-ink">Shop</Link>
         )}
         <ChevronRight className="h-3 w-3" />
         <span className="text-ink-soft">{subcategoryLabel}</span>

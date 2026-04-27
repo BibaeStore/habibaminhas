@@ -1,15 +1,8 @@
 import Link from "next/link";
-import { Package, MapPin, CreditCard, Heart, User, LogOut, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
+import { AccountSidebar } from "@/components/account/account-sidebar";
 
 export const metadata = { title: "My Addresses" };
-
-const sidebar = [
-  { label: "Overview", href: "/account", icon: User },
-  { label: "Orders", href: "/account/orders", icon: Package },
-  { label: "Addresses", href: "/account/addresses", icon: MapPin, active: true },
-  { label: "Payments", href: "/account/payments", icon: CreditCard },
-  { label: "Wishlist", href: "/wishlist", icon: Heart },
-];
 
 const addresses = [
   {
@@ -39,28 +32,20 @@ const addresses = [
 export default function AddressesPage() {
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
+
+      <nav className="mb-6 flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-muted">
+        <Link href="/account" className="transition-colors hover:text-ink">Account</Link>
+        <ChevronRight className="h-3 w-3" />
+        <span className="text-ink-soft">Addresses</span>
+      </nav>
+
       <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">Your account</span>
       <h1 className="mt-2 font-display text-4xl italic sm:text-5xl">Saved addresses.</h1>
       <p className="mt-2 text-[13px] text-ink-soft">Manage your delivery addresses for faster checkout.</p>
 
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
         <aside className="lg:col-span-3">
-          <nav className="flex flex-row gap-1 overflow-x-auto border border-border-soft bg-ivory p-1 lg:flex-col lg:overflow-visible">
-            {sidebar.map(({ label, href, icon: Icon, active }) => (
-              <Link
-                key={label}
-                href={href}
-                className={`flex items-center gap-3 whitespace-nowrap px-4 py-3 text-[12px] uppercase tracking-[0.24em] transition-colors ${
-                  active ? "bg-ink text-ivory" : "text-ink-soft hover:bg-cream hover:text-ink"
-                }`}
-              >
-                <Icon className="h-4 w-4" /> {label}
-              </Link>
-            ))}
-            <button className="mt-auto flex items-center gap-3 px-4 py-3 text-[12px] uppercase tracking-[0.24em] text-sale hover:bg-cream">
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
-          </nav>
+          <AccountSidebar />
         </aside>
 
         <div className="lg:col-span-9">

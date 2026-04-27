@@ -56,11 +56,12 @@ const linkCols = [
   {
     heading: "Shop",
     links: [
-      { label: "Ladies Suits", href: "/ladies/suits" },
-      { label: "Kids Formal Wear", href: "/kids/girls" },
-      { label: "Baby Bedding", href: "/baby/bedding" },
-      { label: "Baby Nests & Loungers", href: "/baby/nests" },
-      { label: "Accessories", href: "/accessories/hair" },
+      { label: "Ladies Suits",       href: "/ladies"      },
+      { label: "Kids Formal Wear",   href: "/kids"        },
+      { label: "Baby Bedding",       href: "/baby"        },
+      { label: "Baby Nests",         href: "/baby"        },
+      { label: "Accessories",        href: "/accessories" },
+      { label: "New Arrivals",       href: "/new"         },
     ],
   },
 ];

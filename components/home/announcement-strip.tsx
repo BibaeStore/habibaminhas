@@ -23,7 +23,7 @@ export function AnnouncementStrip() {
           <span className="text-gold-dark">14-Day Easy Returns</span>
         </div>
         <Link
-          href="/shop"
+          href="/ladies"
           className="group inline-flex items-center gap-2 text-[12px] uppercase tracking-[0.28em] text-ink hover:text-gold-dark"
         >
           Shop now

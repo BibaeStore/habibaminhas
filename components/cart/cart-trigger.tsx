@@ -15,7 +15,8 @@ export function CartTrigger() {
   /* Avoid hydration mismatch — badge only renders after client mount */
   useEffect(() => setMounted(true), []);
 
-  const totalQty = items.reduce((s, i) => s + i.qty, 0);
+  const totalQty  = items.reduce((s, i) => s + i.qty, 0);
+  const itemCount = items.length; // distinct SKUs — shown on the badge
 
   return (
     <>
@@ -27,10 +28,10 @@ export function CartTrigger() {
       >
         <ShoppingBag className="h-[18px] w-[18px]" />
 
-        {/* Dynamic badge — only after hydration to prevent mismatch */}
-        {mounted && totalQty > 0 && (
+        {/* Badge shows number of distinct line items, not total quantity */}
+        {mounted && itemCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gold px-1 text-[9px] font-semibold text-ivory tabular-nums">
-            {totalQty > 99 ? "99+" : totalQty}
+            {itemCount > 99 ? "99+" : itemCount}
           </span>
         )}
       </button>

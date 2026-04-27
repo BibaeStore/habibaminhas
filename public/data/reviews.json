@@ -1,0 +1,324 @@
+{
+  "reviews": [
+    {
+      "id": 1,
+      "name": "Malaika S.",
+      "fullName": "Malaika Siddiqui",
+      "city": "Karachi",
+      "province": "Sindh",
+      "product": {
+        "title": "Rosewood Elegance 3-Piece Formal Suit",
+        "image": "/products/blush-embroidered.webp"
+      },
+      "rating": 5,
+      "review": "The fabric quality is exceptional — exactly what I was hoping for! Will definitely be ordering more from Habiba Minhas.",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 42
+    },
+    {
+      "id": 2,
+      "name": "Mahnoor K.",
+      "fullName": "Mahnoor Khalid",
+      "city": "Lahore",
+      "province": "Punjab",
+      "product": {
+        "title": "Indigo Royal 3-Piece Silk Suit",
+        "image": "/products/indigo-floral.webp"
+      },
+      "rating": 5,
+      "review": "Wore this to my cousin's wedding and received so many compliments. The embroidery is absolutely stunning and the silk feels incredibly luxurious!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 38
+    },
+    {
+      "id": 3,
+      "name": "Hoorain B.",
+      "fullName": "Hoorain Baig",
+      "city": "Islamabad",
+      "province": "ICT",
+      "product": {
+        "title": "Royal Amethyst Evening Gown",
+        "image": "/products/royal-amethyst-gown.webp"
+      },
+      "rating": 5,
+      "review": "Ordered the Royal Amethyst for Eid and it arrived perfectly on time in beautiful packaging. I felt so special wearing it!",
+      "date": "March 2026",
+      "verified": true,
+      "helpful": 55
+    },
+    {
+      "id": 4,
+      "name": "Dua M.",
+      "fullName": "Dua Mirza",
+      "city": "Rawalpindi",
+      "province": "Punjab",
+      "product": {
+        "title": "Sage Chiffon Casual 2-Piece",
+        "image": "/products/sage-chiffon.webp"
+      },
+      "rating": 4,
+      "review": "The chiffon feels so luxurious and the color is exactly as shown in the photos. Very happy with my purchase — great quality for the price!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 27
+    },
+    {
+      "id": 5,
+      "name": "Mahira Z.",
+      "fullName": "Mahira Zafar",
+      "city": "Karachi",
+      "province": "Sindh",
+      "product": {
+        "title": "Sunset Bloom Festive 3-Piece",
+        "image": "/products/sunset-bloom-festive.webp"
+      },
+      "rating": 5,
+      "review": "This is my third order from Habiba Minhas and each time the quality gets better. The Sunset Bloom collection is absolutely breathtaking. Highly recommended to all!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 61
+    },
+    {
+      "id": 6,
+      "name": "Rimsha N.",
+      "fullName": "Rimsha Nawaz",
+      "city": "Multan",
+      "province": "Punjab",
+      "product": {
+        "title": "Sky Blue Embroidered Party Suit",
+        "image": "/products/sky-embroidered.webp"
+      },
+      "rating": 5,
+      "review": "Beautiful embroidered suit — the mirror work details are so intricate and stunning in person. Received countless compliments at the party. Love it!",
+      "date": "March 2026",
+      "verified": true,
+      "helpful": 33
+    },
+    {
+      "id": 7,
+      "name": "Nimra H.",
+      "fullName": "Nimra Hassan",
+      "city": "Faisalabad",
+      "province": "Punjab",
+      "product": {
+        "title": "Pink Blossom Party Wear 3-Piece",
+        "image": "/trending/pink-blossom.webp"
+      },
+      "rating": 4,
+      "review": "Fast delivery, excellent packaging, and the fabric is of premium quality. Ordered 2 pieces and both were perfect. Will definitely reorder soon!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 19
+    },
+    {
+      "id": 8,
+      "name": "Areeba T.",
+      "fullName": "Areeba Tariq",
+      "city": "Lahore",
+      "province": "Punjab",
+      "product": {
+        "title": "Ivory Dream Embroidered Dupatta Set",
+        "image": "/products/ivory-floral.webp"
+      },
+      "rating": 5,
+      "review": "My whole family loved this suit. The colors are vibrant and the stitching is absolutely flawless. Best purchase I've made this year!",
+      "date": "March 2026",
+      "verified": true,
+      "helpful": 44
+    },
+    {
+      "id": 9,
+      "name": "Shanzay M.",
+      "fullName": "Shanzay Malik",
+      "city": "Karachi",
+      "province": "Sindh",
+      "product": {
+        "title": "Emerald Green Embroidered Formal Suit",
+        "image": "/trending/emerald-embroidery.webp"
+      },
+      "rating": 5,
+      "review": "Ordered the Emerald suit for a formal dinner and received so many compliments all night. Worth every single rupee! Absolutely stunning craftsmanship.",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 57
+    },
+    {
+      "id": 10,
+      "name": "Mehak I.",
+      "fullName": "Mehak Iqbal",
+      "city": "Islamabad",
+      "province": "ICT",
+      "product": {
+        "title": "Pistachio Bloom Lawn Collection 2-Piece",
+        "image": "/products/pistachio-floral.webp"
+      },
+      "rating": 4,
+      "review": "The pistachio color is even more beautiful in person than in the photos. Very comfortable to wear all day long. Great for both casual and formal occasions!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 22
+    },
+    {
+      "id": 11,
+      "name": "Anaya S.",
+      "fullName": "Anaya Sheikh",
+      "city": "Peshawar",
+      "province": "KPK",
+      "product": {
+        "title": "Floral Lawn Summer 2-Piece",
+        "image": "/trending/floral-lawn.webp"
+      },
+      "rating": 5,
+      "review": "I've been looking for a lawn suit like this for years. Finally found it at Habiba Minhas! The floral print is elegant and the fabric is so comfortable.",
+      "date": "March 2026",
+      "verified": true,
+      "helpful": 31
+    },
+    {
+      "id": 12,
+      "name": "Zara Q.",
+      "fullName": "Zara Qureshi",
+      "city": "Sialkot",
+      "province": "Punjab",
+      "product": {
+        "title": "Slate Grey Printed Unstitched Fabric",
+        "image": "/products/slate-printed.webp"
+      },
+      "rating": 5,
+      "review": "Excellent quality and the print is very elegant and sophisticated. Customer service was wonderful and the delivery was right on time. Highly recommend!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 16
+    },
+    {
+      "id": 13,
+      "name": "Maha R.",
+      "fullName": "Maha Rehman",
+      "city": "Karachi",
+      "province": "Sindh",
+      "product": {
+        "title": "Sage Bloom Garden Collection",
+        "image": "/trending/sage-bloom.webp"
+      },
+      "rating": 5,
+      "review": "This sage bloom collection is truly breathtaking. The dupatta especially is so beautifully embroidered — it is absolutely perfect in every way!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 48
+    },
+    {
+      "id": 14,
+      "name": "Afreen C.",
+      "fullName": "Afreen Chaudhry",
+      "city": "Lahore",
+      "province": "Punjab",
+      "product": {
+        "title": "Rosewood Elegance 3-Piece Formal Suit",
+        "image": "/products/blush-embroidered.webp"
+      },
+      "rating": 5,
+      "review": "Bought this as a gift for my mother and she absolutely loved it. The quality is outstanding and she wore it to a family gathering. Will shop again soon!",
+      "date": "March 2026",
+      "verified": true,
+      "helpful": 36
+    },
+    {
+      "id": 15,
+      "name": "Bisma H.",
+      "fullName": "Bisma Hussain",
+      "city": "Gujranwala",
+      "province": "Punjab",
+      "product": {
+        "title": "Royal Amethyst Evening Gown",
+        "image": "/products/royal-amethyst-gown.webp"
+      },
+      "rating": 4,
+      "review": "The Royal Amethyst is now my favorite formal suit. Wore it to a dinner party and looked absolutely stunning. The material is so rich and elegant.",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 29
+    },
+    {
+      "id": 16,
+      "name": "Saba F.",
+      "fullName": "Saba Farooq",
+      "city": "Karachi",
+      "province": "Sindh",
+      "product": {
+        "title": "Indigo Royal 3-Piece Silk Suit",
+        "image": "/products/indigo-floral.webp"
+      },
+      "rating": 5,
+      "review": "Quality is absolutely top-notch. The indigo color is rich, deep and very sophisticated. The stitching details are so fine and professional. Absolutely love it!",
+      "date": "March 2026",
+      "verified": true,
+      "helpful": 41
+    },
+    {
+      "id": 17,
+      "name": "Hana A.",
+      "fullName": "Hana Aslam",
+      "city": "Rawalpindi",
+      "province": "Punjab",
+      "product": {
+        "title": "Sunset Bloom Festive 3-Piece",
+        "image": "/products/sunset-bloom-festive.webp"
+      },
+      "rating": 5,
+      "review": "Received my order within 3 days — faster than expected! The suit is absolutely beautiful and the material feels very premium. Thank you Habiba Minhas!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 25
+    },
+    {
+      "id": 18,
+      "name": "Alisha K.",
+      "fullName": "Alisha Khan",
+      "city": "Lahore",
+      "province": "Punjab",
+      "product": {
+        "title": "Sky Blue Embroidered Party Suit",
+        "image": "/products/sky-embroidered.webp"
+      },
+      "rating": 5,
+      "review": "Such a beautiful collection. The sky blue embroidery is so delicate and very well-crafted. It fits beautifully and is so comfortable to wear all day!",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 34
+    },
+    {
+      "id": 19,
+      "name": "Laiba R.",
+      "fullName": "Laiba Rizvi",
+      "city": "Karachi",
+      "province": "Sindh",
+      "product": {
+        "title": "Pink Blossom Party Wear 3-Piece",
+        "image": "/trending/pink-blossom.webp"
+      },
+      "rating": 5,
+      "review": "Pink Blossom is my absolute favourite — wore it to a friend's mehndi and felt like a complete queen! The dupatta is gorgeous. Perfection from top to bottom!",
+      "date": "March 2026",
+      "verified": true,
+      "helpful": 52
+    },
+    {
+      "id": 20,
+      "name": "Palwasha Y.",
+      "fullName": "Palwasha Yousaf",
+      "city": "Abbottabad",
+      "province": "KPK",
+      "product": {
+        "title": "Sage Chiffon Casual 2-Piece",
+        "image": "/products/sage-chiffon.webp"
+      },
+      "rating": 4,
+      "review": "The sage chiffon is perfect for both office wear and casual outings — elegant yet so comfortable. Love everything about this brand! Will keep ordering.",
+      "date": "April 2026",
+      "verified": true,
+      "helpful": 18
+    }
+  ]
+}

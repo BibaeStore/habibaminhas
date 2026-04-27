@@ -1,0 +1,464 @@
+{
+  "notifications": [
+    {
+      "id": 1,
+      "customer": {
+        "firstName": "Malaika",
+        "lastName": "Siddiqui",
+        "city": "Karachi",
+        "province": "Sindh",
+        "phone": "+92 312 ●●● ●●47",
+        "email": "m****ika@gmail.com"
+      },
+      "product": {
+        "title": "Rosewood Elegance 3-Piece Formal Suit",
+        "image": "/products/blush-embroidered.webp",
+        "price": 6500,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "The fabric quality is exceptional — exactly what I was hoping for! Will definitely be ordering more."
+      },
+      "status": "Selling fast · Confirmed order",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 2,
+      "customer": {
+        "firstName": "Mahnoor",
+        "lastName": "Khalid",
+        "city": "Lahore",
+        "province": "Punjab",
+        "phone": "+92 321 ●●● ●●83",
+        "email": "mah****r@gmail.com"
+      },
+      "product": {
+        "title": "Indigo Royal 3-Piece Silk Suit",
+        "image": "/products/indigo-floral.webp",
+        "price": 9800,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Wore this to my cousin's wedding and received so many compliments. The embroidery is absolutely stunning!"
+      },
+      "status": "New purchase · Trending now",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 3,
+      "customer": {
+        "firstName": "Hoorain",
+        "lastName": "Baig",
+        "city": "Islamabad",
+        "province": "ICT",
+        "phone": "+92 333 ●●● ●●62",
+        "email": "h****in@gmail.com"
+      },
+      "product": {
+        "title": "Royal Amethyst Evening Gown",
+        "image": "/products/royal-amethyst-gown.webp",
+        "price": 14500,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Ordered the Royal Amethyst for Eid and it arrived perfectly on time. The packaging was gorgeous too!"
+      },
+      "status": "Confirmed order · Limited stock",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 4,
+      "customer": {
+        "firstName": "Dua",
+        "lastName": "Mirza",
+        "city": "Rawalpindi",
+        "province": "Punjab",
+        "phone": "+92 345 ●●● ●●19",
+        "email": "d****za@gmail.com"
+      },
+      "product": {
+        "title": "Sage Chiffon Casual 2-Piece",
+        "image": "/products/sage-chiffon.webp",
+        "price": 4200,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 4,
+        "comment": "The chiffon feels so luxurious and the color is exactly as shown in the photos. Very happy with my purchase!"
+      },
+      "status": "Order placed · Popular item",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 5,
+      "customer": {
+        "firstName": "Mahira",
+        "lastName": "Zafar",
+        "city": "Karachi",
+        "province": "Sindh",
+        "phone": "+92 300 ●●● ●●55",
+        "email": "m****ra@gmail.com"
+      },
+      "product": {
+        "title": "Sunset Bloom Festive 3-Piece",
+        "image": "/products/sunset-bloom-festive.webp",
+        "price": 8900,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "This is my third order from Habiba Minhas and each time the quality gets better. Highly recommended to everyone!"
+      },
+      "status": "Selling fast · Confirmed order",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 6,
+      "customer": {
+        "firstName": "Rimsha",
+        "lastName": "Nawaz",
+        "city": "Multan",
+        "province": "Punjab",
+        "phone": "+92 306 ●●● ●●38",
+        "email": "r****ha@gmail.com"
+      },
+      "product": {
+        "title": "Sky Blue Embroidered Party Suit",
+        "image": "/products/sky-embroidered.webp",
+        "price": 7600,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Beautiful embroidered suit — the mirror work details are intricate and just stunning in person. Love it!"
+      },
+      "status": "Sale confirmed · Popular item",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 7,
+      "customer": {
+        "firstName": "Nimra",
+        "lastName": "Hassan",
+        "city": "Faisalabad",
+        "province": "Punjab",
+        "phone": "+92 311 ●●● ●●74",
+        "email": "n****ra@gmail.com"
+      },
+      "product": {
+        "title": "Pink Blossom Party Wear 3-Piece",
+        "image": "/trending/pink-blossom.webp",
+        "price": 5500,
+        "quantity": 2
+      },
+      "review": {
+        "rating": 4,
+        "comment": "Fast delivery, excellent packaging, and the fabric is of premium quality. Will definitely reorder!"
+      },
+      "status": "New purchase · Trending now",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 8,
+      "customer": {
+        "firstName": "Areeba",
+        "lastName": "Tariq",
+        "city": "Lahore",
+        "province": "Punjab",
+        "phone": "+92 321 ●●● ●●91",
+        "email": "a****ba@gmail.com"
+      },
+      "product": {
+        "title": "Ivory Dream Embroidered Dupatta Set",
+        "image": "/products/ivory-floral.webp",
+        "price": 11200,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "My whole family loved this suit. The colors are vibrant and the stitching is absolutely flawless!"
+      },
+      "status": "Order placed · Limited stock",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 9,
+      "customer": {
+        "firstName": "Shanzay",
+        "lastName": "Malik",
+        "city": "Karachi",
+        "province": "Sindh",
+        "phone": "+92 347 ●●● ●●26",
+        "email": "sh****ay@gmail.com"
+      },
+      "product": {
+        "title": "Emerald Green Embroidered Formal Suit",
+        "image": "/trending/emerald-embroidery.webp",
+        "price": 13400,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Ordered the Emerald suit for a formal dinner and received so many compliments. Worth every single rupee!"
+      },
+      "status": "Selling fast · Confirmed order",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 10,
+      "customer": {
+        "firstName": "Mehak",
+        "lastName": "Iqbal",
+        "city": "Islamabad",
+        "province": "ICT",
+        "phone": "+92 303 ●●● ●●08",
+        "email": "me****ak@gmail.com"
+      },
+      "product": {
+        "title": "Pistachio Bloom Lawn Collection 2-Piece",
+        "image": "/products/pistachio-floral.webp",
+        "price": 3800,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 4,
+        "comment": "The pistachio color is even more beautiful in person. Very comfortable to wear all day long. Love it!"
+      },
+      "status": "Sale confirmed · Popular item",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 11,
+      "customer": {
+        "firstName": "Anaya",
+        "lastName": "Sheikh",
+        "city": "Peshawar",
+        "province": "KPK",
+        "phone": "+92 301 ●●● ●●53",
+        "email": "a****ya@gmail.com"
+      },
+      "product": {
+        "title": "Floral Lawn Summer 2-Piece",
+        "image": "/trending/floral-lawn.webp",
+        "price": 3200,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "I've been looking for a lawn suit like this for years. Finally found it at Habiba Minhas. Absolutely love it!"
+      },
+      "status": "New purchase · Trending now",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 12,
+      "customer": {
+        "firstName": "Zara",
+        "lastName": "Qureshi",
+        "city": "Sialkot",
+        "province": "Punjab",
+        "phone": "+92 333 ●●● ●●67",
+        "email": "z****ra@gmail.com"
+      },
+      "product": {
+        "title": "Slate Grey Printed Unstitched Fabric",
+        "image": "/products/slate-printed.webp",
+        "price": 4100,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Excellent quality and the print is very elegant. Customer service was also wonderful and professional."
+      },
+      "status": "Confirmed order · Limited stock",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 13,
+      "customer": {
+        "firstName": "Maha",
+        "lastName": "Rehman",
+        "city": "Karachi",
+        "province": "Sindh",
+        "phone": "+92 312 ●●● ●●34",
+        "email": "m****ha@gmail.com"
+      },
+      "product": {
+        "title": "Sage Bloom Garden Collection",
+        "image": "/trending/sage-bloom.webp",
+        "price": 6800,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "This sage bloom collection is breathtaking. The dupatta especially is so beautifully embroidered — perfection!"
+      },
+      "status": "Selling fast · Confirmed order",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 14,
+      "customer": {
+        "firstName": "Afreen",
+        "lastName": "Chaudhry",
+        "city": "Lahore",
+        "province": "Punjab",
+        "phone": "+92 321 ●●● ●●12",
+        "email": "af****en@gmail.com"
+      },
+      "product": {
+        "title": "Rosewood Elegance 3-Piece Formal Suit",
+        "image": "/products/blush-embroidered.webp",
+        "price": 6500,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Bought this as a gift for my mother and she absolutely loved it. Will definitely shop again for sure!"
+      },
+      "status": "Sale confirmed · Popular item",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 15,
+      "customer": {
+        "firstName": "Bisma",
+        "lastName": "Hussain",
+        "city": "Gujranwala",
+        "province": "Punjab",
+        "phone": "+92 300 ●●● ●●78",
+        "email": "b****ma@gmail.com"
+      },
+      "product": {
+        "title": "Royal Amethyst Evening Gown",
+        "image": "/products/royal-amethyst-gown.webp",
+        "price": 14500,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 4,
+        "comment": "The Royal Amethyst is now my favorite formal suit. Wore it to a dinner party and looked absolutely stunning!"
+      },
+      "status": "Order placed · Limited stock",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 16,
+      "customer": {
+        "firstName": "Saba",
+        "lastName": "Farooq",
+        "city": "Karachi",
+        "province": "Sindh",
+        "phone": "+92 311 ●●● ●●45",
+        "email": "s****ba@gmail.com"
+      },
+      "product": {
+        "title": "Indigo Royal 3-Piece Silk Suit",
+        "image": "/products/indigo-floral.webp",
+        "price": 9800,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Quality is absolutely top-notch. The indigo color is rich and the print is very sophisticated. Love every detail!"
+      },
+      "status": "Selling fast · Confirmed order",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 17,
+      "customer": {
+        "firstName": "Hana",
+        "lastName": "Aslam",
+        "city": "Rawalpindi",
+        "province": "Punjab",
+        "phone": "+92 345 ●●● ●●89",
+        "email": "h****na@gmail.com"
+      },
+      "product": {
+        "title": "Sunset Bloom Festive 3-Piece",
+        "image": "/products/sunset-bloom-festive.webp",
+        "price": 8900,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Received my order within 3 days! The suit is beautiful and the material feels very premium. Thank you!"
+      },
+      "status": "New purchase · Trending now",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 18,
+      "customer": {
+        "firstName": "Alisha",
+        "lastName": "Khan",
+        "city": "Lahore",
+        "province": "Punjab",
+        "phone": "+92 303 ●●● ●●23",
+        "email": "al****ha@gmail.com"
+      },
+      "product": {
+        "title": "Sky Blue Embroidered Party Suit",
+        "image": "/products/sky-embroidered.webp",
+        "price": 7600,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Such a beautiful collection. The sky blue embroidery is so delicate and very well-crafted. Highly recommend!"
+      },
+      "status": "Sale confirmed · Popular item",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 19,
+      "customer": {
+        "firstName": "Laiba",
+        "lastName": "Rizvi",
+        "city": "Karachi",
+        "province": "Sindh",
+        "phone": "+92 306 ●●● ●●57",
+        "email": "l****ba@gmail.com"
+      },
+      "product": {
+        "title": "Pink Blossom Party Wear 3-Piece",
+        "image": "/trending/pink-blossom.webp",
+        "price": 5500,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 5,
+        "comment": "Pink Blossom is my absolute favourite — wore it to a friend's mehndi and felt like a queen! Perfection!"
+      },
+      "status": "Confirmed order · Limited stock",
+      "badge": "Live Sale"
+    },
+    {
+      "id": 20,
+      "customer": {
+        "firstName": "Palwasha",
+        "lastName": "Yousaf",
+        "city": "Abbottabad",
+        "province": "KPK",
+        "phone": "+92 347 ●●● ●●14",
+        "email": "pa****ha@gmail.com"
+      },
+      "product": {
+        "title": "Sage Chiffon Casual 2-Piece",
+        "image": "/products/sage-chiffon.webp",
+        "price": 4200,
+        "quantity": 1
+      },
+      "review": {
+        "rating": 4,
+        "comment": "The sage chiffon is perfect for office wear too — elegant yet comfortable. Love everything about it!"
+      },
+      "status": "Selling fast · Confirmed order",
+      "badge": "Live Sale"
+    }
+  ]
+}

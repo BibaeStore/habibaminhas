@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ShieldCheck, Truck, RotateCcw, Lock, Check } from "lucide-react";
+import { ChevronRight, ShieldCheck, Truck, RotateCcw, Lock, Check, Pencil } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { createOrder } from "@/lib/actions/orders";
@@ -30,6 +30,8 @@ export default function PaymentPage() {
   const { shipping, clearCheckout } = useCheckoutStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  // Prevents the empty-cart guard from firing after a successful order clears the store
+  const orderPlaced = useRef(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -41,6 +43,7 @@ export default function PaymentPage() {
 
   useEffect(() => {
     if (!mounted) return;
+    if (orderPlaced.current) return; // order just succeeded — skip redirect guard
     if (items.length === 0) router.replace("/cart");
     else if (!shipping) router.replace("/checkout/shipping");
   }, [mounted, items, shipping, router]);
@@ -94,6 +97,9 @@ export default function PaymentPage() {
         },
         orderItems
       );
+      // Set flag BEFORE clearing stores so the redirect guard ignores the
+      // empty-cart re-render that clearCart() + clearCheckout() will trigger.
+      orderPlaced.current = true;
       localStorage.setItem("hm_customer_email", shipping.email);
       clearCart();
       clearCheckout();
@@ -356,7 +362,11 @@ export default function PaymentPage() {
                   <div className="mt-1 font-medium text-ink">{shipName}</div>
                   <div className="mt-0.5 text-ink-soft">{shipAddr}</div>
                 </div>
-                <Link href="/checkout/shipping" className="shrink-0 text-[11px] text-gold-dark transition-colors hover:text-ink">
+                <Link
+                  href="/checkout/shipping"
+                  className="shrink-0 inline-flex items-center gap-1.5 border border-border-soft bg-ivory px-2.5 py-1.5 text-[10px] uppercase tracking-[0.2em] text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                >
+                  <Pencil className="h-2.5 w-2.5" />
                   Edit
                 </Link>
               </div>

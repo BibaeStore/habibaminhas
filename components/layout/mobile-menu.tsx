@@ -99,18 +99,18 @@ export function MobileMenu({
               </div>
             ))}
             <Link
-              href="/edit"
+              href="/new"
               onClick={onClose}
               className="border-b border-border-soft px-5 py-4 text-[13px] uppercase tracking-[0.28em]"
             >
-              The Edit
+              New Arrivals
             </Link>
             <Link
-              href="/stores"
+              href="/contact"
               onClick={onClose}
               className="border-b border-border-soft px-5 py-4 text-[13px] uppercase tracking-[0.28em]"
             >
-              Stores
+              Contact Us
             </Link>
             <Link
               href="/offers"

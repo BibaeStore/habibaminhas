@@ -56,7 +56,7 @@ export async function CategoryTiles() {
           description="From elegant ladies suits to premium baby essentials — curated with love in Pakistan."
         />
         <Link
-          href="/shop"
+          href="/ladies"
           className="link-underline text-[12px] uppercase tracking-[0.28em] text-ink"
         >
           View All
