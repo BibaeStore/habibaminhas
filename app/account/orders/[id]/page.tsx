@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ChevronRight, MapPin, CreditCard, CheckCircle2, Clock, Package, Truck, RotateCcw, Download } from "lucide-react";
-import { getOrderByNumber } from "@/lib/actions/orders";
+import { getMyOrderByNumber } from "@/lib/actions/orders";
+import { getCustomerSession } from "@/lib/actions/customer-auth";
 import { ProductImage } from "@/components/common/product-image";
 import { formatPrice } from "@/lib/utils";
 import type { Tables, Json } from "@/lib/supabase/types";
+
+export const dynamic = "force-dynamic";
 
 type OrderItem = Tables<"order_items">;
 type Params = { id: string };
@@ -55,12 +58,11 @@ function buildTimeline(status: string, courier: string | null) {
 export default async function OrderDetailPage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
 
-  let order: Awaited<ReturnType<typeof getOrderByNumber>>;
-  try {
-    order = await getOrderByNumber(id);
-  } catch {
-    notFound();
-  }
+  const session = await getCustomerSession();
+  if (!session) redirect(`/account/login?redirect=/account/orders/${id}`);
+
+  const order = await getMyOrderByNumber(id);
+  if (!order) notFound();
 
   const items    = (order.order_items ?? []) as OrderItem[];
   const addr     = parseAddress(order.address);

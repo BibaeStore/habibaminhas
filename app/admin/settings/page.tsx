@@ -347,42 +347,18 @@ export default function AdminSettingsPage() {
 
             {/* ── PAYMENT METHODS ── */}
             {active === "payment" && (
-              <>
-                <AdminCard>
-                  <h2 className="text-[18px] font-semibold text-[var(--admin-text)]">Payment methods</h2>
-                  <div className="mt-4 flex flex-col gap-3">
-                    <Toggle checked={payment.cod}         onChange={(v) => setPayment({ ...payment, cod: v })}         label="Cash on Delivery (COD)" sub="No upfront payment required" />
-                    <Toggle checked={payment.jazzcash}    onChange={(v) => setPayment({ ...payment, jazzcash: v })}    label="JazzCash"               sub="Mobile wallet · Pakistan" />
-                    <Toggle checked={payment.easypaisa}   onChange={(v) => setPayment({ ...payment, easypaisa: v })}   label="Easypaisa"              sub="Mobile wallet · Pakistan" />
-                    <Toggle checked={payment.bankTransfer} onChange={(v) => setPayment({ ...payment, bankTransfer: v })} label="Bank Transfer"        sub="Manual payment confirmation required" />
-                  </div>
-                </AdminCard>
-
-                {payment.bankTransfer && (
-                  <AdminCard>
-                    <h2 className="text-[18px] font-semibold text-[var(--admin-text)]">Bank account details</h2>
-                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <Field label="Bank name">
-                        <input value={payment.bankName} onChange={(e) => setPayment({ ...payment, bankName: e.target.value })}
-                          className={inputSmCls} />
-                      </Field>
-                      <Field label="Account title">
-                        <input value={payment.accountTitle} onChange={(e) => setPayment({ ...payment, accountTitle: e.target.value })}
-                          className={inputSmCls} />
-                      </Field>
-                      <Field label="Account number">
-                        <input value={payment.accountNo} onChange={(e) => setPayment({ ...payment, accountNo: e.target.value })}
-                          className={`${inputSmCls} font-mono`} />
-                      </Field>
-                      <Field label="IBAN">
-                        <input value={payment.iban} onChange={(e) => setPayment({ ...payment, iban: e.target.value })}
-                          className={`${inputSmCls} font-mono`} />
-                      </Field>
-                    </div>
-                    <SectionSaveButton onSave={() => updateSettings({ payment_methods: { cod: payment.cod, jazzcash: payment.jazzcash, easypaisa: payment.easypaisa, bankTransfer: payment.bankTransfer, bankName: payment.bankName, accountTitle: payment.accountTitle, accountNo: payment.accountNo, iban: payment.iban } }).catch(() => {})} />
-                  </AdminCard>
-                )}
-              </>
+              <AdminCard>
+                <h2 className="text-[18px] font-semibold text-[var(--admin-text)]">Payment methods</h2>
+                <p className="mt-1 text-[14px] text-[var(--admin-text-muted)]">
+                  Cash on Delivery is currently the only available checkout option.
+                  Additional gateways (JazzCash, Easypaisa, card) can be enabled later
+                  once integrated.
+                </p>
+                <div className="mt-4 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-4 py-3 text-[14px]">
+                  <span className="font-semibold text-[var(--admin-text)]">Cash on Delivery</span>
+                  <span className="ml-2 text-[var(--admin-text-muted)]">Active</span>
+                </div>
+              </AdminCard>
             )}
 
             {/* ── NOTIFICATIONS ── */}

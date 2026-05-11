@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useTransition } from "react";
 import { Package, MapPin, CreditCard, Heart, User, LogOut, Settings } from "lucide-react";
+import { customerSignOut } from "@/lib/actions/customer-auth";
 
 const NAV = [
   { label: "Overview",  href: "/account",           icon: User },
@@ -15,12 +17,13 @@ const NAV = [
 
 export function AccountSidebar() {
   const pathname = usePathname();
-  const router   = useRouter();
+  const [, startTransition] = useTransition();
 
   function signOut() {
-    localStorage.removeItem("hm_customer_email");
-    router.push("/account");
-    router.refresh();
+    startTransition(async () => {
+      try { localStorage.removeItem("hm_customer_email"); } catch {}
+      await customerSignOut();
+    });
   }
 
   return (

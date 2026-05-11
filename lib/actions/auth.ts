@@ -8,7 +8,12 @@ import { redirect } from "next/navigation";
 const COOKIE_NAME = "admin_token";
 
 function jwtSecret() {
-  const secret = process.env.ADMIN_JWT_SECRET ?? "habiba-admin-dev-secret-change-in-production";
+  const secret = process.env.ADMIN_JWT_SECRET;
+  if (!secret) {
+    throw new Error(
+      "ADMIN_JWT_SECRET is not set. Add a strong random value to your .env file before running the app."
+    );
+  }
   return new TextEncoder().encode(secret);
 }
 

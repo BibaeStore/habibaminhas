@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { products, type Product } from "@/lib/data";
-import { ProductCard } from "@/components/product/product-card";
+import { ProductCard, type CardProduct } from "@/components/product/product-card";
 import { SectionHeading } from "@/components/common/section-heading";
 import { cn } from "@/lib/utils";
 
-const tabs: Array<{ key: Product["category"] | "all"; label: string }> = [
+const tabs: Array<{ key: string; label: string }> = [
   { key: "all", label: "All" },
   { key: "ladies-suits", label: "Ladies" },
   { key: "kids-formal", label: "Kids" },
@@ -16,12 +15,22 @@ const tabs: Array<{ key: Product["category"] | "all"; label: string }> = [
   { key: "accessories", label: "Accessories" },
 ];
 
-export function TrendingTabs() {
+export type TrendingProduct = CardProduct & { category?: string | null };
+
+export function TrendingTabs({ products }: { products: TrendingProduct[] }) {
   const [active, setActive] = useState<string>("all");
-  const items =
-    active === "all"
-      ? products.filter((p) => p.badge === "New In" || p.badge === "Bestseller").slice(0, 6)
-      : products.filter((p) => p.category === active).slice(0, 6);
+
+  const items = useMemo(() => {
+    if (active === "all") {
+      const featured = products.filter(
+        (p) => p.badge === "Bestseller" || p.badge === "New In",
+      );
+      const pool = featured.length >= 6 ? featured : [...featured, ...products];
+      const seen = new Set<string | number>();
+      return pool.filter((p) => (seen.has(p.id) ? false : seen.add(p.id))).slice(0, 6);
+    }
+    return products.filter((p) => p.category === active).slice(0, 6);
+  }, [active, products]);
 
   return (
     <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8">

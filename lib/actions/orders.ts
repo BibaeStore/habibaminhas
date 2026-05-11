@@ -1,8 +1,9 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import { decrementStock, emitLowStockNotifications } from "@/lib/actions/inventory";
 
 export async function getOrders(status?: string) {
   const sb = createAdminClient();
@@ -59,15 +60,12 @@ export async function createOrder(
     PAYMENT_METHOD_MAP[(order.payment_method ?? "").toLowerCase()] ??
     order.payment_method;
 
-  // Generate order number
-  const year = new Date().getFullYear();
-  const { count } = await sb.from("orders").select("*", { count: "exact", head: true });
-  const num = String((count ?? 0) + 1).padStart(4, "0");
-  const order_number = `ORD-${year}-${num}`;
-
+  // order_number is assigned by the orders_set_number BEFORE INSERT trigger
+  // using a Postgres sequence. The new_order notification is also created by
+  // an AFTER INSERT trigger (notify_new_order). Do not duplicate either here.
   const { data: newOrder, error: orderError } = await sb
     .from("orders")
-    .insert({ ...order, order_number, payment_method })
+    .insert({ ...order, order_number: "", payment_method })
     .select()
     .single();
   if (orderError) throw new Error(orderError.message);
@@ -77,11 +75,24 @@ export async function createOrder(
     .insert(items.map((i) => ({ ...i, order_id: newOrder.id })));
   if (itemsError) throw new Error(itemsError.message);
 
+  // Decrement stock and emit low-stock notifications for products that crossed
+  // the threshold during this order.
+  const crossed = await decrementStock(
+    items.map((i) => ({ product_id: i.product_id ?? null, quantity: i.quantity })),
+  );
+  await emitLowStockNotifications(crossed);
+
+  // If the customer is signed in, look up their auth user id so we can link
+  // the customer row to it (and orders flow through RLS immediately).
+  const ssr = await createClient();
+  const { data: userData } = await ssr.auth.getUser();
+  const authUserId = userData.user?.id ?? null;
+
   // Upsert customer record (create or update stats)
   const email = order.customer_email;
   const { data: existing } = await sb
     .from("customers")
-    .select("id, total_orders, total_spent")
+    .select("id, total_orders, total_spent, auth_user_id")
     .eq("email", email)
     .single();
 
@@ -91,6 +102,7 @@ export async function createOrder(
       total_spent:  existing.total_spent  + (order.total ?? 0),
       tier: existing.total_spent + (order.total ?? 0) >= 50000 ? "VIP" : existing.total_orders + 1 >= 3 ? "Regular" : "New",
       phone: order.customer_phone ?? undefined,
+      auth_user_id: existing.auth_user_id ?? authUserId,
     }).eq("id", existing.id);
   } else {
     const addressCity = typeof order.address === "object" && !Array.isArray(order.address)
@@ -104,6 +116,7 @@ export async function createOrder(
       total_orders:  1,
       total_spent:   order.total ?? 0,
       tier:          "New",
+      auth_user_id:  authUserId,
     });
   }
 
@@ -147,6 +160,35 @@ export async function getOrdersByEmail(email: string) {
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+/** Returns orders for the currently authenticated customer. Uses the SSR
+ *  (cookie) client so Supabase RLS gates rows to the caller's own orders. */
+export async function getMyOrders() {
+  const sb = await createClient();
+  const { data: userData } = await sb.auth.getUser();
+  if (!userData.user) return [];
+  const { data, error } = await sb
+    .from("orders")
+    .select("*, order_items(*)")
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return data ?? [];
+}
+
+/** Returns a single order BY order_number, scoped to the authenticated user
+ *  by RLS. Returns null if the order does not belong to the caller. */
+export async function getMyOrderByNumber(orderNumber: string) {
+  const sb = await createClient();
+  const { data: userData } = await sb.auth.getUser();
+  if (!userData.user) return null;
+  const { data, error } = await sb
+    .from("orders")
+    .select("*, order_items(*)")
+    .eq("order_number", orderNumber)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data;
 }
 
 export async function getOrderStats() {

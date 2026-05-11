@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import { LOW_STOCK_THRESHOLD, emitLowStockNotifications } from "@/lib/actions/inventory";
 
 export async function uploadProductImage(formData: FormData) {
   const file = formData.get("file") as File | null;
@@ -58,6 +59,18 @@ export async function getProductBySlug(slug: string) {
   return data;
 }
 
+export async function getProductsBySlugs(slugs: string[]) {
+  if (slugs.length === 0) return [];
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("products")
+    .select("*")
+    .in("slug", slugs)
+    .eq("status", "active");
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function createProduct(payload: TablesInsert<"products">) {
   const sb = createAdminClient();
   const { data, error } = await sb
@@ -73,6 +86,17 @@ export async function createProduct(payload: TablesInsert<"products">) {
 
 export async function updateProduct(id: string, payload: TablesUpdate<"products">) {
   const sb = createAdminClient();
+
+  let previousStock: number | null = null;
+  if (typeof payload.stock === "number") {
+    const { data: prev } = await sb
+      .from("products")
+      .select("stock")
+      .eq("id", id)
+      .single();
+    previousStock = prev?.stock ?? null;
+  }
+
   const { data, error } = await sb
     .from("products")
     .update(payload)
@@ -80,6 +104,18 @@ export async function updateProduct(id: string, payload: TablesUpdate<"products"
     .select()
     .single();
   if (error) return { data: null, error: error.message };
+
+  if (
+    data &&
+    typeof payload.stock === "number" &&
+    data.stock <= LOW_STOCK_THRESHOLD &&
+    (previousStock === null || previousStock > LOW_STOCK_THRESHOLD)
+  ) {
+    await emitLowStockNotifications([
+      { id: data.id, title: data.title, stock: data.stock },
+    ]);
+  }
+
   revalidatePath("/admin/products");
   revalidatePath("/shop");
   return { data, error: null };

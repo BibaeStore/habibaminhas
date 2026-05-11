@@ -15,6 +15,7 @@ import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
 import { getProducts, updateProduct, deleteProduct, createProduct, uploadProductImage } from "@/lib/actions/products";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
+import { PalettePicker, type Palette } from "@/components/admin/ui/palette-picker";
 
 type Product = Tables<"products">;
 
@@ -431,6 +432,7 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [salePrice,setSalePrice]= useState("");
   const [stock,    setStock]    = useState("0");
   const [images,   setImages]   = useState<string[]>([]);
+  const [palette,  setPalette]  = useState<Palette>(["#f2e0d8", "#c97a86", "#5a2030"]);
   const [uploading,setUploading]= useState(false);
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState("");
@@ -486,7 +488,7 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
       featured,
       size_guide: includeSizeGuide,
       images,
-      palette: ["#f2e0d8", "#c97a86", "#5a2030"],
+      palette,
     });
 
     setSaving(false);
@@ -705,6 +707,8 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
             </label>
           </div>
 
+          <PalettePicker value={palette} onChange={setPalette} />
+
           <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
             <label className="flex cursor-pointer items-start gap-3">
               <button
@@ -839,6 +843,11 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [statusVal,   setStatusVal]   = useState(product.status);
   const [featuredVal, setFeaturedVal] = useState(product.featured);
   const [images,      setImages]      = useState<string[]>(product.images ?? []);
+  const [palette,     setPalette]     = useState<Palette>(
+    (Array.isArray(product.palette) && product.palette.length === 3
+      ? (product.palette as Palette)
+      : ["#f2e0d8", "#c97a86", "#5a2030"]) as Palette,
+  );
   const [uploading,   setUploading]   = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);
@@ -874,6 +883,7 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
       status:     statusVal,
       featured:   featuredVal,
       images,
+      palette,
     });
     setSaving(false);
     if (result.error) { setError(result.error); return; }
@@ -997,6 +1007,8 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
             </div>
           </div>
 
+          <PalettePicker value={palette} onChange={setPalette} />
+
           <label className="flex cursor-pointer items-center gap-3">
             <button
               onClick={() => setFeaturedVal(!featuredVal)}
@@ -1015,7 +1027,7 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
         <div className="flex items-center justify-end gap-3 border-t border-[var(--admin-border)] pt-5 mt-5">
           <AdminButton variant="outline" onClick={onClose}>Cancel</AdminButton>
           <AdminButton
-            variant={saved ? "primary" : "primary"}
+            variant="primary"
             loading={saving}
             onClick={handleSave}
           >

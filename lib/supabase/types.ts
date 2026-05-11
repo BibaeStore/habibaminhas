@@ -27,7 +27,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
-          id?: string
+          id: string
           name: string
           password_hash?: string | null
           role?: string
@@ -41,69 +41,6 @@ export type Database = {
           password_hash?: string | null
           role?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      contact_messages: {
-        Row: {
-          created_at: string | null
-          email: string
-          id: string
-          message: string
-          name: string
-          phone: string | null
-          read: boolean | null
-          subject: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          id?: string
-          message: string
-          name: string
-          phone?: string | null
-          read?: boolean | null
-          subject?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          id?: string
-          message?: string
-          name?: string
-          phone?: string | null
-          read?: boolean | null
-          subject?: string | null
-        }
-        Relationships: []
-      }
-      notifications: {
-        Row: {
-          created_at: string | null
-          data: Json | null
-          id: string
-          message: string
-          read: boolean | null
-          title: string
-          type: string
-        }
-        Insert: {
-          created_at?: string | null
-          data?: Json | null
-          id?: string
-          message: string
-          read?: boolean | null
-          title: string
-          type: string
-        }
-        Update: {
-          created_at?: string | null
-          data?: Json | null
-          id?: string
-          message?: string
-          read?: boolean | null
-          title?: string
-          type?: string
         }
         Relationships: []
       }
@@ -166,6 +103,39 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          read: boolean | null
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          read?: boolean | null
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          read?: boolean | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           city: string | null
@@ -184,7 +154,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
-          name: string
+          name?: string
           phone?: string | null
           tier?: string
           total_orders?: number
@@ -202,6 +172,36 @@ export type Database = {
           total_orders?: number
           total_spent?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
         }
         Relationships: []
       }
@@ -470,6 +470,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_product_stock: {
+        Args: { p_items: Json; p_threshold?: number }
+        Returns: {
+          crossed_threshold: boolean
+          id: string
+          stock: number
+          title: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       set_admin_password: {
         Args: { p_email: string; p_password: string }

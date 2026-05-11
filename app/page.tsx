@@ -4,9 +4,10 @@ import { AnnouncementStrip } from "@/components/home/announcement-strip";
 import { CategoryTiles } from "@/components/home/category-tiles";
 import { EditorialBlock } from "@/components/home/editorial-block";
 import { TrendTiles } from "@/components/home/trend-tiles";
-import { TrendingTabs } from "@/components/home/trending-tabs";
+import { TrendingTabs, type TrendingProduct } from "@/components/home/trending-tabs";
 import { TestimonialRow } from "@/components/home/testimonial-row";
 import { JournalTeaser } from "@/components/home/journal-teaser";
+import { getProducts } from "@/lib/actions/products";
 
 export const metadata: Metadata = {
   title: "Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear",
@@ -16,7 +17,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const allProducts = await getProducts({ status: "active" }).catch(() => []);
+  const trendingProducts: TrendingProduct[] = (allProducts ?? []).map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    title: p.title,
+    price: p.price,
+    images: p.images,
+    compare_at: p.compare_at,
+    palette: p.palette,
+    badge: p.badge,
+    subcategory: p.subcategory,
+    subtype: p.subtype,
+    category: p.category,
+  }));
   return (
     <>
       <h1 className="sr-only">Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear</h1>
@@ -82,7 +97,7 @@ export default function HomePage() {
       />
 
       <TrendTiles />
-      <TrendingTabs />
+      <TrendingTabs products={trendingProducts} />
       <TestimonialRow />
       <JournalTeaser />
     </>

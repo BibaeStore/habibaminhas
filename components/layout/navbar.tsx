@@ -6,10 +6,36 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, User, Heart, Menu, ChevronDown, Globe } from "lucide-react";
 import { CartTrigger } from "@/components/cart/cart-trigger";
-import { megaMenus } from "@/lib/data";
+import { megaMenus as fallbackMenus, type MegaMenu } from "@/lib/data";
 import { MegaPanel } from "./mega-panel";
 import { MobileMenu } from "./mobile-menu";
 import { cn } from "@/lib/utils";
+
+type FetchedMenu = Omit<MegaMenu, "feature"> & {
+  feature?: {
+    title: string;
+    subtitle: string;
+    href: string;
+    image: string | null;
+  };
+};
+
+const TONES = ["rose", "gold", "sage", "ink"] as const;
+
+function adaptFetched(menus: FetchedMenu[]): MegaMenu[] {
+  return menus.map((m, idx) => ({
+    ...m,
+    feature: m.feature
+      ? {
+          title: m.feature.title,
+          subtitle: m.feature.subtitle,
+          href: m.feature.href,
+          tone: TONES[idx % TONES.length],
+          image: m.feature.image ?? undefined,
+        }
+      : undefined,
+  }));
+}
 
 export function Navbar() {
   const router = useRouter();
@@ -17,6 +43,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
+  const [menus, setMenus] = useState<MegaMenu[]>(fallbackMenus);
 
   // Close-delay timer — prevents panel closing when mouse crosses the 74px header gap
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,6 +76,17 @@ export function Navbar() {
     fetch("/api/categories/images")
       .then((r) => r.json())
       .then((map: Record<string, string>) => setCategoryImages(map))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/nav-menu")
+      .then((r) => r.json())
+      .then((fetched: FetchedMenu[]) => {
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          setMenus(adaptFetched(fetched));
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -102,7 +140,7 @@ export function Navbar() {
 
           {/* Desktop nav links */}
           <div className="hidden lg:flex items-center gap-1">
-            {megaMenus.map((m) => (
+            {menus.map((m) => (
               <button
                 key={m.label}
                 type="button"
@@ -176,7 +214,7 @@ export function Navbar() {
 
       {open
         ? (() => {
-            const active = megaMenus.find((m) => m.label === open);
+            const active = menus.find((m) => m.label === open);
             return active ? (
               <MegaPanel
                 menu={active}
@@ -189,7 +227,7 @@ export function Navbar() {
           })()
         : null}
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu menus={menus} open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </header>
   );
 }

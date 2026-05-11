@@ -12,7 +12,6 @@ import {
   LogOut,
   TrendingUp,
   LayoutGrid,
-  Megaphone,
   X,
   Bell,
 } from "lucide-react";
@@ -38,7 +37,6 @@ const SETUP: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Categories", href: "/admin/categories", icon: LayoutGrid },
   { label: "Analytics", href: "/admin/analytics", icon: TrendingUp },
-  { label: "Marketing", href: "/admin/marketing", icon: Megaphone },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
