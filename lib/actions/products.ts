@@ -3,7 +3,8 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
-import { LOW_STOCK_THRESHOLD, emitLowStockNotifications } from "@/lib/actions/inventory";
+import { emitLowStockNotifications } from "@/lib/actions/inventory";
+import { LOW_STOCK_THRESHOLD } from "@/lib/inventory-constants";
 
 export async function uploadProductImage(formData: FormData) {
   const file = formData.get("file") as File | null;

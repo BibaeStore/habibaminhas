@@ -1,8 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/server";
-
-export const LOW_STOCK_THRESHOLD = 5;
+import { LOW_STOCK_THRESHOLD } from "@/lib/inventory-constants";
 
 /**
  * Atomically decrements stock for a list of items via the
