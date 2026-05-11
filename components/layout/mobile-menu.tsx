@@ -102,13 +102,6 @@ export function MobileMenu({
               </div>
             ))}
             <Link
-              href="/new"
-              onClick={onClose}
-              className="border-b border-border-soft px-5 py-4 text-[13px] uppercase tracking-[0.28em]"
-            >
-              New Arrivals
-            </Link>
-            <Link
               href="/contact"
               onClick={onClose}
               className="border-b border-border-soft px-5 py-4 text-[13px] uppercase tracking-[0.28em]"
