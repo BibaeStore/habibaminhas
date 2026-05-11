@@ -139,7 +139,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav links */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-0.5">
             {menus.map((m) => (
               <button
                 key={m.label}
@@ -150,7 +150,7 @@ export function Navbar() {
                 }}
                 onClick={() => setOpen(open === m.label ? null : m.label)}
                 className={cn(
-                  "group relative px-4 py-3 text-[12px] uppercase tracking-[0.26em] transition-colors",
+                  "group relative px-3 py-3 text-[10px] uppercase tracking-[0.22em] transition-colors",
                   open === m.label ? "text-gold-dark" : "text-ink hover:text-gold-dark",
                 )}
               >
@@ -164,16 +164,9 @@ export function Navbar() {
               </button>
             ))}
             <Link
-              href="/new"
-              onMouseEnter={() => { cancelClose(); setOpen(null); }}
-              className="px-4 py-3 text-[12px] uppercase tracking-[0.26em] text-ink hover:text-gold-dark"
-            >
-              New In
-            </Link>
-            <Link
               href="/about"
               onMouseEnter={() => { cancelClose(); setOpen(null); }}
-              className="px-4 py-3 text-[12px] uppercase tracking-[0.26em] text-ink hover:text-gold-dark"
+              className="px-3 py-3 text-[10px] uppercase tracking-[0.22em] text-ink hover:text-gold-dark"
             >
               About
             </Link>
