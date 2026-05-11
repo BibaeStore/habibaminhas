@@ -1,8 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SectionHeading } from "@/components/common/section-heading";
+import type { Metadata } from "next";
 
-export const metadata = { title: "Journal" };
+export const metadata: Metadata = {
+  title: "Journal",
+  description: "Field notes, fabric notes, and the occasional recipe. We publish once a week — no algorithms, no sponsored posts.",
+  alternates: {
+    canonical: "/journal/",
+  },
+};
 
 const posts = [
   {
@@ -50,11 +56,17 @@ const posts = [
 export default function JournalPage() {
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-8">
-      <SectionHeading
-        eyebrow="The Journal"
-        title="Field notes, fabric notes, and the occasional recipe."
-        description="We publish once a week. Everything is written in-house — no algorithms, no sponsored posts."
-      />
+      <div className="flex flex-col gap-3">
+        <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
+          The Journal
+        </span>
+        <h1 className="font-display text-3xl font-light leading-[1.1] text-ink sm:text-4xl md:text-[44px]">
+          Field notes, fabric notes, and the occasional recipe.
+        </h1>
+        <p className="max-w-xl text-sm leading-relaxed text-ink-soft sm:text-[15px]">
+          We publish once a week. Everything is written in-house — no algorithms, no sponsored posts.
+        </p>
+      </div>
       <div className="mt-14 grid grid-cols-1 gap-10 lg:grid-cols-12">
         <Link href={`/journal/${posts[0].slug}`} className="group block lg:col-span-8">
           <div className="relative aspect-[16/9] w-full overflow-hidden">

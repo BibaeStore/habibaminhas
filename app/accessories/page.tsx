@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
-export const metadata = { title: "Accessories" };
+export const metadata: Metadata = {
+  title: "Accessories",
+  description: "3-piece handcrafted silk headband & floral clip sets — made by hand, finished with care, gifted with love.",
+  alternates: {
+    canonical: "/accessories/",
+  },
+};
 
 export default async function AccessoriesPage() {
   const items = await getProducts({ category: "accessories", status: "active" }).catch(() => []);

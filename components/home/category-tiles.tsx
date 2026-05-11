@@ -23,27 +23,74 @@ const SLUG_TO_HREF: Record<string, string> = {
   "new-arrivals": "/new",
 };
 
-// Static fallback for New Arrivals in case it isn't in the DB yet
-const NEW_ARRIVALS_FALLBACK = {
-  id: "new-arrivals-static",
-  name: "New Arrivals",
-  slug: "new-arrivals",
-  image: "/categories/new-arrivals.webp",
-  color: "#dde0f0",
-};
+// Static fallbacks for all categories — ensures they always show even if DB isn't populated yet
+const STATIC_FALLBACKS = [
+  {
+    id: "ladies-suits-static",
+    name: "Ladies Suits",
+    slug: "ladies-suits",
+    image: "/HeroSection/ladies-suits.webp",
+    color: "#f2e0d8",
+  },
+  {
+    id: "kids-formal-static",
+    name: "Kids Formal",
+    slug: "kids-formal",
+    image: "/HeroSection/kids-formal.webp",
+    color: "#f5e8c0",
+  },
+  {
+    id: "baby-bedding-static",
+    name: "Baby Bedding",
+    slug: "baby-bedding",
+    image: "/HeroSection/baby-bedding.webp",
+    color: "#f0e0f0",
+  },
+  {
+    id: "baby-nests-static",
+    name: "Baby Nests",
+    slug: "baby-nests",
+    image: "/HeroSection/baby-bedding.webp",
+    color: "#e8e0f0",
+  },
+  {
+    id: "accessories-static",
+    name: "Accessories",
+    slug: "accessories",
+    image: "/HeroSection/accessories.webp",
+    color: "#eedbc4",
+  },
+  {
+    id: "new-arrivals-static",
+    name: "New Arrival",
+    slug: "new-arrivals",
+    image: "/HeroSection/new-arrivals.webp",
+    color: "#f0ece4",
+  },
+];
 
 export async function CategoryTiles() {
   const allTiles = await getFeaturedCategories().catch(() => []);
 
-  // Keep only the allowed slugs, sort by the defined order
-  let tiles = allTiles
+  // Start with static fallbacks
+  let tiles = [...STATIC_FALLBACKS];
+
+  // Merge with DB data — DB data takes precedence if slug matches
+  for (const dbTile of allTiles) {
+    if (ALLOWED_SLUGS.includes(dbTile.slug)) {
+      const existingIdx = tiles.findIndex((t) => t.slug === dbTile.slug);
+      if (existingIdx >= 0) {
+        tiles[existingIdx] = dbTile as typeof tiles[0];
+      } else {
+        tiles.push(dbTile as typeof tiles[0]);
+      }
+    }
+  }
+
+  // Sort by the defined order
+  tiles = tiles
     .filter((t) => ALLOWED_SLUGS.includes(t.slug))
     .sort((a, b) => ALLOWED_SLUGS.indexOf(a.slug) - ALLOWED_SLUGS.indexOf(b.slug));
-
-  // If New Arrivals isn't in the DB, append the static fallback so it always shows
-  if (!tiles.some((t) => t.slug === "new-arrivals")) {
-    tiles = [...tiles, NEW_ARRIVALS_FALLBACK as typeof tiles[0]];
-  }
 
   if (tiles.length === 0) return null;
 

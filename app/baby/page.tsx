@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
-export const metadata = { title: "Baby Products" };
+export const metadata: Metadata = {
+  title: "Baby Products",
+  description: "Soft, padded nursery bedding sets, baby nests, swaddle wraps, and accessories — everything your little one needs, made with love in Pakistan.",
+  alternates: {
+    canonical: "/baby/",
+  },
+};
 
 export default async function BabyPage() {
   const items = await getProducts({ category: "baby-products", status: "active" }).catch(() => []);

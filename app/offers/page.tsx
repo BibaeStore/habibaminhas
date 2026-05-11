@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
-export const metadata = { title: "Sale" };
+export const metadata: Metadata = {
+  title: "Sale",
+  description: "Special offers across ladies suits, kids formalwear, baby products, and accessories. Limited time discounts on handcrafted pieces.",
+  alternates: {
+    canonical: "/offers/",
+  },
+};
 
 export default async function OffersPage() {
   const items = await getProducts({ status: "active", onSale: true }).catch(() => []);

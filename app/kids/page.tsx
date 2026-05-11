@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
-export const metadata = { title: "Kids" };
+export const metadata: Metadata = {
+  title: "Kids",
+  description: "Festive co-ord sets, embroidered gowns, and silk suits for girls — handcrafted for Eid, weddings, and every celebration.",
+  alternates: {
+    canonical: "/kids/",
+  },
+};
 
 export default async function KidsPage() {
   const items = await getProducts({ category: "kids-formal", status: "active" }).catch(() => []);

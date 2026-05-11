@@ -1,5 +1,6 @@
 "use client";
 
+import type { Metadata } from "next";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Download } from "lucide-react";

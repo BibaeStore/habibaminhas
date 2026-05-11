@@ -71,7 +71,14 @@ export async function generateMetadata({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  return { title: helpPages[slug]?.title ?? "Help" };
+  const page = helpPages[slug];
+  return {
+    title: page?.title ?? "Help",
+    description: page?.intro ?? "Get help with your Habiba Minhas order",
+    alternates: {
+      canonical: `/help/${slug}/`,
+    },
+  };
 }
 
 export default async function HelpPage({

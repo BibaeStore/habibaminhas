@@ -127,7 +127,13 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
   const post = posts[slug];
-  return { title: post?.title ?? "Journal" };
+  return {
+    title: post?.title ?? "Journal",
+    description: post?.excerpt ?? "From the Habiba Minhas journal",
+    alternates: {
+      canonical: `/journal/${slug}/`,
+    },
+  };
 }
 
 export default async function JournalPostPage({ params }: { params: Promise<Params> }) {

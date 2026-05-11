@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { HeroCarousel } from "@/components/home/hero-carousel";
 import { AnnouncementStrip } from "@/components/home/announcement-strip";
 import { CategoryTiles } from "@/components/home/category-tiles";
@@ -7,9 +8,18 @@ import { TrendingTabs } from "@/components/home/trending-tabs";
 import { TestimonialRow } from "@/components/home/testimonial-row";
 import { JournalTeaser } from "@/components/home/journal-teaser";
 
+export const metadata: Metadata = {
+  title: "Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear",
+  description: "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
+  alternates: {
+    canonical: "/",
+  },
+};
+
 export default function HomePage() {
   return (
     <>
+      <h1 className="sr-only">Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear</h1>
       <HeroCarousel />
       <AnnouncementStrip />
       <CategoryTiles />

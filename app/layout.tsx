@@ -20,12 +20,37 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://habibaminhas.com"),
   title: {
     default: "Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear",
     template: "%s | Habiba Minhas",
   },
   description:
     "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
+  openGraph: {
+    type: "website",
+    locale: "en_PK",
+    url: "https://habibaminhas.com/",
+    siteName: "Habiba Minhas",
+    title: "Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear",
+    description: "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear",
+    description: "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({

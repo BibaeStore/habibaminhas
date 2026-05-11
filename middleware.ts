@@ -23,7 +23,8 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
   const isPublicAdminRoute =
-    pathname === "/admin/login" || pathname === "/admin/setup";
+    pathname === "/admin/login" || pathname === "/admin/login/" ||
+    pathname === "/admin/setup" || pathname === "/admin/setup/";
 
   if (!isAdminRoute) return NextResponse.next();
 
@@ -32,14 +33,14 @@ export async function middleware(request: NextRequest) {
   // Protect admin routes
   if (!isPublicAdminRoute && !admin) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/admin/login";
+    loginUrl.pathname = "/admin/login/";
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect logged-in admin away from login/setup
   if (isPublicAdminRoute && admin) {
     const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = "/admin";
+    dashboardUrl.pathname = "/admin/";
     return NextResponse.redirect(dashboardUrl);
   }
 

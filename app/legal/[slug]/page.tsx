@@ -57,7 +57,14 @@ export async function generateMetadata({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  return { title: legal[slug]?.title ?? "Legal" };
+  const page = legal[slug];
+  return {
+    title: page?.title ?? "Legal",
+    description: page?.body[0]?.p ?? "Legal information for Habiba Minhas",
+    alternates: {
+      canonical: `/legal/${slug}/`,
+    },
+  };
 }
 
 export default async function LegalPage({

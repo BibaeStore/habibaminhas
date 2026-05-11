@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
-export const metadata = { title: "New Arrivals" };
+export const metadata: Metadata = {
+  title: "New Arrivals",
+  description: "The latest additions to the Habiba Minhas collection — ladies suits, kids formalwear, baby products, and accessories.",
+  alternates: {
+    canonical: "/new/",
+  },
+};
 
 export default async function NewArrivalsPage() {
   const items = await getProducts({ status: "active", featured: true }).catch(() => []);

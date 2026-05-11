@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { SectionHeading } from "@/components/common/section-heading";
 
-export const metadata = { title: "About" };
+export const metadata: Metadata = {
+  title: "About",
+  description: "Habiba Minhas — Crafting elegance for the modern family since 2026. Premium handcrafted fashion and baby products made in Pakistan.",
+  alternates: {
+    canonical: "/about/",
+  },
+};
 
 const values = [
   {

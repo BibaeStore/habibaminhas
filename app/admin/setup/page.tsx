@@ -22,7 +22,7 @@ export default function AdminSetupPage() {
     const result = await createFirstAdmin(form.name, form.email, form.password);
     setLoading(false);
     if (result?.error) { setError(result.error); return; }
-    router.push("/admin/login");
+    router.push("/admin/login/");
   };
 
   return (

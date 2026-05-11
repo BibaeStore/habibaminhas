@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
-export const metadata = { title: "Ladies" };
+export const metadata: Metadata = {
+  title: "Ladies",
+  description: "Handcrafted 3-piece silk suits adorned with gold brocade, mirror-work, and artisan embroidery — made for the modern Pakistani woman.",
+  alternates: {
+    canonical: "/ladies/",
+  },
+};
 
 export default async function LadiesPage() {
   const items = await getProducts({ category: "ladies-suits", status: "active" }).catch(() => []);

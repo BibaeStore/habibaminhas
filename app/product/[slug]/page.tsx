@@ -32,7 +32,13 @@ export async function generateMetadata({
   const { slug } = await params;
   try {
     const p = await getProductBySlug(slug);
-    return { title: p.seo_title ?? p.title };
+    return {
+      title: p.seo_title ?? p.title,
+      description: p.seo_description ?? `${p.title} — Handcrafted in Pakistan. Flat Rs. 250 delivery nationwide.`,
+      alternates: {
+        canonical: `/product/${slug}/`,
+      },
+    };
   } catch {
     return { title: "Product" };
   }
