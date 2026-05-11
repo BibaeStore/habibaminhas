@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ShieldCheck, RotateCcw, Truck } from "lucide-react";
 import { customerSignIn } from "@/lib/actions/customer-auth";
 
-export default function LoginPage() {
+export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const redirectTo = params?.get("redirect") ?? "/account";
