@@ -67,3 +67,26 @@ export async function customerForgotPassword(email: string): Promise<{ error?: s
   if (error) return { error: error.message };
   return { success: true };
 }
+
+/** Update the logged-in customer's password. */
+export async function customerUpdatePassword(
+  newPassword: string,
+): Promise<{ error?: string; success?: boolean }> {
+  if (!newPassword || newPassword.length < 8)
+    return { error: "Password must be at least 8 characters." };
+  const sb = await createClient();
+  const { error } = await sb.auth.updateUser({ password: newPassword });
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+/** Update the logged-in customer's display name (stored in auth.user metadata). */
+export async function customerUpdateName(
+  name: string,
+): Promise<{ error?: string; success?: boolean }> {
+  if (!name.trim()) return { error: "Name is required." };
+  const sb = await createClient();
+  const { error } = await sb.auth.updateUser({ data: { full_name: name.trim() } });
+  if (error) return { error: error.message };
+  return { success: true };
+}

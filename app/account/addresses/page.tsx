@@ -1,35 +1,16 @@
 import Link from "next/link";
-import { ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, MapPin } from "lucide-react";
 import { AccountSidebar } from "@/components/account/account-sidebar";
+import { getCustomerSession } from "@/lib/actions/customer-auth";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "My Addresses" };
+export const dynamic = "force-dynamic";
+export const metadata = { title: "My Addresses — Habiba Minhas" };
 
-const addresses = [
-  {
-    id: 1,
-    label: "Home",
-    default: true,
-    name: "Ayesha Khan",
-    line1: "House 14, Street 7, DHA Phase 6",
-    city: "Karachi",
-    province: "Sindh",
-    postal: "75500",
-    phone: "+92 300 1234567",
-  },
-  {
-    id: 2,
-    label: "Office",
-    default: false,
-    name: "Ayesha Khan",
-    line1: "Suite 302, Dolmen City Mall",
-    city: "Karachi",
-    province: "Sindh",
-    postal: "74200",
-    phone: "+92 300 1234567",
-  },
-];
+export default async function AddressesPage() {
+  const session = await getCustomerSession();
+  if (!session) redirect("/account/login?redirect=/account/addresses");
 
-export default function AddressesPage() {
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
 
@@ -49,44 +30,22 @@ export default function AddressesPage() {
         </aside>
 
         <div className="lg:col-span-9">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {addresses.map((a) => (
-              <div key={a.id} className="relative border border-border-soft bg-ivory p-6">
-                {a.default && (
-                  <span className="absolute right-4 top-4 text-[10px] uppercase tracking-[0.24em] text-gold-dark border border-gold/30 px-2 py-0.5">
-                    Default
-                  </span>
-                )}
-                <div className="text-[11px] uppercase tracking-[0.26em] text-muted">{a.label}</div>
-                <div className="mt-3 text-[13px] leading-relaxed">
-                  <div className="font-medium">{a.name}</div>
-                  <div className="text-ink-soft">{a.line1}</div>
-                  <div className="text-ink-soft">{a.city}, {a.province} — {a.postal}</div>
-                  <div className="mt-1 text-ink-soft">{a.phone}</div>
-                </div>
-                <div className="mt-5 flex items-center gap-4 border-t border-border-soft pt-4">
-                  <button className="flex items-center gap-1.5 text-[12px] uppercase tracking-[0.22em] text-ink-soft hover:text-ink">
-                    <Pencil className="h-3.5 w-3.5" /> Edit
-                  </button>
-                  {!a.default && (
-                    <button className="flex items-center gap-1.5 text-[12px] uppercase tracking-[0.22em] text-sale hover:text-ink">
-                      <Trash2 className="h-3.5 w-3.5" /> Remove
-                    </button>
-                  )}
-                  {!a.default && (
-                    <button className="ml-auto text-[12px] uppercase tracking-[0.22em] text-gold-dark hover:text-ink">
-                      Set as default
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {/* Add new */}
-            <button className="flex min-h-[180px] flex-col items-center justify-center gap-3 border border-dashed border-border-soft bg-ivory text-ink-soft hover:border-gold-dark hover:text-gold-dark transition-colors">
-              <Plus className="h-6 w-6" />
-              <span className="text-[12px] uppercase tracking-[0.26em]">Add new address</span>
-            </button>
+          <div className="flex flex-col items-center justify-center gap-5 border border-border-soft bg-cream py-20 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-ivory">
+              <MapPin className="h-7 w-7 text-muted" />
+            </div>
+            <div>
+              <h2 className="font-display text-2xl italic">No saved addresses yet</h2>
+              <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-ink-soft">
+                Address management is coming soon. For now, you can enter your delivery address at checkout each time you order.
+              </p>
+            </div>
+            <Link
+              href="/ladies"
+              className="mt-2 inline-flex h-11 items-center bg-ink px-8 text-[12px] uppercase tracking-[0.28em] text-ivory transition-colors hover:bg-gold-dark"
+            >
+              Start shopping
+            </Link>
           </div>
         </div>
       </div>

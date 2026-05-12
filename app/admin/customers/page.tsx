@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, Filter, Download, Mail, Phone, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
+import { Search, Download, Mail, Phone, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
 import { AdminButton } from "@/components/admin/ui/button";
@@ -143,11 +143,27 @@ export default function AdminCustomersPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <AdminButton variant="outline" leadingIcon={<Filter className="h-4 w-4" />}>
-              Filter
-            </AdminButton>
-            <AdminButton variant="outline" leadingIcon={<Download className="h-4 w-4" />}>
-              Export
+            <AdminButton
+              variant="outline"
+              leadingIcon={<Download className="h-4 w-4" />}
+              onClick={() => {
+                const headers = ["Name", "Email", "Phone", "City", "Orders", "Total Spent", "Tier", "Joined"];
+                const rows = filtered.map((c) => [
+                  c.name, c.email, c.phone ?? "", c.city ?? "",
+                  c.total_orders, c.total_spent,
+                  c.tier, new Date(c.created_at).toLocaleDateString("en-PK"),
+                ]);
+                const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Export CSV
             </AdminButton>
           </div>
         </div>

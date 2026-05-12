@@ -439,7 +439,7 @@ export default function AdminSettingsPage() {
                           <div className="mt-0.5 text-[13px] text-[var(--admin-text-muted)]">{s.location} · {s.time}</div>
                         </div>
                         {!s.current && (
-                          <AdminButton variant="danger" size="sm">Revoke</AdminButton>
+                          <AdminButton variant="danger" size="sm" disabled title="Session management coming soon">Revoke</AdminButton>
                         )}
                       </div>
                     ))}

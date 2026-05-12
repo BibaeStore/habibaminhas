@@ -52,6 +52,29 @@ function getCity(address: Order["address"]): string {
   return a.city ?? "—";
 }
 
+function exportOrdersCSV(orders: Order[]) {
+  const headers = ["Order #", "Date", "Customer", "Phone", "City", "Items", "Payment", "Status", "Total (Rs.)"];
+  const rows = orders.map((o) => [
+    o.order_number,
+    new Date(o.created_at).toLocaleDateString("en-PK"),
+    o.customer_name,
+    o.customer_phone,
+    getCity(o.address),
+    (o.order_items ?? []).length,
+    o.payment_method,
+    o.status,
+    o.total,
+  ]);
+  const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminOrdersPage() {
   const [orders,    setOrders]    = useState<Order[]>([]);
   const [loading,   setLoading]   = useState(true);
@@ -108,6 +131,7 @@ export default function AdminOrdersPage() {
             <AdminButton
               variant="outline"
               leadingIcon={<Download className="h-4 w-4" />}
+              onClick={() => exportOrdersCSV(filtered)}
             >
               Export CSV
             </AdminButton>
@@ -480,7 +504,7 @@ function OrderDetailPanel({
                   Cancel order
                 </AdminButton>
               )}
-              <AdminButton variant="outline" size="sm">
+              <AdminButton variant="outline" size="sm" onClick={() => window.print()}>
                 Print
               </AdminButton>
             </div>

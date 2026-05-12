@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Bell, Menu, ExternalLink } from "lucide-react";
+import { Bell, Menu, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { getUnreadCount } from "@/lib/actions/notifications";
@@ -41,15 +41,6 @@ export function AdminTopbar({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="relative hidden sm:block">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--admin-text-muted)]" />
-          <input
-            type="search"
-            placeholder="Search…"
-            className="h-11 w-60 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] pl-10 pr-3 text-[15px] text-[var(--admin-text)] placeholder:text-[var(--admin-text-muted)] outline-none focus:border-[var(--admin-primary)] focus:bg-[var(--admin-surface)]"
-          />
-        </div>
-
         <Link
           href="/admin/notifications"
           className="relative inline-flex h-11 w-11 items-center justify-center rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-soft)] hover:bg-[var(--admin-surface-alt)]"

@@ -47,9 +47,9 @@ export default async function HomePage() {
         motif="floral"
         image="/editorial/ladies-collection.webp"
         links={[
-          { label: "Shop Ladies Suits", href: "/ladies/suits" },
-          { label: "Formal & Party Wear", href: "/ladies/occasion/formal" },
-          { label: "Gold Brocade Collection", href: "/ladies/suits/gold-brocade" },
+          { label: "Shop Ladies Suits", href: "/ladies" },
+          { label: "Formal & Party Wear", href: "/ladies" },
+          { label: "Gold Brocade Collection", href: "/ladies" },
         ]}
       />
 
@@ -62,9 +62,9 @@ export default async function HomePage() {
         orientation="right"
         image="/HeroSection/kids-formal.webp"
         links={[
-          { label: "Shop Girls Formal", href: "/kids/girls" },
-          { label: "Festive Co-Ord Sets", href: "/kids/girls/co-ord" },
-          { label: "Embroidered Gowns", href: "/kids/girls/gowns" },
+          { label: "Shop Girls Formal", href: "/kids" },
+          { label: "Festive Co-Ord Sets", href: "/kids" },
+          { label: "Embroidered Gowns", href: "/kids" },
         ]}
       />
 
@@ -76,9 +76,9 @@ export default async function HomePage() {
         motif="stripes"
         image="/HeroSection/baby-bedding.webp"
         links={[
-          { label: "Shop Crib Bedding Sets", href: "/baby/bedding" },
-          { label: "Baby Nests & Loungers", href: "/baby/nests" },
-          { label: "Swaddles & Accessories", href: "/baby/swaddles" },
+          { label: "Shop Crib Bedding Sets", href: "/baby" },
+          { label: "Baby Nests & Loungers", href: "/baby" },
+          { label: "Swaddles & Accessories", href: "/baby" },
         ]}
       />
 
@@ -91,8 +91,8 @@ export default async function HomePage() {
         orientation="right"
         image="/HeroSection/accessories.webp"
         links={[
-          { label: "Shop Hair Accessories", href: "/accessories/hair" },
-          { label: "Headband & Clip Sets", href: "/accessories/hair/sets" },
+          { label: "Shop Hair Accessories", href: "/accessories" },
+          { label: "Headband & Clip Sets", href: "/accessories" },
         ]}
       />
 
