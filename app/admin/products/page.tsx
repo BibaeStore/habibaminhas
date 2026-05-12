@@ -79,7 +79,7 @@ export default function AdminProductsPage() {
   const handleFilter = (setter: (v: string) => void) => (v: string) => { setter(v); setPage(1); };
 
   return (
-    <AdminShell title="Products">
+    <AdminShell>
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
 
         {/* Page header */}

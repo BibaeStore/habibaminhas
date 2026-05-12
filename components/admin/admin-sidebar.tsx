@@ -1,200 +1,207 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
-  LayoutDashboard,
-  Package,
-  ShoppingBag,
-  Users,
-  Settings,
-  LogOut,
-  TrendingUp,
-  LayoutGrid,
-  X,
-  Bell,
+  LayoutDashboard, Package, ShoppingBag, Users,
+  Settings, LogOut, TrendingUp, LayoutGrid, X, Bell,
 } from "lucide-react";
 import { adminLogout } from "@/lib/actions/auth";
 import { getOrderStats } from "@/lib/actions/orders";
-import { AdminButton } from "./ui/button";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  dynamicBadge?: boolean;
+  badge?: boolean;
 }
 
+// Dashboard first — standalone home item above all sections
+const HOME: NavItem[] = [
+  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+];
+
 const DAILY: NavItem[] = [
-  { label: "Orders", href: "/admin/orders", icon: ShoppingBag, dynamicBadge: true },
-  { label: "Products", href: "/admin/products", icon: Package },
-  { label: "Customers", href: "/admin/customers", icon: Users },
+  { label: "Orders",        href: "/admin/orders",        icon: ShoppingBag, badge: true },
+  { label: "Products",      href: "/admin/products",      icon: Package },
+  { label: "Customers",     href: "/admin/customers",     icon: Users },
   { label: "Notifications", href: "/admin/notifications", icon: Bell },
 ];
 
 const SETUP: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Categories", href: "/admin/categories", icon: LayoutGrid },
-  { label: "Analytics", href: "/admin/analytics", icon: TrendingUp },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Analytics",  href: "/admin/analytics",  icon: TrendingUp },
+  { label: "Settings",   href: "/admin/settings",   icon: Settings },
 ];
 
-function NavGroup({
-  title,
-  items,
-  pathname,
-  pendingOrders,
-  onItemClick,
+function NavItem({
+  item, pathname, pendingCount, onItemClick,
 }: {
-  title: string;
-  items: NavItem[];
-  pathname: string | null;
-  pendingOrders: number | null;
-  onItemClick?: () => void;
+  item: NavItem; pathname: string | null; pendingCount: number; onItemClick?: () => void;
 }) {
+  const { label, href, icon: Icon, badge } = item;
+  // Normalize pathname: strip trailing slash, then match exactly (dashboard)
+  // or as a path prefix (e.g. /admin/orders/ORD-xxx also highlights Orders)
+  const norm   = (pathname ?? "").replace(/\/$/, "");
+  const isDash = href === "/admin";
+  const active = isDash ? norm === "/admin" : norm === href || norm.startsWith(href + "/");
+  const count  = badge && pendingCount > 0 ? pendingCount : 0;
+
   return (
-    <div>
-      <div className="px-3 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--admin-text-muted)]">
-        {title}
-      </div>
-      <ul className="flex flex-col gap-1">
-        {items.map(({ label, href, icon: Icon, dynamicBadge }) => {
-          const active =
-            pathname === href ||
-            (href !== "/admin" && pathname?.startsWith(href));
-          const badge =
-            dynamicBadge && pendingOrders && pendingOrders > 0
-              ? String(pendingOrders)
-              : null;
-          return (
-            <li key={href}>
-              <Link
-                href={href}
-                onClick={onItemClick}
-                className={`relative flex h-12 items-center gap-3 rounded-[var(--admin-radius)] px-4 text-[15px] font-medium transition-colors ${
-                  active
-                    ? "bg-[var(--admin-primary-soft)] text-[var(--admin-primary)]"
-                    : "text-[var(--admin-text-soft)] hover:bg-[var(--admin-surface-alt)]"
-                }`}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-[var(--admin-primary)]" />
-                )}
-                <Icon className="h-5 w-5 shrink-0" />
-                <span className="flex-1">{label}</span>
-                {badge && (
-                  <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--admin-primary)] px-1.5 text-[11px] font-bold text-white">
-                    {badge}
-                  </span>
-                )}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+    <li>
+      <Link
+        href={href}
+        onClick={onItemClick}
+        className="group relative flex h-[54px] w-full items-center gap-4 px-5 text-[16px] font-medium transition-all duration-150"
+        style={{
+          color:      active ? "#faf7f1" : "rgba(250,247,241,0.6)",
+          background: active ? "rgba(184,148,100,0.2)" : "transparent",
+        }}
+        onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(250,247,241,0.9)"; }}}
+        onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent";              e.currentTarget.style.color = "rgba(250,247,241,0.6)";  }}}
+      >
+        {/* Active indicator */}
+        {active && (
+          <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full" style={{ background: "#b89464" }} />
+        )}
+        <Icon className={`h-[22px] w-[22px] shrink-0 transition-colors ${active ? "text-[#b89464]" : ""}`} />
+        <span className="flex-1 leading-none">{label}</span>
+        {count > 0 && (
+          <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full px-1.5 text-[12px] font-bold text-ivory"
+            style={{ background: "#b89464" }}>
+            {count > 99 ? "99+" : count}
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="px-5 pb-1 pt-6 text-[10px] font-bold uppercase tracking-[0.25em]"
+      style={{ color: "rgba(250,247,241,0.28)" }}>
+      {children}
     </div>
   );
 }
 
-export function AdminSidebar({
-  isOpen = false,
-  onClose,
-}: {
-  isOpen?: boolean;
-  onClose?: () => void;
-}) {
+export function AdminSidebar({ isOpen = false, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
-  const [pendingOrders, setPendingOrders] = useState<number | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [pending, setPending]            = useState(0);
+  const [isPending, startTransition]     = useTransition();
 
   useEffect(() => {
     getOrderStats()
-      .then((s) => setPendingOrders(s.byStatus.pending + s.byStatus.processing))
+      .then((s) => setPending(s.byStatus.pending + s.byStatus.processing))
       .catch(() => {});
   }, []);
 
-  function handleLogout() {
-    startTransition(() => {
-      adminLogout();
-    });
-  }
+  function handleLogout() { startTransition(() => { adminLogout(); }); }
 
   return (
     <>
+      {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={onClose}
         />
       )}
+
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[264px] shrink-0 flex-col border-r border-[var(--admin-border)] bg-[var(--admin-surface)] transition-transform duration-200 ease-out md:static md:z-auto md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[280px] shrink-0 flex-col transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
+        style={{
+          background:  "#1a1612",
+          borderRight: "1px solid rgba(255,255,255,0.07)",
+        }}
       >
+        {/* Mobile close */}
         <button
           onClick={onClose}
-          className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center text-[var(--admin-text-muted)] hover:text-[var(--admin-text)] md:hidden"
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-ivory/50 transition-colors hover:bg-white/10 hover:text-ivory md:hidden"
           aria-label="Close menu"
         >
           <X className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-3 border-b border-[var(--admin-border)] px-5 py-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] text-[var(--admin-primary)] font-bold">
-            HM
-          </div>
-          <div>
-            <div className="text-[16px] font-semibold text-[var(--admin-text)] leading-none">
-              Habiba Minhas
-            </div>
-            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--admin-text-muted)]">
-              Admin
-            </div>
-          </div>
+        {/* ── Logo header ───────────────────────────────────────── */}
+        <div className="flex items-center px-5 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <Image
+            src="/logo/habiba-minhas-logo-t.png"
+            alt="Habiba Minhas"
+            width={220}
+            height={74}
+            className="w-full max-w-[190px] object-contain brightness-0 invert opacity-90"
+            style={{ height: "auto" }}
+          />
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-3">
-          <NavGroup
-            title="Daily tasks"
-            items={DAILY}
-            pathname={pathname}
-            pendingOrders={pendingOrders}
-            onItemClick={onClose}
-          />
-          <NavGroup
-            title="Setup & reports"
-            items={SETUP}
-            pathname={pathname}
-            pendingOrders={pendingOrders}
-            onItemClick={onClose}
-          />
+        {/* ── Navigation ────────────────────────────────────────── */}
+        <nav
+          className="flex-1 overflow-y-auto py-2"
+          style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(184,148,100,0.25) transparent" }}
+        >
+          <style>{`
+            .admin-nav::-webkit-scrollbar { width: 3px; }
+            .admin-nav::-webkit-scrollbar-track { background: transparent; }
+            .admin-nav::-webkit-scrollbar-thumb { background: rgba(184,148,100,0.25); border-radius: 10px; }
+          `}</style>
+          <div className="admin-nav">
+            {/* Dashboard — always first, no section label */}
+            <ul className="flex flex-col gap-0.5 pt-2">
+              {HOME.map((item) => (
+                <NavItem key={item.href} item={item} pathname={pathname} pendingCount={0} onItemClick={onClose} />
+              ))}
+            </ul>
+
+            <SectionLabel>Daily Tasks</SectionLabel>
+            <ul className="flex flex-col gap-0.5">
+              {DAILY.map((item) => (
+                <NavItem key={item.href} item={item} pathname={pathname} pendingCount={pending} onItemClick={onClose} />
+              ))}
+            </ul>
+
+            <SectionLabel>Setup & Reports</SectionLabel>
+            <ul className="flex flex-col gap-0.5">
+              {SETUP.map((item) => (
+                <NavItem key={item.href} item={item} pathname={pathname} pendingCount={0} onItemClick={onClose} />
+              ))}
+            </ul>
+          </div>
         </nav>
 
-        <div className="border-t border-[var(--admin-border)] p-3">
-          <div className="flex items-center gap-3 px-1 pb-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--admin-primary-soft)] text-sm font-bold text-[var(--admin-primary)]">
-              H
+        {/* ── User footer ───────────────────────────────────────── */}
+        <div className="px-4 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="mb-3 flex items-center gap-3 px-1">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[14px] font-bold text-ivory"
+              style={{ background: "#b89464" }}
+            >
+              HM
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-[var(--admin-text)]">
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-semibold" style={{ color: "rgba(250,247,241,0.9)" }}>
                 Habiba Minhas
               </div>
-              <div className="truncate text-xs text-[var(--admin-text-muted)]">
-                Super admin
-              </div>
+              <div className="text-[12px]" style={{ color: "rgba(250,247,241,0.4)" }}>Super Admin</div>
             </div>
           </div>
-          <AdminButton
-            variant="outline"
-            fullWidth
+          <button
             onClick={handleLogout}
-            loading={isPending}
-            leadingIcon={<LogOut className="h-4 w-4" />}
+            disabled={isPending}
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-full text-[14px] font-medium transition-all"
+            style={{ color: "rgba(250,247,241,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#faf7f1"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(250,247,241,0.5)"; }}
           >
-            Sign out
-          </AdminButton>
+            <LogOut className="h-4 w-4" />
+            {isPending ? "Signing out…" : "Sign out"}
+          </button>
         </div>
       </aside>
     </>

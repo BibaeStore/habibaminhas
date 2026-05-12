@@ -141,7 +141,7 @@ export default function AdminAnalyticsPage() {
   const kpi = KPI_DATA[period];
 
   return (
-    <AdminShell title="Analytics">
+    <AdminShell>
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
 
         <PageHeader

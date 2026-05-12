@@ -1,45 +1,67 @@
-/* Admin-only theme. Imported from app/admin/layout.tsx. */
-/* All tokens are prefixed --admin-* to avoid collision with public site. */
+/* Admin-only theme — brand-aligned. Imported from app/admin/layout.tsx. */
 
 .admin-root {
-  --admin-bg: #ffffff;
-  --admin-surface: #ffffff;
-  --admin-surface-alt: #f7f8fa;
-  --admin-border: #e5e7eb;
-  --admin-text: #111827;
-  --admin-text-soft: #4b5563;
-  --admin-text-muted: #9ca3af;
+  /* ── Surfaces ──────────────────────────────── */
+  --admin-bg:           #faf7f1;   /* ivory  */
+  --admin-surface:      #faf7f1;   /* ivory  */
+  --admin-surface-alt:  #f3eee3;   /* cream  */
+  --admin-surface-deep: #ece4d4;   /* parchment */
 
-  --admin-primary: #2563eb;
-  --admin-primary-hover: #1d4ed8;
-  --admin-primary-soft: #eff6ff;
+  /* ── Borders ───────────────────────────────── */
+  --admin-border:       #e5ddd0;   /* border-soft */
 
-  --admin-success: #16a34a;
+  /* ── Text ──────────────────────────────────── */
+  --admin-text:         #1a1612;   /* ink       */
+  --admin-text-soft:    #3d3731;   /* ink-soft  */
+  --admin-text-muted:   #8a8179;   /* muted     */
+
+  /* ── Brand accent ──────────────────────────── */
+  --admin-primary:      #b89464;   /* gold-dark */
+  --admin-primary-hover:#9a7a50;   /* darker gold */
+  --admin-primary-soft: #f5ede0;   /* gold-light */
+
+  /* ── Sidebar ───────────────────────────────── */
+  --admin-sidebar-bg:   #1a1612;   /* ink — dark sidebar */
+  --admin-sidebar-text: rgba(250,247,241,0.75);
+  --admin-sidebar-text-active: #faf7f1;
+  --admin-sidebar-border: rgba(255,255,255,0.08);
+  --admin-sidebar-hover: rgba(255,255,255,0.06);
+  --admin-sidebar-active-bg: rgba(184,148,100,0.18); /* gold-dark tint */
+  --admin-sidebar-active-bar: #b89464;
+
+  /* ── Status ────────────────────────────────── */
+  --admin-success:      #16a34a;
   --admin-success-soft: #dcfce7;
-  --admin-warning: #d97706;
+  --admin-warning:      #d97706;
   --admin-warning-soft: #fef3c7;
-  --admin-danger: #dc2626;
-  --admin-danger-soft: #fee2e2;
+  --admin-danger:       #9c3b2f;   /* brand sale red */
+  --admin-danger-soft:  #fde8e6;
 
-  --admin-radius: 8px;
-  --admin-font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
+  /* ── Shape ─────────────────────────────────── */
+  --admin-radius:       2px;       /* sharp corners — brand standard */
 
-  background: var(--admin-bg);
+  /* ── Font ──────────────────────────────────── */
+  --admin-font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  background: var(--admin-surface-alt);
   color: var(--admin-text);
   font-family: var(--admin-font);
   font-feature-settings: "cv11";
   -webkit-font-smoothing: antialiased;
-  font-style: normal;
 }
 
-/* Reset any inherited italic from the public layout. */
+/* Prevent italic bleed from public layout */
 .admin-root,
-.admin-root * {
-  font-style: normal;
-}
+.admin-root * { font-style: normal; }
 
-/* Consistent focus ring for interactive elements. */
+/* Ultra-thin gold scrollbar for all admin scrollable areas */
+.admin-root ::-webkit-scrollbar { width: 4px; height: 4px; }
+.admin-root ::-webkit-scrollbar-track { background: transparent; }
+.admin-root ::-webkit-scrollbar-thumb { background: rgba(184,148,100,0.3); border-radius: 10px; }
+.admin-root ::-webkit-scrollbar-thumb:hover { background: rgba(184,148,100,0.55); }
+.admin-root * { scrollbar-width: thin; scrollbar-color: rgba(184,148,100,0.3) transparent; }
+
+/* Focus ring — gold instead of blue */
 .admin-root :is(button, a, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--admin-primary);
   outline-offset: 2px;

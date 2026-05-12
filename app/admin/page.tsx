@@ -93,7 +93,7 @@ export default async function AdminDashboard() {
 
   if (hasNoData) {
     return (
-      <AdminShell title="Dashboard">
+      <AdminShell>
         <div className="flex-1 overflow-y-auto p-6">
           <AdminCard>
             <EmptyState
@@ -125,7 +125,7 @@ export default async function AdminDashboard() {
     .slice(0, 5);
 
   return (
-    <AdminShell title="Dashboard">
+    <AdminShell>
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         {/* 1. Today panel */}
         <AdminCard padded={false} className="overflow-hidden">
