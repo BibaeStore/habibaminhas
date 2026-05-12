@@ -163,13 +163,7 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Shipping</dt>
-                <dd>
-                  {order.shipping === 0 ? (
-                    <span className="text-gold-dark">Complimentary</span>
-                  ) : (
-                    formatPrice(order.shipping)
-                  )}
-                </dd>
+                <dd>{formatPrice(order.shipping)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Gift wrap</dt>

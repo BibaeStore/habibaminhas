@@ -379,7 +379,7 @@ export function PaymentView({
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-ink-soft">Shipping</dt>
-                  <dd>{shippingCost === 0 ? <span className="text-gold-dark">Complimentary</span> : formatPrice(shippingCost)}</dd>
+                  <dd>{formatPrice(shippingCost)}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-ink-soft">Gift wrap</dt>
@@ -394,7 +394,7 @@ export function PaymentView({
 
             <div className="border-t border-border-soft px-6 py-4">
               <ul className="flex flex-col gap-2 text-[11px] text-ink-soft">
-                <li className="flex items-center gap-2"><Truck       className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> {shippingCfg.standard === 0 ? "Free delivery nationwide" : `Flat ${formatPrice(shippingCfg.standard)} delivery nationwide`}</li>
+                <li className="flex items-center gap-2"><Truck       className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> {`Flat ${formatPrice(shippingCfg.standard)} delivery nationwide`}</li>
                 <li className="flex items-center gap-2"><RotateCcw   className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> 14-day hassle-free returns</li>
                 <li className="flex items-center gap-2"><ShieldCheck  className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Secure encrypted checkout</li>
               </ul>

@@ -14,7 +14,7 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
   useEffect(() => { setMounted(true); }, []);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const shipping = subtotal >= shippingCfg.freeThreshold ? 0 : shippingCfg.standard;
+  const shipping = shippingCfg.standard;
   const total = subtotal + shipping;
 
   if (!mounted) {
@@ -160,13 +160,7 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Shipping</dt>
-                <dd>
-                  {shipping === 0 ? (
-                    <span className="text-gold-dark">Complimentary</span>
-                  ) : (
-                    formatPrice(shipping)
-                  )}
-                </dd>
+                <dd>{formatPrice(shipping)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Gift wrap</dt>
@@ -186,9 +180,7 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
             <ul className="grid grid-cols-1 gap-3 pt-2 text-[11px] text-ink-soft">
               <li className="flex items-center gap-2">
                 <Truck className="h-3.5 w-3.5 text-gold-dark" />
-                {shippingCfg.standard === 0
-                  ? "Free delivery nationwide"
-                  : `Flat ${formatPrice(shippingCfg.standard)} delivery — free over ${formatPrice(shippingCfg.freeThreshold)}`}
+                {`Flat ${formatPrice(shippingCfg.standard)} delivery nationwide`}
               </li>
               <li className="flex items-center gap-2">
                 <RotateCcw className="h-3.5 w-3.5 text-gold-dark" /> 14-day hassle-free returns

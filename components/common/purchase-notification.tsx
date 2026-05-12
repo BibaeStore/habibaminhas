@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { X, ShoppingBag, MapPin, Phone, User, Star, Zap, BadgeCheck } from "lucide-react";
+import { X, ShoppingBag, MapPin, User, BadgeCheck } from "lucide-react";
 
 /* ── Timing ─────────────────────────────────────────────────── */
 const DISPLAY_MS     = 8_000;  // visible duration per card
@@ -99,7 +99,7 @@ export function PurchaseNotification() {
 
   if (!current) return null;
 
-  const { customer, product, review, status, badge } = current;
+  const { customer, product, badge } = current;
 
   return (
     <div
@@ -122,11 +122,8 @@ export function PurchaseNotification() {
 
       <div className="flex items-stretch">
 
-        {/* Product image */}
-        <div
-          className="relative w-[56px] flex-none self-stretch overflow-hidden bg-parchment"
-          style={{ minHeight: 152 }}
-        >
+        {/* Product image — fills full card height */}
+        <div className="relative w-[88px] flex-none self-stretch overflow-hidden bg-parchment">
           {product.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -138,11 +135,6 @@ export function PurchaseNotification() {
             <div className="flex h-full w-full items-center justify-center bg-gold-light">
               <ShoppingBag className="h-6 w-6 text-gold-dark" />
             </div>
-          )}
-          {product.quantity > 1 && (
-            <span className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[9px] font-bold text-ivory">
-              {product.quantity}
-            </span>
           )}
         </div>
 
@@ -172,30 +164,8 @@ export function PurchaseNotification() {
             {product.title}
           </p>
 
-          {/* Star rating + review quote */}
-          <div className="mt-2 border-l-[2px] border-gold-dark/50 pl-2.5">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-2.5 w-2.5 ${
-                    i < review.rating
-                      ? "fill-gold-dark text-gold-dark"
-                      : "fill-border-soft text-border-soft"
-                  }`}
-                />
-              ))}
-              <span className="ml-1 text-[10px] font-semibold text-gold-dark">
-                {review.rating}.0
-              </span>
-            </div>
-            <p className="mt-0.5 line-clamp-2 text-[10px] italic leading-snug text-ink-soft">
-              &ldquo;{review.comment}&rdquo;
-            </p>
-          </div>
-
-          {/* Customer details — 3 rows with icons */}
-          <div className="mt-2.5 flex flex-col gap-1">
+          {/* Customer details */}
+          <div className="mt-2 flex flex-col gap-1">
             <div className="flex items-center gap-1.5">
               <User className="h-3 w-3 shrink-0 text-gold-dark" />
               <span className="text-[11px] font-semibold text-ink">{customer.firstName}</span>
@@ -208,19 +178,8 @@ export function PurchaseNotification() {
                 {customer.city}, {customer.province}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Phone className="h-3 w-3 shrink-0 text-muted" />
-              <span className="text-[10px] tracking-wide text-muted">{customer.phone}</span>
-            </div>
           </div>
 
-          {/* Status footer */}
-          <div className="mt-2.5 flex items-center gap-1.5 border-t border-gold-dark/15 pt-2">
-            <Zap className="h-3 w-3 shrink-0 text-gold-dark" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.26em] text-gold-dark">
-              {status}
-            </span>
-          </div>
         </div>
       </div>
 

@@ -211,9 +211,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<Para
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Shipping</dt>
                 <dd>
-                  {order.shipping === 0
-                    ? <span className="text-gold-dark">Complimentary</span>
-                    : formatPrice(order.shipping)}
+                  {formatPrice(order.shipping)}
                 </dd>
               </div>
             </dl>

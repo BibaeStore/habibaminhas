@@ -33,14 +33,14 @@ export function EditorialBlock({
           reversed ? "lg:[&>*:first-child]:order-2" : ""
         }`}
       >
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-5">
           {image ? (
             <div className="relative aspect-[4/5] w-full overflow-hidden">
               <Image
                 src={image}
                 alt={title}
                 fill
-                sizes="(max-width: 1024px) 100vw, 58vw"
+                sizes="(max-width: 1024px) 100vw, 42vw"
                 className="object-cover object-center"
               />
             </div>
@@ -54,7 +54,7 @@ export function EditorialBlock({
             />
           )}
         </div>
-        <div className="flex flex-col justify-center lg:col-span-5 lg:px-8">
+        <div className="flex flex-col justify-center lg:col-span-7 lg:px-8">
           <span className="text-[11px] uppercase tracking-[0.34em] text-gold-dark">
             {eyebrow}
           </span>

@@ -220,8 +220,8 @@ export default async function InvoicePage({ params }: { params: Promise<Params> 
               </div>
               <div className="flex justify-between">
                 <span className="text-[#8a8179]">Shipping</span>
-                <span className={order.shipping === 0 ? "text-[#b89464]" : "text-[#1a1612]"}>
-                  {order.shipping === 0 ? "Complimentary" : formatPrice(order.shipping)}
+                <span className="text-[#1a1612]">
+                  {formatPrice(order.shipping)}
                 </span>
               </div>
               <div className="mt-2 flex justify-between border-t-2 border-[#1a1612] pt-3">
