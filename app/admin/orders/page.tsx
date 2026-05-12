@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import {
   Search, Download, X, Truck, CreditCard, Package,
   ChevronLeft, ChevronRight, MapPin, Phone, Mail,
-  ClipboardList, MessageSquare,
+  ClipboardList, MessageSquare, Eye,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminButton } from "@/components/admin/ui/button";
@@ -248,9 +249,16 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="px-5 py-5 text-right text-sm font-medium text-[var(--admin-text)]">{formatPrice(o.total)}</td>
                       <td className="px-5 py-5">
-                        <AdminButton variant="outline" size="sm" onClick={() => setSelected(o)}>
-                          Update →
-                        </AdminButton>
+                        <div className="flex items-center gap-1.5">
+                          <Link href={`/admin/orders/${o.id}`}>
+                            <AdminButton variant="outline" size="sm" leadingIcon={<Eye className="h-3.5 w-3.5" />}>
+                              View
+                            </AdminButton>
+                          </Link>
+                          <AdminButton variant="ghost" size="sm" onClick={() => setSelected(o)}>
+                            Quick update
+                          </AdminButton>
+                        </div>
                       </td>
                     </tr>
                   );
