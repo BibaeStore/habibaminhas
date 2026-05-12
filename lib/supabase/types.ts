@@ -49,6 +49,7 @@ export type Database = {
           id: string
           image: string | null
           name: string
+          nav_href: string | null
           parent_id: string | null
           product_count: number
           seo_desc: string | null
@@ -65,6 +66,7 @@ export type Database = {
           id?: string
           image?: string | null
           name: string
+          nav_href?: string | null
           parent_id?: string | null
           product_count?: number
           seo_desc?: string | null
@@ -81,6 +83,7 @@ export type Database = {
           id?: string
           image?: string | null
           name?: string
+          nav_href?: string | null
           parent_id?: string | null
           product_count?: number
           seo_desc?: string | null

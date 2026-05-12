@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { LayoutShell } from "@/components/layout/layout-shell";
 import { getStorefrontSettings } from "@/lib/actions/settings";
+import { getNavMenu } from "@/lib/actions/categories";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -57,14 +58,17 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const { seo } = await getStorefrontSettings();
+  const [{ seo }, navMenus] = await Promise.all([
+    getStorefrontSettings(),
+    getNavMenu(),
+  ]);
   return (
     <html
       lang="en"
       className={`${fraunces.variable} ${manrope.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-ivory text-ink">
-        <LayoutShell>{children}</LayoutShell>
+        <LayoutShell navMenus={navMenus}>{children}</LayoutShell>
         {/* TrustBox bootstrap script */}
         <Script
           src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"

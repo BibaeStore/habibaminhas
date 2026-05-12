@@ -24,6 +24,7 @@ type FormState = {
   name: string; slug: string; color: string | null;
   type: string; parent_id: string | null;
   status: string; sort_order: number;
+  nav_href: string | null;
   seo_title: string | null; seo_desc: string | null;
   image: string | null;
 };
@@ -31,6 +32,7 @@ type FormState = {
 const BLANK: FormState = {
   name: "", slug: "", color: "#f0ece4", type: "sub",
   parent_id: null, status: "active", sort_order: 1,
+  nav_href: "",
   seo_title: "", seo_desc: "", image: null,
 };
 
@@ -75,6 +77,7 @@ export default function AdminCategoriesPage() {
       name: c.name, slug: c.slug, color: c.color,
       type: c.type, parent_id: c.parent_id,
       status: c.status, sort_order: c.sort_order,
+      nav_href: c.nav_href ?? "",
       seo_title: c.seo_title ?? "", seo_desc: c.seo_desc ?? "",
       image: c.image,
     });
@@ -89,7 +92,8 @@ export default function AdminCategoriesPage() {
       await createCategory({
         name: form.name.trim(), slug, color: form.color, type: form.type,
         parent_id: form.parent_id || null, status: form.status,
-        sort_order: form.sort_order, seo_title: form.seo_title || null,
+        sort_order: form.sort_order, nav_href: form.nav_href || null,
+        seo_title: form.seo_title || null,
         seo_desc: form.seo_desc || null, image: form.image,
       });
       loadCats();
@@ -106,7 +110,8 @@ export default function AdminCategoriesPage() {
       await updateCategory(editCat.id, {
         name: form.name.trim(), slug: form.slug.trim(), color: form.color,
         type: form.type, parent_id: form.parent_id || null, status: form.status,
-        sort_order: form.sort_order, seo_title: form.seo_title || null,
+        sort_order: form.sort_order, nav_href: form.nav_href || null,
+        seo_title: form.seo_title || null,
         seo_desc: form.seo_desc || null, image: form.image,
       });
       loadCats();
@@ -562,7 +567,7 @@ function CategoryForm({
           />
         </div>
         <div>
-          <label className={labelCls}>Slug (URL)</label>
+          <label className={labelCls}>Slug (URL identifier)</label>
           <input
             value={form.slug}
             onChange={(e) => set("slug", e.target.value)}
@@ -570,6 +575,24 @@ function CategoryForm({
             className={`${inputCls} font-mono`}
           />
         </div>
+      </div>
+
+      <div>
+        <label className={labelCls}>
+          Nav Link URL
+          <span className="ml-2 font-normal text-[var(--admin-text-soft)] text-[13px]">
+            — the page this item links to in the navbar
+          </span>
+        </label>
+        <input
+          value={form.nav_href ?? ""}
+          onChange={(e) => set("nav_href", e.target.value || null)}
+          placeholder="/ladies"
+          className={`${inputCls} font-mono`}
+        />
+        <p className="mt-1 text-[12px] text-[var(--admin-text-muted)]">
+          e.g. <code>/ladies</code>, <code>/kids</code>, <code>/baby</code>. Leave blank to hide from nav.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

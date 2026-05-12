@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { useState } from "react";
 import { X, ChevronDown, Globe, User, Heart, ShoppingBag } from "lucide-react";
-import { megaMenus } from "@/lib/data";
+import { megaMenus as fallbackMenus, type MegaMenu } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 export function MobileMenu({
+  menus: serverMenus,
   open,
   onClose,
 }: {
+  menus?: MegaMenu[];
   open: boolean;
   onClose: () => void;
 }) {
+  const megaMenus = serverMenus && serverMenus.length > 0 ? serverMenus : fallbackMenus;
   const [expanded, setExpanded] = useState<string | null>(null);
   return (
     <>

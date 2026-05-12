@@ -6,12 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, User, Heart, Menu, ChevronDown, Globe } from "lucide-react";
 import { CartTrigger } from "@/components/cart/cart-trigger";
-import { megaMenus } from "@/lib/data";
+import { megaMenus as fallbackMenus, type MegaMenu } from "@/lib/data";
 import { MegaPanel } from "./mega-panel";
 import { MobileMenu } from "./mobile-menu";
 import { cn } from "@/lib/utils";
 
-export function Navbar() {
+export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
+  const menus = serverMenus && serverMenus.length > 0 ? serverMenus : fallbackMenus;
+
   const router = useRouter();
   const [open, setOpen] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -101,7 +103,7 @@ export function Navbar() {
 
           {/* Desktop nav links */}
           <div className="hidden lg:flex items-center gap-0.5">
-            {megaMenus.map((m) => (
+            {menus.map((m) => (
               <button
                 key={m.label}
                 type="button"
@@ -167,7 +169,7 @@ export function Navbar() {
 
       {open
         ? (() => {
-            const active = megaMenus.find((m) => m.label === open);
+            const active = menus.find((m) => m.label === open);
             return active ? (
               <MegaPanel
                 menu={active}
@@ -180,7 +182,7 @@ export function Navbar() {
           })()
         : null}
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu menus={menus} open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </header>
   );
 }
