@@ -1,10 +1,30 @@
-import { products } from "@/lib/data";
 import { CollectionTemplate } from "@/components/collection/collection-template";
+import { getProducts } from "@/lib/actions/products";
+import type { Metadata } from "next";
 
-export const metadata = { title: "The Edit" };
+export const metadata: Metadata = { title: "The Edit — Habiba Minhas" };
 
-export default function EditPage() {
-  const items = products.filter((_, i) => i % 2 === 0);
+export const dynamic = "force-dynamic";
+
+export default async function EditPage() {
+  const all = await getProducts({ status: "active" }).catch(() => []);
+
+  // Stylist's pick: featured products first, then recent — capped at 24
+  const featured = all.filter((p) => p.featured);
+  const rest     = all.filter((p) => !p.featured);
+  const items    = [...featured, ...rest].slice(0, 24).map((p) => ({
+    id:          p.id,
+    slug:        p.slug,
+    title:       p.title,
+    price:       p.price,
+    images:      p.images,
+    compare_at:  p.compare_at,
+    palette:     p.palette,
+    badge:       p.badge,
+    subcategory: p.subcategory,
+    subtype:     p.subtype,
+  }));
+
   return (
     <CollectionTemplate
       crumbs={[{ label: "Home", href: "/" }, { label: "The Edit" }]}
