@@ -12,115 +12,119 @@ const linkCols = [
   {
     heading: "Customer Care",
     links: [
-      { label: "Track Your Order", href: "/track" },
-      { label: "FAQs", href: "/help/faq" },
-      { label: "Exchange & Returns", href: "/help/returns" },
-      { label: "Shipping Info", href: "/help/shipping" },
-      { label: "Contact Us", href: "/contact" },
-      { label: "Payment Methods", href: "/help/payments" },
+      { label: "Track Your Order",   href: "/track"          },
+      { label: "FAQs",               href: "/help/faq"       },
+      { label: "Exchange & Returns", href: "/help/returns"   },
+      { label: "Shipping Info",      href: "/help/shipping"  },
+      { label: "Contact Us",         href: "/contact"        },
+      { label: "Payment Methods",    href: "/help/payments"  },
     ],
   },
   {
     heading: "Information",
     links: [
-      { label: "About Us", href: "/about" },
-      { label: "Privacy Policy", href: "/legal/privacy" },
-      { label: "Terms of Service", href: "/legal/terms" },
-      { label: "Wholesale Enquiries", href: "/contact" },
-      { label: "Journal", href: "/journal" },
+      { label: "About Us",            href: "/about"          },
+      { label: "Privacy Policy",      href: "/legal/privacy"  },
+      { label: "Terms of Service",    href: "/legal/terms"    },
+      { label: "Wholesale Enquiries", href: "/contact"        },
+      { label: "Journal",             href: "/journal"        },
     ],
   },
   {
     heading: "Shop",
     links: [
-      { label: "Ladies Suits",       href: "/ladies"      },
-      { label: "Kids Formal Wear",   href: "/kids"        },
-      { label: "Baby Bedding",       href: "/baby"        },
-      { label: "Baby Nests",         href: "/baby"        },
-      { label: "Accessories",        href: "/accessories" },
-      { label: "New Arrivals",       href: "/new"         },
+      { label: "Ladies Suits",     href: "/ladies"      },
+      { label: "Kids Formal Wear", href: "/kids"        },
+      { label: "Baby Bedding",     href: "/baby"        },
+      { label: "Baby Nests",       href: "/baby"        },
+      { label: "Accessories",      href: "/accessories" },
+      { label: "New Arrivals",     href: "/new"         },
     ],
   },
 ];
 
 const services = [
-  {
-    icon: Package,
-    title: "Flat Rs. 250 Delivery",
-    subtitle: "Nationwide shipping across all of Pakistan.",
-    href: "/help/shipping",
-  },
-  {
-    icon: RotateCcw,
-    title: "14-Day Returns",
-    subtitle: "Easy returns within 14 days of delivery.",
-    href: "/help/returns",
-  },
-  {
-    icon: MapPin,
-    title: "Based in Karachi",
-    subtitle: "Handcrafted and dispatched from Karachi, Pakistan.",
-    href: "/about",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Secure Checkout",
-    subtitle: "Card, COD, JazzCash and Easypaisa.",
-    href: "/help/payments",
-  },
+  { icon: Package,    title: "Flat Rs. 250 Delivery", subtitle: "Nationwide shipping across Pakistan.", href: "/help/shipping" },
+  { icon: RotateCcw,  title: "14-Day Returns",        subtitle: "Easy returns within 14 days.",          href: "/help/returns"  },
+  { icon: MapPin,     title: "Based in Karachi",      subtitle: "Handcrafted & dispatched from Karachi.", href: "/about"         },
+  { icon: ShieldCheck,title: "Secure Checkout",       subtitle: "COD, JazzCash, Easypaisa & Card.",       href: "/help/payments" },
+];
+
+const socialLinks = [
+  { href: "https://www.instagram.com/habibaminhas.official/",              label: "Instagram", Icon: InstagramIcon },
+  { href: "https://www.facebook.com/profile.php?id=61573309750795",        label: "Facebook",  Icon: FacebookIcon  },
+  { href: "https://www.youtube.com/@HabibaMinhas989",                      label: "YouTube",   Icon: YouTubeIcon   },
+  { href: "https://www.tiktok.com/@habibaminhas.official",                 label: "TikTok",    Icon: TikTokIcon    },
+  { href: "https://x.com/HabibaMinhas989",                                 label: "X",         Icon: XIcon         },
+  { href: "https://www.pinterest.com/habibaminhas989/",                    label: "Pinterest", Icon: PinterestIcon },
+  { href: "https://www.quora.com/profile/Habiba-Minhas-5",                 label: "Quora",     Icon: QuoraIcon     },
+  { href: "https://www.reddit.com/user/HabibaMinhas_989/",                 label: "Reddit",    Icon: RedditIcon    },
+];
+
+const paymentLogos = [
+  { src: "/logos/payments/visa.webp",       alt: "Visa",             w: 48, h: 30 },
+  { src: "/logos/payments/mastercard.webp", alt: "Mastercard",       w: 36, h: 28 },
+  { src: "/logos/payments/jazzcash.webp",   alt: "JazzCash",         w: 48, h: 48 },
+  { src: "/logos/payments/easypaisa.webp",  alt: "Easypaisa",        w: 48, h: 48 },
+  { src: "/logos/payments/cod.webp",        alt: "Cash on Delivery", w: 48, h: 28 },
 ];
 
 export function Footer() {
   return (
-    <footer className="mt-24 border-t border-border-soft bg-cream">
-      <div className="mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-8">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <footer className="mt-24 bg-ink">
+
+      {/* ── Newsletter — top, centered ─────────────────────────────── */}
+      <Newsletter />
+
+      {/* ── Thin gold divider ──────────────────────────────────────── */}
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-8">
+        <div className="h-px bg-ivory/10" />
+      </div>
+
+      {/* ── Service badges ─────────────────────────────────────────── */}
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {services.map(({ icon: Icon, title, subtitle, href }) => (
             <Link
               key={title}
               href={href}
-              className="group flex items-start gap-3 border border-border-soft bg-ivory p-5 transition-colors hover:border-ink"
+              className="group flex items-start gap-3 border border-ivory/10 bg-ivory/5 p-5 transition-colors hover:border-gold-dark/50 hover:bg-ivory/10"
             >
-              <Icon className="h-5 w-5 text-gold-dark" />
+              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
               <div>
-                <div className="text-[12px] uppercase tracking-[0.22em] text-ink">
-                  {title}
-                </div>
-                <div className="mt-1 text-[12px] leading-snug text-ink-soft">
-                  {subtitle}
-                </div>
+                <div className="text-[11px] uppercase tracking-[0.22em] text-ivory/80">{title}</div>
+                <div className="mt-1 text-[11px] leading-snug text-ivory/40">{subtitle}</div>
               </div>
             </Link>
           ))}
         </div>
+      </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-12">
+      {/* ── Main footer grid ───────────────────────────────────────── */}
+      <div className="mx-auto w-full max-w-[1440px] px-4 pb-14 sm:px-8">
+        <div className="h-px bg-ivory/10" />
+        <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-12">
+
+          {/* Brand column */}
           <div className="lg:col-span-4">
-            <Link href="/">
+            <Link href="/" aria-label="Habiba Minhas">
               <Image
                 src="/logo/habiba-minhas-logo-t.png"
                 alt="Habiba Minhas"
                 width={240}
                 height={80}
-                className="h-[84px] w-auto"
+                className="h-[72px] w-auto brightness-0 invert opacity-90"
               />
             </Link>
-            <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-ink-soft">
+            <p className="mt-5 max-w-sm text-[13px] leading-relaxed text-ivory/50">
               Premium fashion & baby products — handcrafted with love in
               Pakistan. Ladies suits, kids formalwear, nursery essentials,
               and silk accessories for the modern family.
             </p>
+
+            {/* Social icons */}
             <div className="mt-6 flex flex-wrap items-center gap-2">
-              {[
-                { href: "https://www.instagram.com/habibaminhas.official/", label: "Instagram",  Icon: InstagramIcon  },
-                { href: "https://www.facebook.com/profile.php?id=61573309750795", label: "Facebook", Icon: FacebookIcon  },
-                { href: "https://www.youtube.com/@HabibaMinhas989",         label: "YouTube",   Icon: YouTubeIcon    },
-                { href: "https://www.tiktok.com/@habibaminhas.official",    label: "TikTok",    Icon: TikTokIcon     },
-                { href: "https://x.com/HabibaMinhas989",                    label: "X",         Icon: XIcon          },
-                { href: "https://www.pinterest.com/habibaminhas989/",       label: "Pinterest", Icon: PinterestIcon  },
-                { href: "https://www.quora.com/profile/Habiba-Minhas-5",    label: "Quora",     Icon: QuoraIcon      },
-                { href: "https://www.reddit.com/user/HabibaMinhas_989/",    label: "Reddit",    Icon: RedditIcon     },
-              ].map(({ href, label, Icon }) => (
+              {socialLinks.map(({ href, label, Icon }) => (
                 <a
                   key={label}
                   href={href}
@@ -128,7 +132,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   aria-label={label}
                   title={label}
-                  className="flex h-9 w-9 items-center justify-center border border-ink/20 text-ink transition-all hover:border-ink hover:bg-ink hover:text-ivory"
+                  className="flex h-9 w-9 items-center justify-center border border-ivory/20 text-ivory/60 transition-all hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
                 >
                   <Icon className="h-4 w-4" />
                 </a>
@@ -136,6 +140,7 @@ export function Footer() {
             </div>
           </div>
 
+          {/* Link columns */}
           {linkCols.map((col) => (
             <div key={col.heading} className="lg:col-span-2">
               <div className="text-[11px] uppercase tracking-[0.3em] text-gold-dark">
@@ -146,7 +151,7 @@ export function Footer() {
                   <li key={l.label}>
                     <Link
                       href={l.href}
-                      className="link-underline text-[13px] text-ink-soft hover:text-ink"
+                      className="text-[13px] text-ivory/50 transition-colors hover:text-gold-dark"
                     >
                       {l.label}
                     </Link>
@@ -156,47 +161,59 @@ export function Footer() {
             </div>
           ))}
 
+          {/* Contact column */}
           <div className="lg:col-span-2">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-gold-dark">
-              Contact
-            </div>
-            <ul className="mt-4 flex flex-col gap-2.5 text-[13px] text-ink-soft">
-              <li><a href="mailto:info@habibaminhas.com" className="hover:text-gold-dark transition-colors">info@habibaminhas.com</a></li>
-              <li><a href="https://wa.me/923120295812" target="_blank" rel="noopener noreferrer" className="hover:text-gold-dark transition-colors">+92 312 0295812</a></li>
-              <li>Karachi, Pakistan — 75533</li>
+            <div className="text-[11px] uppercase tracking-[0.3em] text-gold-dark">Contact</div>
+            <ul className="mt-4 flex flex-col gap-2.5 text-[13px] text-ivory/50">
+              <li>
+                <a href="mailto:info@habibaminhas.com" className="transition-colors hover:text-gold-dark">
+                  info@habibaminhas.com
+                </a>
+              </li>
+              <li>
+                <a href="https://wa.me/923120295812" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold-dark">
+                  +92 312 0295812
+                </a>
+              </li>
+              <li className="text-ivory/30">Karachi, Pakistan — 75533</li>
             </ul>
           </div>
         </div>
+      </div>
 
-        <Newsletter />
-
-        {/* Trustpilot Reviews */}
-        <div className="mt-14 border-t border-border-soft pt-10">
+      {/* ── Trustpilot ─────────────────────────────────────────────── */}
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-8">
+        <div className="border-t border-ivory/10 py-10">
           <TrustpilotWidget />
         </div>
+      </div>
 
-        <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border-soft pt-6 text-[11px] uppercase tracking-[0.22em] text-muted sm:flex-row sm:items-center">
-          <div>© 2026 Habiba Minhas Atelier — All rights reserved</div>
+      {/* ── Bottom bar — copyright + payment logos ─────────────────── */}
+      <div className="mx-auto w-full max-w-[1440px] px-4 pb-8 sm:px-8">
+        <div className="flex flex-col items-start justify-between gap-4 border-t border-ivory/10 pt-6 sm:flex-row sm:items-center">
+          <div className="text-[11px] uppercase tracking-[0.22em] text-ivory/30">
+            © 2026 Habiba Minhas Atelier — All rights reserved
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             {paymentLogos.map(({ src, alt, w, h }) => (
               <div
                 key={alt}
-                className="flex h-8 items-center justify-center rounded border border-border-soft bg-ivory px-2"
+                className="flex h-8 items-center justify-center rounded bg-white px-3"
               >
-                <Image src={src} alt={alt} width={w} height={h} className="object-contain" style={{ maxHeight: 22 }} />
+                <Image
+                  src={src}
+                  alt={alt}
+                  width={w}
+                  height={h}
+                  className="object-contain"
+                  style={{ maxHeight: 20 }}
+                />
               </div>
             ))}
           </div>
         </div>
       </div>
+
     </footer>
   );
 }
-
-const paymentLogos = [
-  { src: "/logos/payments/visa.webp",         alt: "Visa",         w: 48, h: 30 },
-  { src: "/logos/payments/mastercard.webp",   alt: "Mastercard",   w: 36, h: 28 },
-  { src: "/logos/payments/jazzcash.webp",     alt: "JazzCash",     w: 48, h: 48 },
-  { src: "/logos/payments/easypaisa.webp",    alt: "Easypaisa",    w: 48, h: 48 },
-  { src: "/logos/payments/cod.webp",          alt: "Cash on Delivery", w: 48, h: 28 },
-];
