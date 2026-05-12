@@ -90,7 +90,7 @@ export function PaymentView({
         unit_price: item.price,
         total_price: item.price * item.qty,
       }));
-      const newOrder = await createOrder(
+      const result = await createOrder(
         {
           customer_name: `${shipping.firstName} ${shipping.lastName}`,
           customer_email: shipping.email,
@@ -106,11 +106,16 @@ export function PaymentView({
         },
         orderItems
       );
+      if (result.error || !result.order) {
+        setError(result.error ?? "Failed to place order. Please try again.");
+        setPlacing(false);
+        return;
+      }
       orderPlaced.current = true;
       localStorage.setItem("hm_customer_email", shipping.email);
       clearCart();
       clearCheckout();
-      router.push(`/order/${newOrder.order_number}`);
+      router.push(`/order/${result.order.order_number}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to place order. Please try again.");
       setPlacing(false);
@@ -120,7 +125,8 @@ export function PaymentView({
   if (!mounted || !shipping) return null;
 
   const shipName = `${shipping.firstName} ${shipping.lastName}`;
-  const shipAddr = [shipping.street, shipping.city].filter(Boolean).join(", ");
+  // Only show city + province — keeps the box clean regardless of how long other fields are
+  const shipAddr = [shipping.city, shipping.province].filter(Boolean).join(", ");
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-10 sm:px-8 lg:py-16">
@@ -355,15 +361,15 @@ export function PaymentView({
             </ul>
 
             <div className="border-t border-border-soft px-6 py-4 text-[12px]">
-              <div className="flex items-start justify-between gap-2">
-                <div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <div className="text-[10px] uppercase tracking-[0.24em] text-muted">Ships to</div>
-                  <div className="mt-1 font-medium text-ink">{shipName}</div>
-                  <div className="mt-0.5 text-ink-soft">{shipAddr}</div>
+                  <div className="mt-1 truncate font-medium text-ink">{shipName}</div>
+                  <div className="mt-0.5 truncate text-ink-soft">{shipAddr}</div>
                 </div>
                 <Link
                   href="/checkout/shipping"
-                  className="shrink-0 inline-flex items-center gap-1.5 border border-border-soft bg-ivory px-2.5 py-1.5 text-[10px] uppercase tracking-[0.2em] text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded border border-border-soft bg-ivory px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] text-ink-soft transition-colors hover:border-ink hover:text-ink"
                 >
                   <Pencil className="h-2.5 w-2.5" />
                   Edit
