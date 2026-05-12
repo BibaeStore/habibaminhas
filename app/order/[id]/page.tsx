@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductImage } from "@/components/common/product-image";
-import { CheckCircle2, Package, Truck, RotateCcw, ArrowRight, Download } from "lucide-react";
+import { CheckCircle2, Package, Truck, RotateCcw, ArrowRight, Download, MapPin } from "lucide-react";
 import { getOrderByNumber } from "@/lib/actions/orders";
 import { formatPrice } from "@/lib/utils";
 import type { Tables, Json } from "@/lib/supabase/types";
@@ -99,8 +99,26 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
             </span>
           </div>
 
+          {/* Track order banner */}
+          <div className="mt-10 flex items-center gap-4 border border-gold-dark/30 bg-gold-light px-6 py-5">
+            <MapPin className="h-5 w-5 shrink-0 text-gold-dark" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-gold-dark">Track your delivery</div>
+              <p className="mt-0.5 text-[13px] text-ink-soft">
+                Use your order number <strong className="font-medium text-ink">{order.order_number}</strong> and your phone number to check status anytime.
+              </p>
+            </div>
+            <Link
+              href={`/track?order=${order.order_number}`}
+              className="shrink-0 inline-flex h-10 items-center gap-2 bg-ink px-5 text-[11px] uppercase tracking-[0.22em] text-ivory hover:bg-gold-dark transition-colors"
+            >
+              <Package className="h-3.5 w-3.5" />
+              Track
+            </Link>
+          </div>
+
           {/* CTA */}
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/ladies"
               className="inline-flex h-12 items-center gap-2 bg-ink px-8 text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-gold-dark transition-colors group"

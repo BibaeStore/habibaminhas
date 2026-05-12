@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, User, Heart, Menu, ChevronDown, Globe, Package } from "lucide-react";
+import { Search, User, Heart, Menu, ChevronDown, Package } from "lucide-react";
 import { CartTrigger } from "@/components/cart/cart-trigger";
 import { megaMenus as fallbackMenus, type MegaMenu } from "@/lib/data";
 import { MegaPanel } from "./mega-panel";
@@ -149,15 +149,7 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
               Search
             </span>
           </button>
-          <button
-            type="button"
-            aria-label="Region"
-            className="hidden md:inline-flex items-center gap-1 p-2 text-ink hover:text-gold-dark"
-          >
-            <Globe className="h-[18px] w-[18px]" />
-            <span className="text-[11px] uppercase tracking-[0.22em]">PK</span>
-          </button>
-          <Link href="/track" aria-label="Track Order" title="Track your order" className="p-2 text-ink hover:text-gold-dark">
+<Link href="/track" aria-label="Track Order" title="Track your order" className="p-2 text-ink hover:text-gold-dark">
             <Package className="h-[18px] w-[18px]" />
           </Link>
           <Link href="/account" aria-label="Account" className="p-2 text-ink hover:text-gold-dark">
