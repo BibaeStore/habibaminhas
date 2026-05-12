@@ -12,6 +12,7 @@ const linkCols = [
   {
     heading: "Customer Care",
     links: [
+      { label: "Track Your Order", href: "/track" },
       { label: "FAQs", href: "/help/faq" },
       { label: "Exchange & Returns", href: "/help/returns" },
       { label: "Shipping Info", href: "/help/shipping" },
