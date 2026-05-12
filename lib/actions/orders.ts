@@ -190,6 +190,56 @@ export async function updateOrder(id: string, payload: TablesUpdate<"orders">) {
   return data;
 }
 
+/**
+ * Public order tracker — matches on order_number AND last-4 digits of phone.
+ * Returns a safe subset of order data (no full email/address details).
+ */
+export async function trackOrderByNumberAndPhone(
+  orderNumber: string,
+  phone: string,
+): Promise<{ found: boolean; order?: {
+  order_number: string; status: string; created_at: string; updated_at: string;
+  customer_name: string; courier: string | null; tracking_number: string | null;
+  subtotal: number; shipping: number; total: number; payment_method: string; payment_status: string;
+  city: string; items: Array<{ product_title: string; product_image: string | null; quantity: number; size: string | null; unit_price: number; total_price: number }>;
+} }> {
+  if (!orderNumber.trim() || !phone.trim()) return { found: false };
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("orders")
+    .select("*, order_items(product_title, product_image, quantity, size, unit_price, total_price)")
+    .eq("order_number", orderNumber.trim().toUpperCase())
+    .single();
+  if (error || !data) return { found: false };
+
+  // Verify phone: compare last 7 digits (strips spaces, dashes, country code differences)
+  const normalize = (p: string) => p.replace(/\D/g, "").slice(-7);
+  if (normalize(data.customer_phone) !== normalize(phone)) return { found: false };
+
+  const addr = typeof data.address === "object" && !Array.isArray(data.address)
+    ? (data.address as Record<string, string>) : {} as Record<string, string>;
+
+  return {
+    found: true,
+    order: {
+      order_number:    data.order_number,
+      status:          data.status,
+      created_at:      data.created_at,
+      updated_at:      data.updated_at,
+      customer_name:   data.customer_name,
+      courier:         data.courier,
+      tracking_number: data.tracking_number,
+      subtotal:        data.subtotal,
+      shipping:        data.shipping,
+      total:           data.total,
+      payment_method:  data.payment_method,
+      payment_status:  data.payment_status,
+      city:            addr.city ?? "",
+      items:           (data.order_items ?? []) as Array<{ product_title: string; product_image: string | null; quantity: number; size: string | null; unit_price: number; total_price: number }>,
+    },
+  };
+}
+
 export async function getOrdersByEmail(email: string) {
   const sb = createAdminClient();
   const { data, error } = await sb

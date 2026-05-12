@@ -27,22 +27,22 @@ function base(content: string, preheader = "") {
 
       <!-- ── Header ── -->
       <tr>
-        <td style="background:${INK};padding:0;border-radius:8px 8px 0 0;">
+        <td style="padding:0;border-radius:8px 8px 0 0;overflow:hidden;">
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <!-- Logo row — ivory background so the dark logo is visible -->
             <tr>
-              <td style="padding:26px 32px 22px;">
-                <!-- Text-based logo — renders perfectly in all email clients -->
-                <table cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td style="background:${GOLD};width:44px;height:44px;text-align:center;vertical-align:middle;border-radius:4px;">
-                      <span style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:#ffffff;line-height:1;">HM</span>
-                    </td>
-                    <td style="padding-left:12px;vertical-align:middle;">
-                      <span style="display:block;font-family:Georgia,'Times New Roman',serif;font-size:19px;font-weight:bold;color:#ffffff;letter-spacing:0.12em;text-transform:uppercase;line-height:1.1;">Habiba Minhas</span>
-                    </td>
-                  </tr>
-                </table>
-                <p style="margin:10px 0 0;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#c8a978;font-family:Arial,sans-serif;">
+              <td style="background:#f9f6f0;padding:20px 32px;text-align:center;">
+                <img src="https://habibaminhas.com/logo/habiba-minhas-logo-t.png"
+                     alt="Habiba Minhas"
+                     width="200" height="67"
+                     style="display:inline-block;width:200px;height:auto;max-height:67px;border:0;outline:none;text-decoration:none;"
+                />
+              </td>
+            </tr>
+            <!-- Dark tagline row -->
+            <tr>
+              <td style="background:${INK};padding:12px 32px 16px;text-align:center;">
+                <p style="margin:0;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#c8a978;font-family:Arial,sans-serif;">
                   Handcrafted with Love in Pakistan
                 </p>
               </td>
