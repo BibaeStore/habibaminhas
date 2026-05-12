@@ -30,12 +30,19 @@ function base(content: string, preheader = "") {
         <td style="background:${INK};padding:0;border-radius:8px 8px 0 0;">
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td style="padding:28px 32px 24px;">
-                <img src="${SITE}/logo/habiba-minhas-logo-t.png"
-                     alt="Habiba Minhas" width="180" height="auto"
-                     style="display:block;max-height:60px;width:auto;filter:brightness(0) invert(1);"
-                     onerror="this.style.display='none'"/>
-                <p style="margin:8px 0 0;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#c8a978;">
+              <td style="padding:26px 32px 22px;">
+                <!-- Text-based logo — renders perfectly in all email clients -->
+                <table cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="background:${GOLD};width:44px;height:44px;text-align:center;vertical-align:middle;border-radius:4px;">
+                      <span style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:#ffffff;line-height:1;">HM</span>
+                    </td>
+                    <td style="padding-left:12px;vertical-align:middle;">
+                      <span style="display:block;font-family:Georgia,'Times New Roman',serif;font-size:19px;font-weight:bold;color:#ffffff;letter-spacing:0.12em;text-transform:uppercase;line-height:1.1;">Habiba Minhas</span>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:10px 0 0;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#c8a978;font-family:Arial,sans-serif;">
                   Handcrafted with Love in Pakistan
                 </p>
               </td>
@@ -58,6 +65,8 @@ function base(content: string, preheader = "") {
           </p>
           <p style="margin:0 0 4px;font-size:11px;color:#c8a978;">
             <a href="mailto:info@habibaminhas.com" style="color:#c8a978;text-decoration:none;">info@habibaminhas.com</a>
+            &nbsp;·&nbsp;
+            <a href="mailto:support@habibaminhas.com" style="color:#c8a978;text-decoration:none;">support@habibaminhas.com</a>
             &nbsp;·&nbsp;
             <a href="https://wa.me/923120295812" style="color:#c8a978;text-decoration:none;">+92 312 0295812</a>
           </p>
@@ -218,7 +227,9 @@ export function buildCustomerEmail(d: OrderEmailData): string {
       <p style="margin:20px 0 0;font-size:12px;color:${MUTED};">
         Have a question?&nbsp;
         <a href="https://wa.me/923120295812" style="color:${GOLD};text-decoration:none;font-weight:bold;">WhatsApp us</a>
-        &nbsp;or email&nbsp;
+        &nbsp;·&nbsp;
+        <a href="mailto:support@habibaminhas.com" style="color:${GOLD};text-decoration:none;">support@habibaminhas.com</a>
+        &nbsp;·&nbsp;
         <a href="mailto:info@habibaminhas.com" style="color:${GOLD};text-decoration:none;">info@habibaminhas.com</a>
       </p>
     </td>
