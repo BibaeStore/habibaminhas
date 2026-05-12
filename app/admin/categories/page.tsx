@@ -144,6 +144,24 @@ export default function AdminCategoriesPage() {
     return cats.find((c) => c.id === parentId)?.name ?? "—";
   };
 
+  // Returns 1 = Main, 2 = Sub, 3 = Child based on parent chain depth
+  const getLevel = (c: Category): 1 | 2 | 3 => {
+    if (!c.parent_id) return 1;
+    const parent = cats.find((x) => x.id === c.parent_id);
+    if (!parent?.parent_id) return 2;
+    return 3;
+  };
+
+  // Full breadcrumb path: "Ladies Suits › Stitched Suits" for a child
+  const parentPath = (c: Category): string => {
+    if (!c.parent_id) return "—";
+    const parent = cats.find((x) => x.id === c.parent_id);
+    if (!parent) return "—";
+    if (!parent.parent_id) return parent.name;
+    const grandparent = cats.find((x) => x.id === parent.parent_id);
+    return grandparent ? `${grandparent.name} › ${parent.name}` : parent.name;
+  };
+
   const allPagedSelected = paged.length > 0 && paged.every((c) => selectedIds.has(c.id));
 
   const toggleSelectAll = () => {
@@ -184,10 +202,10 @@ export default function AdminCategoriesPage() {
         {/* Summary tiles */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: "Total categories", value: cats.length },
-            { label: "Main categories",  value: cats.filter((c) => c.type === "main").length },
-            { label: "Featured tiles",   value: cats.filter((c) => c.type === "featured").length },
-            { label: "Inactive",         value: cats.filter((c) => c.status === "inactive").length },
+            { label: "Total",    value: cats.length },
+            { label: "Main",     value: cats.filter((c) => c.type === "main").length },
+            { label: "Sub",      value: cats.filter((c) => c.type === "sub" && !!c.parent_id && !cats.find((p) => p.id === c.parent_id)?.parent_id).length },
+            { label: "Child",    value: cats.filter((c) => c.type === "sub" && !!c.parent_id && !!cats.find((p) => p.id === c.parent_id)?.parent_id).length },
           ].map((s) => (
             <AdminCard key={s.label} padded={false} className="p-4">
               <div className="text-[13px] text-[var(--admin-text-muted)]">{s.label}</div>
@@ -325,13 +343,21 @@ export default function AdminCategoriesPage() {
                       <div className="mt-0.5 font-mono text-[13px] text-[var(--admin-text-muted)]">/{c.slug}</div>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${
-                        c.type === "main"     ? "bg-[var(--admin-primary)] text-white" :
-                        c.type === "featured" ? "bg-[var(--admin-warning-soft)] text-[var(--admin-warning)]" :
-                        "border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] text-[var(--admin-text-soft)]"
-                      }`}>
-                        {c.type === "main" ? "Main" : c.type === "featured" ? "Featured" : "Sub"}
-                      </span>
+                      {(() => {
+                        const lv = getLevel(c);
+                        if (c.type === "featured") return (
+                          <span className="inline-flex items-center rounded-full bg-[var(--admin-warning-soft)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--admin-warning)]">Featured</span>
+                        );
+                        if (lv === 1) return (
+                          <span className="inline-flex items-center rounded-full bg-[var(--admin-primary)] px-2.5 py-0.5 text-[12px] font-medium text-white">Main</span>
+                        );
+                        if (lv === 2) return (
+                          <span className="inline-flex items-center rounded-full border border-[var(--admin-primary)] bg-[var(--admin-primary-soft)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--admin-primary)]">Sub</span>
+                        );
+                        return (
+                          <span className="inline-flex items-center rounded-full border border-[var(--admin-border)] bg-[var(--admin-surface-deep)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--admin-text-soft)]">Child</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-5 py-4">
                       <button
@@ -346,7 +372,9 @@ export default function AdminCategoriesPage() {
                       </button>
                     </td>
                     <td className="px-5 py-4 text-center text-[15px] tabular-nums text-[var(--admin-text-soft)]">{c.sort_order}</td>
-                    <td className="px-5 py-4 text-[15px] text-[var(--admin-text-soft)]">{parentName(c.parent_id)}</td>
+                    <td className="px-5 py-4 text-[14px] text-[var(--admin-text-soft)]">
+                      {parentPath(c)}
+                    </td>
                     <td className="px-5 py-4 text-center">
                       <span className={`text-[15px] font-medium tabular-nums ${c.product_count === 0 ? "text-[var(--admin-text-muted)]" : "text-[var(--admin-text)]"}`}>
                         {c.product_count}
@@ -595,45 +623,94 @@ function CategoryForm({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {/* Level selector */}
+      <div>
+        <label className={labelCls}>Category Level</label>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { val: "main",     label: "Main",    desc: "Top-level nav (e.g. Ladies Suits)" },
+            { val: "sub",      label: "Sub",      desc: "Under a main (e.g. Stitched Suits)" },
+            { val: "child",    label: "Child",    desc: "Under a sub (e.g. Casual Wear)" },
+          ].map(({ val, label, desc }) => {
+            // "child" maps to type="sub" in DB — we distinguish by parent selection
+            const dbVal = val === "child" ? "sub" : val;
+            const isSelected =
+              val === "main"  ? form.type === "main" && !form.parent_id :
+              val === "sub"   ? form.type === "sub"  && !!form.parent_id && !allCats.find((c) => c.id === form.parent_id)?.parent_id :
+              /* child */       form.type === "sub"  && !!form.parent_id && !!allCats.find((c) => c.id === form.parent_id)?.parent_id;
+            return (
+              <button
+                key={val}
+                type="button"
+                onClick={() => {
+                  if (val === "main")  { set("type", "main"); set("parent_id", null); }
+                  if (val === "sub")   { set("type", "sub");  set("parent_id", null); }
+                  if (val === "child") { set("type", "sub");  set("parent_id", null); }
+                }}
+                className="flex flex-col items-start rounded-[var(--admin-radius)] border p-3 text-left transition-colors"
+                style={{
+                  borderColor: isSelected ? "var(--admin-primary)" : "var(--admin-border)",
+                  background:  isSelected ? "var(--admin-primary-soft)" : "var(--admin-surface)",
+                }}
+              >
+                <span className="text-[14px] font-semibold" style={{ color: isSelected ? "var(--admin-primary)" : "var(--admin-text)" }}>{label}</span>
+                <span className="mt-0.5 text-[11px] leading-tight" style={{ color: "var(--admin-text-muted)" }}>{desc}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Featured tile toggle */}
+      <div>
+        <label className="flex cursor-pointer items-center gap-2.5 select-none">
+          <input
+            type="checkbox"
+            checked={form.type === "featured"}
+            onChange={(e) => { set("type", e.target.checked ? "featured" : "sub"); set("parent_id", null); }}
+            className="h-4 w-4 cursor-pointer accent-[var(--admin-primary)]"
+          />
+          <span className="text-[14px] font-medium text-[var(--admin-text)]">Featured homepage tile</span>
+          <span className="text-[12px] text-[var(--admin-text-muted)]">(shows on the landing page grid)</span>
+        </label>
+      </div>
+
+      {/* Parent selector — hidden for Main and Featured */}
+      {form.type !== "main" && form.type !== "featured" && (
         <div>
-          <label className={labelCls}>Type</label>
+          <label className={labelCls}>
+            Parent Category
+            <span className="ml-2 text-[12px] font-normal text-[var(--admin-text-muted)]">
+              {/* hint based on selected parent depth */}
+              {form.parent_id
+                ? allCats.find((c) => c.id === form.parent_id)?.parent_id
+                  ? "— creating a Child under this Sub"
+                  : "— creating a Sub under this Main"
+                : "— select a parent"}
+            </span>
+          </label>
           <select
-            value={form.type}
-            onChange={(e) => set("type", e.target.value)}
+            value={form.parent_id ?? ""}
+            onChange={(e) => set("parent_id", e.target.value || null)}
             className={inputCls}
           >
-            <option value="main">Main Category</option>
-            <option value="sub">Subcategory</option>
-            <option value="featured">Featured (Homepage Tile)</option>
-          </select>
-        </div>
-        {isFeatured ? (
-          <div>
-            <label className={labelCls}>Link URL</label>
-            <input
-              value={form.seo_desc ?? ""}
-              onChange={(e) => set("seo_desc", e.target.value || null)}
-              placeholder="/ladies"
-              className={`${inputCls} font-mono`}
-            />
-          </div>
-        ) : (
-          <div>
-            <label className={labelCls}>Parent Category</label>
-            <select
-              value={form.parent_id ?? ""}
-              onChange={(e) => set("parent_id", e.target.value || null)}
-              className={inputCls}
-            >
-              <option value="">— None (top level) —</option>
-              {allCats.filter((c) => c.type !== "featured").map((c) => (
+            <option value="">— Select parent —</option>
+            <optgroup label="Main categories (create Sub under these)">
+              {allCats.filter((c) => c.type === "main").map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
-          </div>
-        )}
-      </div>
+            </optgroup>
+            <optgroup label="Sub categories (create Child under these)">
+              {allCats.filter((c) => c.type === "sub" && !allCats.find((p) => p.id === c.parent_id)?.parent_id).map((c) => {
+                const parent = allCats.find((p) => p.id === c.parent_id);
+                return (
+                  <option key={c.id} value={c.id}>{parent ? `${parent.name} › ${c.name}` : c.name}</option>
+                );
+              })}
+            </optgroup>
+          </select>
+        </div>
+      )}
 
       {/* Image upload */}
       <div>

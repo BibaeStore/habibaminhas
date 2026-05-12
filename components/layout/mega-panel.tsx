@@ -13,12 +13,14 @@ const toneMap = {
   ink: ["#d7dbe4", "#6f7c8f", "#1a1612"] as [string, string, string],
 };
 
-// Maps mega menu label → category slug in the DB
+// Maps mega menu label → category slug for image lookup fallback
 const MENU_SLUG: Record<string, string> = {
-  Ladies:          "ladies-suits",
-  Kids:            "kids-formal",
-  "Baby Products": "baby-bedding",
-  Accessories:     "accessories",
+  "Ladies Suits":  "ladies-suits",
+  "Kids Formal":   "kids-formal",
+  "Baby Bedding":  "baby-bedding",
+  "Baby Nests":    "baby-nests",
+  "Accessories":   "accessories",
+  "New Arrivals":  "new-arrivals",
 };
 
 export function MegaPanel({
@@ -45,7 +47,12 @@ export function MegaPanel({
     >
       <div className="border-t border-border-soft bg-ivory shadow-soft animate-fade-up">
         <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-8 px-8 py-5">
-          <div className="col-span-8 grid grid-cols-4 gap-6">
+          <div className={`col-span-8 grid gap-6 ${
+            menu.columns.length === 1 ? "grid-cols-1" :
+            menu.columns.length === 2 ? "grid-cols-2" :
+            menu.columns.length === 3 ? "grid-cols-3" :
+            "grid-cols-4"
+          }`}>
             {menu.columns.map((col) => (
               <div key={col.heading} className="flex flex-col gap-4">
                 <span className="font-display text-lg italic text-ink">

@@ -10,6 +10,7 @@ const TONES = ["rose", "gold", "sage", "ink"] as const;
 // ─── Nav menu ─────────────────────────────────────────────────────────────────
 
 /** Builds the navbar MegaMenu[] directly from the DB categories.
+ *  Supports 3 levels: main → sub (columns) → child (items in each column).
  *  Called from app/layout.tsx (server component) — cached per request by React. */
 export async function getNavMenu(): Promise<MegaMenu[]> {
   try {
@@ -21,24 +22,64 @@ export async function getNavMenu(): Promise<MegaMenu[]> {
       .order("sort_order", { ascending: true });
     if (error || !data) return [];
 
-    const topLevel = data.filter((r) => !r.parent_id && r.type === "main");
+    // Level 1: top-level main categories
+    const level1 = data.filter((r) => !r.parent_id && r.type === "main");
 
-    return topLevel.map((parent, idx) => {
-      const children = data.filter((r) => r.parent_id === parent.id);
+    return level1.map((parent, idx) => {
       const parentHref = parent.nav_href || `/${parent.slug}`;
 
-      const columnItems = [
-        { label: `All ${parent.name}`, href: parentHref },
-        ...children.map((c) => ({
-          label: c.name,
-          href: c.nav_href || parentHref,
-        })),
-      ];
+      // Level 2: direct children of this main category
+      const level2 = data.filter((r) => r.parent_id === parent.id);
+
+      let columns: MegaMenu["columns"];
+
+      if (level2.length > 0) {
+        // Check if any level-2 item has its own children (level 3)
+        const level2WithChildren = level2.filter((l2) =>
+          data.some((r) => r.parent_id === l2.id)
+        );
+
+        if (level2WithChildren.length > 0) {
+          // 3-level layout: each level-2 becomes a column, its children are the items
+          columns = level2.map((l2) => {
+            const l2Href = l2.nav_href || parentHref;
+            const children = data.filter((r) => r.parent_id === l2.id);
+            return {
+              heading: l2.name,
+              items: [
+                { label: `All ${l2.name}`, href: l2Href },
+                ...children.map((c) => ({
+                  label: c.name,
+                  href: c.nav_href || l2Href,
+                })),
+              ],
+            };
+          });
+        } else {
+          // 2-level: all subs go in one column
+          columns = [{
+            heading: parent.name,
+            items: [
+              { label: `All ${parent.name}`, href: parentHref },
+              ...level2.map((c) => ({
+                label: c.name,
+                href: c.nav_href || parentHref,
+              })),
+            ],
+          }];
+        }
+      } else {
+        // No subs — single column pointing to the parent
+        columns = [{
+          heading: parent.name,
+          items: [{ label: `View all`, href: parentHref }],
+        }];
+      }
 
       const menu: MegaMenu = {
         label: parent.name,
         href: parentHref,
-        columns: [{ heading: parent.name, items: columnItems }],
+        columns,
       };
 
       if (parent.image) {
