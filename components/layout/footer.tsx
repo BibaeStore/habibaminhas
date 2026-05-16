@@ -55,7 +55,7 @@ const socialLinks = [
   { href: "https://www.facebook.com/profile.php?id=61573309750795", label: "Facebook", Icon: FacebookIcon },
   { href: "https://www.youtube.com/@HabibaMinhas989", label: "YouTube", Icon: YouTubeIcon },
   { href: "https://www.tiktok.com/@habibaminhas._official", label: "TikTok", Icon: TikTokIcon },
-  { href: "https://x.com/HabibaMinhas989", label: "X", Icon: XIcon },
+  { href: "https://x.com/HabibaMinhas_", label: "X", Icon: XIcon },
   { href: "https://www.pinterest.com/habibaminhas989/", label: "Pinterest", Icon: PinterestIcon },
   { href: "https://www.quora.com/profile/Habiba-Minhas-5", label: "Quora", Icon: QuoraIcon },
   { href: "https://www.reddit.com/user/HabibaMinhas_989/", label: "Reddit", Icon: RedditIcon },
