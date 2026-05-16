@@ -12,61 +12,61 @@ const linkCols = [
   {
     heading: "Customer Care",
     links: [
-      { label: "Track Your Order",   href: "/track"          },
-      { label: "FAQs",               href: "/help/faq"       },
-      { label: "Exchange & Returns", href: "/help/returns"   },
-      { label: "Shipping Info",      href: "/help/shipping"  },
-      { label: "Contact Us",         href: "/contact"        },
-      { label: "Payment Methods",    href: "/help/payments"  },
+      { label: "Track Your Order", href: "/track" },
+      { label: "FAQs", href: "/help/faq" },
+      { label: "Exchange & Returns", href: "/help/returns" },
+      { label: "Shipping Info", href: "/help/shipping" },
+      { label: "Contact Us", href: "/contact" },
+      { label: "Payment Methods", href: "/help/payments" },
     ],
   },
   {
     heading: "Information",
     links: [
-      { label: "About Us",            href: "/about"          },
-      { label: "Privacy Policy",      href: "/legal/privacy"  },
-      { label: "Terms of Service",    href: "/legal/terms"    },
-      { label: "Wholesale Enquiries", href: "/contact"        },
-      { label: "Journal",             href: "/journal"        },
+      { label: "About Us", href: "/about" },
+      { label: "Privacy Policy", href: "/legal/privacy" },
+      { label: "Terms of Service", href: "/legal/terms" },
+      { label: "Wholesale Enquiries", href: "/contact" },
+      { label: "Journal", href: "/journal" },
     ],
   },
   {
     heading: "Shop",
     links: [
-      { label: "Ladies Suits",     href: "/ladies"      },
-      { label: "Kids Formal Wear", href: "/kids"        },
-      { label: "Baby Bedding",     href: "/baby"        },
-      { label: "Baby Nests",       href: "/baby"        },
-      { label: "Accessories",      href: "/accessories" },
-      { label: "New Arrivals",     href: "/new"         },
+      { label: "Ladies Suits", href: "/ladies" },
+      { label: "Kids Formal Wear", href: "/kids" },
+      { label: "Baby Bedding", href: "/baby" },
+      { label: "Baby Nests", href: "/baby" },
+      { label: "Accessories", href: "/accessories" },
+      { label: "New Arrivals", href: "/new" },
     ],
   },
 ];
 
 const services = [
-  { icon: Package,    title: "Flat Rs. 250 Delivery", subtitle: "Nationwide shipping across Pakistan.", href: "/help/shipping" },
-  { icon: RotateCcw,  title: "14-Day Returns",        subtitle: "Easy returns within 14 days.",          href: "/help/returns"  },
-  { icon: MapPin,     title: "Based in Karachi",      subtitle: "Handcrafted & dispatched from Karachi.", href: "/about"         },
-  { icon: ShieldCheck,title: "Secure Checkout",       subtitle: "COD, JazzCash, Easypaisa & Card.",       href: "/help/payments" },
+  { icon: Package, title: "Flat Rs. 250 Delivery", subtitle: "Nationwide shipping across Pakistan.", href: "/help/shipping" },
+  { icon: RotateCcw, title: "14-Day Returns", subtitle: "Easy returns within 14 days.", href: "/help/returns" },
+  { icon: MapPin, title: "Based in Karachi", subtitle: "Handcrafted & dispatched from Karachi.", href: "/about" },
+  { icon: ShieldCheck, title: "Secure Checkout", subtitle: "COD, JazzCash, Easypaisa & Card.", href: "/help/payments" },
 ];
 
 const socialLinks = [
-  { href: "https://www.instagram.com/habibaminhas.official/",              label: "Instagram", Icon: InstagramIcon },
-  { href: "https://www.facebook.com/profile.php?id=61573309750795",        label: "Facebook",  Icon: FacebookIcon  },
-  { href: "https://www.youtube.com/@HabibaMinhas989",                      label: "YouTube",   Icon: YouTubeIcon   },
-  { href: "https://www.tiktok.com/@habibaminhas.official",                 label: "TikTok",    Icon: TikTokIcon    },
-  { href: "https://x.com/HabibaMinhas989",                                 label: "X",         Icon: XIcon         },
-  { href: "https://www.pinterest.com/habibaminhas989/",                    label: "Pinterest", Icon: PinterestIcon },
-  { href: "https://www.quora.com/profile/Habiba-Minhas-5",                 label: "Quora",     Icon: QuoraIcon     },
-  { href: "https://www.reddit.com/user/HabibaMinhas_989/",                 label: "Reddit",    Icon: RedditIcon    },
+  { href: "https://www.instagram.com/habibaminhas.official/", label: "Instagram", Icon: InstagramIcon },
+  { href: "https://www.facebook.com/profile.php?id=61573309750795", label: "Facebook", Icon: FacebookIcon },
+  { href: "https://www.youtube.com/@HabibaMinhas989", label: "YouTube", Icon: YouTubeIcon },
+  { href: "https://www.tiktok.com/@habibaminhas._official", label: "TikTok", Icon: TikTokIcon },
+  { href: "https://x.com/HabibaMinhas989", label: "X", Icon: XIcon },
+  { href: "https://www.pinterest.com/habibaminhas989/", label: "Pinterest", Icon: PinterestIcon },
+  { href: "https://www.quora.com/profile/Habiba-Minhas-5", label: "Quora", Icon: QuoraIcon },
+  { href: "https://www.reddit.com/user/HabibaMinhas_989/", label: "Reddit", Icon: RedditIcon },
 ];
 
 const paymentLogos = [
-  { src: "/logos/payments/visa.webp",       alt: "Visa",             w: 48, h: 30 },
-  { src: "/logos/payments/mastercard.webp", alt: "Mastercard",       w: 36, h: 28 },
-  { src: "/logos/payments/jazzcash.webp",   alt: "JazzCash",         w: 48, h: 48 },
-  { src: "/logos/payments/easypaisa.webp",  alt: "Easypaisa",        w: 48, h: 48 },
-  { src: "/logos/payments/cod.webp",        alt: "Cash on Delivery", w: 48, h: 28 },
+  { src: "/logos/payments/visa.webp", alt: "Visa", w: 48, h: 30 },
+  { src: "/logos/payments/mastercard.webp", alt: "Mastercard", w: 36, h: 28 },
+  { src: "/logos/payments/jazzcash.webp", alt: "JazzCash", w: 48, h: 48 },
+  { src: "/logos/payments/easypaisa.webp", alt: "Easypaisa", w: 48, h: 48 },
+  { src: "/logos/payments/cod.webp", alt: "Cash on Delivery", w: 48, h: 28 },
 ];
 
 export function Footer() {
