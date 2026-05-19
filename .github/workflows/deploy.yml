@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
 permissions:
-  contents: read
+  contents: write
   deployments: write
 
 jobs:
@@ -18,6 +18,24 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git as BibaeStore
+        run: |
+          git config --global user.name "BibaeStore"
+          git config --global user.email "bibaestore@gmail.com"
+
+      - name: Create deployment commit as BibaeStore
+        run: |
+          # Create a deployment marker (doesn't change code, just triggers as BibaeStore)
+          git commit --allow-empty -m "deploy: trigger Vercel deployment [skip ci]
+
+          Original commit by: ${{ github.actor }}
+          Commit SHA: ${{ github.sha }}
+          Deployed by: GitHub Actions (BibaeStore)"
+
+          echo "✅ Deployment commit created as BibaeStore"
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
@@ -41,4 +59,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deployment Complete
-        run: echo "✅ Deployment to Vercel successful!"
+        run: |
+          echo "✅ Deployment to Vercel successful!"
+          echo "🚀 Deployed by: BibaeStore (via GitHub Actions)"
+          echo "👤 Original commit by: ${{ github.actor }}"
