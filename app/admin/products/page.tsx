@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/admin/ui/page-header";
 import { StatusPill } from "@/components/admin/ui/status-pill";
 import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
 import { getProducts, updateProduct, deleteProduct, createProduct, uploadProductImage } from "@/lib/actions/products";
+import { getMainCategories, getChildCategories } from "@/lib/actions/categories";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
 import { PalettePicker, type Palette } from "@/components/admin/ui/palette-picker";
@@ -37,6 +38,7 @@ export default function AdminProductsPage() {
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState("");
   const [catFilter,    setCatFilter]    = useState("all");
+  const [subCatFilter, setSubCatFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [stockFilter,  setStockFilter]  = useState("all");
   const [priceFilter,  setPriceFilter]  = useState("all");
@@ -49,18 +51,39 @@ export default function AdminProductsPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
+  const [mainCategories, setMainCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+
   const loadProducts = () => {
     setLoading(true);
     getProducts().then((data) => { setProducts(data); setLoading(false); }).catch(() => setLoading(false));
   };
 
-  useEffect(() => { loadProducts(); }, []);
+  useEffect(() => {
+    loadProducts();
+    getMainCategories().then(setMainCategories);
+  }, []);
+
+  useEffect(() => {
+    if (catFilter === "all") {
+      setAvailableSubcategories([]);
+      setSubCatFilter("all");
+      return;
+    }
+    const selectedMain = mainCategories.find((c) => c.slug === catFilter);
+    if (!selectedMain) return;
+    getChildCategories(selectedMain.id).then((children) => {
+      setAvailableSubcategories(children);
+      setSubCatFilter("all");
+    });
+  }, [catFilter, mainCategories]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
       if (search && !p.title.toLowerCase().includes(search.toLowerCase()) &&
           !(p.sku ?? "").toLowerCase().includes(search.toLowerCase())) return false;
       if (catFilter !== "all" && p.category !== catFilter) return false;
+      if (subCatFilter !== "all" && !(p.subcategory ?? []).includes(subCatFilter)) return false;
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
       if (stockFilter === "in-stock"     && p.stock === 0) return false;
       if (stockFilter === "low-stock"    && (p.stock === 0 || p.stock > 5)) return false;
@@ -70,7 +93,7 @@ export default function AdminProductsPage() {
       if (priceFilter === "over-6000"    && p.price <= 6000) return false;
       return true;
     });
-  }, [products, search, catFilter, statusFilter, stockFilter, priceFilter]);
+  }, [products, search, catFilter, subCatFilter, statusFilter, stockFilter, priceFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage   = Math.min(page, totalPages);
@@ -127,8 +150,8 @@ export default function AdminProductsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="relative">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-6">
+            <div className="relative lg:col-span-2">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--admin-text-muted)]" />
               <input
                 type="search"
@@ -144,11 +167,26 @@ export default function AdminProductsPage() {
               className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
             >
               <option value="all">All Categories</option>
-              <option value="ladies-suits">Ladies Stitched</option>
-              <option value="kids-formal">Kids Girls</option>
-              <option value="baby-products">Baby Products</option>
-              <option value="accessories">Accessories</option>
+              {mainCategories.map((cat) => (
+                <option key={cat.id} value={cat.slug}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
+            {availableSubcategories.length > 0 && (
+              <select
+                value={subCatFilter}
+                onChange={(e) => handleFilter(setSubCatFilter)(e.target.value)}
+                className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+              >
+                <option value="all">All Subcategories</option>
+                {availableSubcategories.map((sub) => (
+                  <option key={sub.id} value={sub.slug}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
               value={statusFilter}
               onChange={(e) => handleFilter(setStatusFilter)(e.target.value)}
@@ -284,9 +322,20 @@ export default function AdminProductsPage() {
                       <span className="font-mono text-sm text-[var(--admin-text-soft)]">{p.sku ?? "—"}</span>
                     </td>
                     <td className="px-5 py-5">
-                      <span className="rounded border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-2.5 py-1 text-sm text-[var(--admin-text-soft)]">
-                        {CAT_LABEL[p.category] ?? p.category}
-                      </span>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="rounded border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-2.5 py-1 text-sm text-[var(--admin-text-soft)] w-fit">
+                          {CAT_LABEL[p.category] ?? p.category}
+                        </span>
+                        {p.subcategory && p.subcategory.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {p.subcategory.map((sub, i) => (
+                              <span key={i} className="rounded bg-[var(--admin-primary-soft)] px-2 py-0.5 text-xs text-[var(--admin-primary)]">
+                                {sub}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-5">
                       <div className="text-[15px] font-medium text-[var(--admin-text)]">{formatPrice(p.price)}</div>
@@ -426,7 +475,8 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [featured, setFeatured] = useState(false);
   const [name,     setName]     = useState("");
   const [sku,      setSku]      = useState("");
-  const [category, setCategory] = useState("ladies-suits");
+  const [category, setCategory] = useState("");
+  const [subcategories, setSubcategories] = useState<string[]>([]);
   const [status,   setStatus]   = useState("draft");
   const [price,    setPrice]    = useState("0");
   const [salePrice,setSalePrice]= useState("");
@@ -436,6 +486,34 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [uploading,setUploading]= useState(false);
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState("");
+
+  const [mainCategories, setMainCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [childCategories, setChildCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  useEffect(() => {
+    getMainCategories().then((cats) => {
+      setMainCategories(cats);
+      if (cats.length > 0) setCategory(cats[0].slug);
+      setLoadingCategories(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!category) return;
+    const selectedMain = mainCategories.find((c) => c.slug === category);
+    if (!selectedMain) return;
+    getChildCategories(selectedMain.id).then((children) => {
+      setChildCategories(children);
+      setSubcategories([]);
+    });
+  }, [category, mainCategories]);
+
+  const toggleSubcategory = (slug: string) => {
+    setSubcategories((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    );
+  };
 
   const handleImageFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -464,6 +542,7 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
   const handleCreate = async () => {
     if (!name.trim()) { setError("Product name is required."); return; }
+    if (!category) { setError("Please select a main category."); return; }
     const parsedPrice    = parseInt(price) || 0;
     const parsedSalePrice = salePrice ? parseInt(salePrice) : null;
     if (parsedPrice <= 0) { setError("Price must be greater than 0."); return; }
@@ -481,6 +560,7 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
       slug,
       sku: sku.trim() || null,
       category,
+      subcategory: subcategories.length > 0 ? subcategories : null,
       status,
       price: parsedSalePrice ?? parsedPrice,
       compare_at: parsedSalePrice ? parsedPrice : null,
@@ -541,16 +621,24 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
-              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Category</span>
+              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Main Category</span>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+                disabled={loadingCategories}
+                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)] disabled:opacity-50"
               >
-                <option value="ladies-suits">Ladies Stitched Suits</option>
-                <option value="kids-formal">Kids Girls Wear</option>
-                <option value="baby-products">Baby Products</option>
-                <option value="accessories">Accessories</option>
+                {loadingCategories ? (
+                  <option value="">Loading...</option>
+                ) : mainCategories.length === 0 ? (
+                  <option value="">No categories found</option>
+                ) : (
+                  mainCategories.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name}
+                    </option>
+                  ))
+                )}
               </select>
             </label>
             <label className="flex flex-col gap-1.5">
@@ -565,6 +653,37 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
               </select>
             </label>
           </div>
+
+          {childCategories.length > 0 && (
+            <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
+              <div className="mb-3 text-[14px] font-semibold text-[var(--admin-text)]">
+                Subcategories (select one or more)
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {childCategories.map((child) => (
+                  <label
+                    key={child.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] p-3 transition-colors hover:bg-[var(--admin-surface-alt)]"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleSubcategory(child.slug)}
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
+                        subcategories.includes(child.slug)
+                          ? "border-[var(--admin-primary)] bg-[var(--admin-primary)]"
+                          : "border-[var(--admin-border)]"
+                      }`}
+                    >
+                      {subcategories.includes(child.slug) && (
+                        <Check className="h-3.5 w-3.5 text-white" />
+                      )}
+                    </button>
+                    <span className="text-[14px] text-[var(--admin-text)]">{child.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <div className="mb-2 text-[14px] font-semibold text-[var(--admin-text)]">Product Images</div>
@@ -760,33 +879,54 @@ function ViewProductModal({ product, onClose, onEdit }: { product: Product; onCl
         </div>
 
         <div className="space-y-5">
-          <div className="flex items-start gap-4">
-            <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded bg-[var(--admin-surface-alt)]">
-              {product.images?.[0] ? (
-                <Image src={product.images[0]} alt={product.title} fill sizes="80px" className="object-cover object-top" />
-              ) : (
-                <Package className="absolute inset-0 m-auto h-8 w-8 text-[var(--admin-text-muted)]" />
+          <div className="space-y-3">
+            <div className="text-[14px] font-semibold text-[var(--admin-text)]">Product Images</div>
+            {product.images && product.images.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {product.images.map((url, i) => (
+                  <div key={i} className="relative h-24 w-20 overflow-hidden rounded bg-[var(--admin-surface-alt)] border border-[var(--admin-border)]">
+                    <Image src={url} alt={`${product.title} ${i + 1}`} fill sizes="80px" className="object-cover object-top" />
+                    {i === 0 && (
+                      <span className="absolute bottom-0 left-0 right-0 bg-black/70 py-0.5 text-center text-xs text-white">Main</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-24 w-20 items-center justify-center rounded bg-[var(--admin-surface-alt)] border border-[var(--admin-border)]">
+                <Package className="h-8 w-8 text-[var(--admin-text-muted)]" />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="text-[15px] font-semibold text-[var(--admin-text)]">{product.title}</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <StatusPill tone={product.status === "active" ? "success" : "neutral"}>
+                {product.status}
+              </StatusPill>
+              <StatusPill tone="neutral">
+                {CAT_LABEL[product.category] ?? product.category}
+              </StatusPill>
+              {product.featured && (
+                <StatusPill tone="primary">
+                  <Star className="mr-1 h-3 w-3 fill-current" /> Featured
+                </StatusPill>
+              )}
+              {product.badge && (
+                <StatusPill tone="warning">
+                  {product.badge}
+                </StatusPill>
               )}
             </div>
-            <div className="flex-1 space-y-2">
-              <div>
-                <div className="text-[15px] font-medium leading-snug text-[var(--admin-text)]">{product.title}</div>
-                {product.featured && (
-                  <div className="mt-0.5 flex items-center gap-1 text-xs font-bold text-[var(--admin-primary)]">
-                    <Star className="h-4 w-4 fill-[var(--admin-primary)]" /> Featured
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusPill tone={product.status === "active" ? "success" : "neutral"}>
-                  {product.status}
-                </StatusPill>
-                <StatusPill tone="neutral">
-                  {CAT_LABEL[product.category] ?? product.category}
-                </StatusPill>
-              </div>
-            </div>
           </div>
+
+          {product.description && (
+            <div>
+              <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Description</div>
+              <div className="mt-1 text-[14px] leading-relaxed text-[var(--admin-text-soft)]">{product.description}</div>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-3 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
             <div>
@@ -813,14 +953,49 @@ function ViewProductModal({ product, onClose, onEdit }: { product: Product; onCl
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {product.sku && (
+              <div>
+                <div className="text-xs font-semibold text-[var(--admin-text-muted)]">SKU</div>
+                <div className="mt-1 font-mono text-sm text-[var(--admin-text)]">{product.sku}</div>
+              </div>
+            )}
             <div>
-              <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Subcategory</div>
-              <div className="mt-1 text-[15px] text-[var(--admin-text)]">{product.subcategory ?? "—"}</div>
+              <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Slug (URL)</div>
+              <div className="mt-1 font-mono text-xs text-[var(--admin-text-soft)]">/product/{product.slug}/</div>
             </div>
             <div>
-              <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Slug</div>
-              <div className="mt-1 font-mono text-sm text-[var(--admin-text-soft)]">{product.slug}</div>
+              <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Category</div>
+              <div className="mt-1 text-[14px] text-[var(--admin-text)]">{CAT_LABEL[product.category] ?? product.category}</div>
             </div>
+            <div>
+              <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Subcategories</div>
+              <div className="mt-1 text-[14px] text-[var(--admin-text)]">
+                {product.subcategory && product.subcategory.length > 0
+                  ? product.subcategory.join(", ")
+                  : "—"}
+              </div>
+            </div>
+            {product.size_guide && (
+              <div>
+                <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Size Guide</div>
+                <div className="mt-1 text-[14px] text-[var(--admin-text)]">✓ Included</div>
+              </div>
+            )}
+            {product.palette && product.palette.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Color Palette</div>
+                <div className="mt-1 flex gap-1.5">
+                  {product.palette.map((color, i) => (
+                    <div
+                      key={i}
+                      className="h-6 w-6 rounded border border-[var(--admin-border)]"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -842,6 +1017,8 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [stockVal,    setStockVal]    = useState(String(product.stock));
   const [statusVal,   setStatusVal]   = useState(product.status);
   const [featuredVal, setFeaturedVal] = useState(product.featured);
+  const [category,    setCategory]    = useState(product.category);
+  const [subcategories, setSubcategories] = useState<string[]>(product.subcategory ?? []);
   const [images,      setImages]      = useState<string[]>(product.images ?? []);
   const [palette,     setPalette]     = useState<Palette>(
     (Array.isArray(product.palette) && product.palette.length === 3
@@ -852,6 +1029,35 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);
   const [error,       setError]       = useState("");
+
+  const [mainCategories, setMainCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [childCategories, setChildCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  useEffect(() => {
+    getMainCategories().then((cats) => {
+      setMainCategories(cats);
+      setLoadingCategories(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!category || mainCategories.length === 0) return;
+    const selectedMain = mainCategories.find((c) => c.slug === category);
+    if (!selectedMain) return;
+    getChildCategories(selectedMain.id).then((children) => {
+      setChildCategories(children);
+      // Clear subcategories when main category changes to prevent showing invalid ones
+      const childSlugs = children.map((c) => c.slug);
+      setSubcategories((prev) => prev.filter((sub) => childSlugs.includes(sub)));
+    });
+  }, [category, mainCategories]);
+
+  const toggleSubcategory = (slug: string) => {
+    setSubcategories((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    );
+  };
 
   const handleImageFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -877,6 +1083,8 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
     setSaving(true); setError("");
     const result = await updateProduct(product.id, {
       title:      name.trim(),
+      category,
+      subcategory: subcategories.length > 0 ? subcategories : null,
       price:      parsedPrice,
       compare_at: parsedCompare,
       stock:      parseInt(stockVal) || 0,
@@ -892,8 +1100,15 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
     setTimeout(() => { setSaved(false); onClose(); }, 1200);
   };
 
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 py-8">
       <div className="relative w-full max-w-sm rounded-[var(--admin-radius)] bg-[var(--admin-surface)] p-6 shadow-lg md:max-w-xl">
         <div className="border-b border-[var(--admin-border)] pb-5 mb-5">
           <h2 className="text-[18px] font-semibold text-[var(--admin-text)]">Edit Product</h2>
@@ -999,11 +1214,66 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
             </label>
           </div>
 
+          <label className="flex flex-col gap-1.5">
+            <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Main Category</span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={loadingCategories}
+              className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)] disabled:opacity-50"
+            >
+              {loadingCategories ? (
+                <option value="">Loading...</option>
+              ) : mainCategories.length === 0 ? (
+                <option value="">No categories found</option>
+              ) : (
+                mainCategories.map((cat) => (
+                  <option key={cat.id} value={cat.slug}>
+                    {cat.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+
+          {childCategories.length > 0 && (
+            <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
+              <div className="mb-3 text-[14px] font-semibold text-[var(--admin-text)]">
+                Subcategories (select one or more)
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {childCategories.map((child) => (
+                  <label
+                    key={child.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] p-3 transition-colors hover:bg-[var(--admin-surface-alt)]"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleSubcategory(child.slug)}
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
+                        subcategories.includes(child.slug)
+                          ? "border-[var(--admin-primary)] bg-[var(--admin-primary)]"
+                          : "border-[var(--admin-border)]"
+                      }`}
+                    >
+                      {subcategories.includes(child.slug) && (
+                        <Check className="h-3.5 w-3.5 text-white" />
+                      )}
+                    </button>
+                    <span className="text-[14px] text-[var(--admin-text)]">{child.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
-            <div className="text-[14px] font-semibold text-[var(--admin-text)]">Category</div>
-            <div className="mt-1.5 flex h-11 items-center rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-3 text-[15px] text-[var(--admin-text-soft)]">
-              {CAT_LABEL[product.category] ?? product.category}
-              <span className="ml-2 text-sm text-[var(--admin-text-muted)]">(cannot change)</span>
+            <div className="mb-1.5 text-[14px] font-semibold text-[var(--admin-text)]">Product URL (Slug)</div>
+            <div className="flex h-11 items-center rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-3 font-mono text-sm text-[var(--admin-text-soft)]">
+              /product/{product.slug}/
+            </div>
+            <div className="mt-1 text-xs text-[var(--admin-text-muted)]">
+              ⓘ Slug cannot be changed to prevent breaking existing links and SEO
             </div>
           </div>
 

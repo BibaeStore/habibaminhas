@@ -37,7 +37,7 @@ export async function getProducts(filters?: {
   let q = sb.from("products").select("*").order("created_at", { ascending: false });
 
   if (filters?.category)    q = q.eq("category",    filters.category);
-  if (filters?.subcategory) q = q.eq("subcategory", filters.subcategory);
+  if (filters?.subcategory) q = q.contains("subcategory", [filters.subcategory]);
   if (filters?.subtype)     q = q.eq("subtype",     filters.subtype);
   if (filters?.status)      q = q.eq("status",      filters.status);
   if (filters?.featured)    q = q.eq("featured",    true);

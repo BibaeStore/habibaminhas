@@ -7,6 +7,14 @@ import type { MegaMenu } from "@/lib/data";
 
 const TONES = ["rose", "gold", "sage", "ink"] as const;
 
+// Map category slugs to route paths (handles legacy slug mismatches)
+const CATEGORY_ROUTE_MAP: Record<string, string> = {
+  "baby-products": "/baby/",
+  "ladies-suits": "/ladies/",
+  "kids-formal": "/kids/",
+  "accessories": "/accessories/",
+};
+
 // ─── Nav menu ─────────────────────────────────────────────────────────────────
 
 /** Builds the navbar MegaMenu[] directly from the DB categories.
@@ -26,7 +34,7 @@ export async function getNavMenu(): Promise<MegaMenu[]> {
     const level1 = data.filter((r) => !r.parent_id && r.type === "main");
 
     return level1.map((parent, idx) => {
-      const parentHref = parent.nav_href || `/${parent.slug}`;
+      const parentHref = parent.nav_href || CATEGORY_ROUTE_MAP[parent.slug] || `/${parent.slug}/`;
 
       // Level 2: direct children of this main category
       const level2 = data.filter((r) => r.parent_id === parent.id);
@@ -42,7 +50,7 @@ export async function getNavMenu(): Promise<MegaMenu[]> {
         if (level2WithChildren.length > 0) {
           // 3-level layout: each level-2 becomes a column, its children are the items
           columns = level2.map((l2) => {
-            const l2Href = l2.nav_href || parentHref;
+            const l2Href = l2.nav_href || `${parentHref}${l2.slug}/`;
             const children = data.filter((r) => r.parent_id === l2.id);
             return {
               heading: l2.name,
@@ -50,7 +58,7 @@ export async function getNavMenu(): Promise<MegaMenu[]> {
                 { label: `All ${l2.name}`, href: l2Href },
                 ...children.map((c) => ({
                   label: c.name,
-                  href: c.nav_href || l2Href,
+                  href: c.nav_href || `${l2Href}${c.slug}/`,
                 })),
               ],
             };
@@ -63,7 +71,7 @@ export async function getNavMenu(): Promise<MegaMenu[]> {
               { label: `All ${parent.name}`, href: parentHref },
               ...level2.map((c) => ({
                 label: c.name,
-                href: c.nav_href || parentHref,
+                href: c.nav_href || `${parentHref}${c.slug}/`,
               })),
             ],
           }];
@@ -137,6 +145,53 @@ export async function getCategories() {
     .from("categories")
     .select("*")
     .order("sort_order", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getMainCategories() {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("categories")
+    .select("id, name, slug, sort_order")
+    .is("parent_id", null)
+    .eq("type", "main")
+    .eq("status", "active")
+    .order("sort_order", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getChildCategories(parentId: string) {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("categories")
+    .select("id, name, slug, sort_order")
+    .eq("parent_id", parentId)
+    .eq("status", "active")
+    .order("sort_order", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getCategoryBySlug(slug: string) {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("categories")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getCategoryById(id: string) {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("categories")
+    .select("*")
+    .eq("id", id)
+    .single();
   if (error) throw new Error(error.message);
   return data;
 }

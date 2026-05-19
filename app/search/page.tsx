@@ -168,7 +168,7 @@ function SearchContent() {
       const q = query.toLowerCase();
       return (
         p.title.toLowerCase().includes(q) ||
-        (p.subcategory ?? "").toLowerCase().includes(q) ||
+        (p.subcategory ?? []).some((sub) => sub.toLowerCase().includes(q)) ||
         (p.badge       ?? "").toLowerCase().includes(q) ||
         (p.category    ?? "").toLowerCase().includes(q)
       );

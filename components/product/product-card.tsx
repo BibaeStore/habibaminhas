@@ -22,7 +22,7 @@ export interface CardProduct {
   collection?: string;
   images?: string[];
   compare_at?: number | null;
-  subcategory?: string | null;
+  subcategory?: string[] | null;
   subtype?: string | null;
   palette: string[];
   badge?: string | null;

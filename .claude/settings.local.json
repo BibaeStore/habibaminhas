@@ -99,7 +99,15 @@
       "Bash(git push *)",
       "PowerShell(Get-ChildItem -Path app -Recurse -File | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path + '\\\\', ''\\) })",
       "PowerShell(Get-ChildItem -Path docs -Recurse | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path + '\\\\', ''\\) })",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(git config *)",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__generate_typescript_types",
+      "PowerShell(npm run *)",
+      "PowerShell(npm install *)",
+      "PowerShell(npx tsx scripts/fix-category-urls.ts)",
+      "PowerShell(npx tsx scripts/check-product-subcategories.ts)",
+      "PowerShell(npx tsx scripts/migrate-product-subcategories.ts)"
     ]
   },
   "enableAllProjectMcpServers": true,

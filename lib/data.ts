@@ -79,40 +79,25 @@ export const megaMenus: MegaMenu[] = [
     },
   },
   {
-    label: "Baby Products",
+    label: "Baby Product",
     href: "/baby",
     columns: [
       {
-        heading: "Nursery Bedding",
+        heading: "Baby Product",
         items: [
-          { label: "All Bedding Sets",        href: "/baby" },
-          { label: "5-Piece Crib Sets",       href: "/baby" },
-          { label: "6-Piece Bumper Sets",     href: "/baby" },
-          { label: "Deluxe 10-Piece Sets",    href: "/baby" },
-          { label: "Character Themes",        href: "/baby" },
-        ],
-      },
-      {
-        heading: "Nests & Loungers",
-        items: [
-          { label: "Baby Nest Pods",   href: "/baby" },
-          { label: "Swaddle Wraps",    href: "/baby" },
-          { label: "Nursing Pillows",  href: "/baby" },
-          { label: "Carrier Covers",   href: "/baby" },
-        ],
-      },
-      {
-        heading: "Essentials",
-        items: [
-          { label: "Diaper Totes",            href: "/baby" },
-          { label: "Mattress & Pillow Sets",  href: "/baby" },
-          { label: "Gift Sets",               href: "/baby", badge: "Popular" },
+          { label: "All Baby Products",  href: "/baby" },
+          { label: "Bedding Set",        href: "/baby/bedding-set" },
+          { label: "Baby Nest",          href: "/baby/baby-nest" },
+          { label: "Baby Pillows",       href: "/baby/baby-pillows" },
+          { label: "Baby Bath",          href: "/baby/baby-bath" },
+          { label: "Baby Swaddle",       href: "/baby/baby-swaddle" },
+          { label: "Baby Cot Sets",      href: "/baby/baby-cot-sets" },
         ],
       },
     ],
     feature: {
       title: "Pastel Dream",
-      subtitle: "10-piece deluxe plush nursery set — the complete starter for your nursery.",
+      subtitle: "Premium baby products crafted with love for your little one's comfort.",
       href: "/baby",
       tone: "sage",
       image: "/HeroSection/baby-bedding.webp",
@@ -143,12 +128,12 @@ export const megaMenus: MegaMenu[] = [
 ];
 
 export const flatNav = [
-  { label: "Ladies",      href: "/ladies"      },
-  { label: "Kids",        href: "/kids"        },
-  { label: "Baby Products", href: "/baby"      },
-  { label: "Accessories", href: "/accessories" },
-  { label: "New Arrivals", href: "/new"        },
-  { label: "About",       href: "/about"       },
+  { label: "Ladies",       href: "/ladies"      },
+  { label: "Kids",         href: "/kids"        },
+  { label: "Baby Product", href: "/baby"        },
+  { label: "Accessories",  href: "/accessories" },
+  { label: "New Arrival",  href: "/shop"        },
+  { label: "About",        href: "/about"       },
 ];
 
 // ─── Homepage hero carousel ───────────────────────────────────────────────────

@@ -50,7 +50,7 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
     fetch("/api/categories/images")
       .then((r) => r.json())
       .then((map: Record<string, string>) => setCategoryImages(map))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const goToSearch = () => {
@@ -68,7 +68,7 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
     >
       <div className="mx-auto flex h-[52px] w-full max-w-[1440px] items-center justify-between px-4 sm:h-[72px] sm:px-8">
         {/* Left: logo + desktop nav */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
           {/* Mobile: hamburger + search */}
           <div className="flex items-center gap-1 lg:hidden">
             <button
@@ -94,9 +94,9 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
             <Image
               src="/logo/habiba-minhas-logo-t.png"
               alt="Habiba Minhas"
-              width={260}
+              width={300}
               height={87}
-              className="h-[40px] w-auto sm:h-[64px]"
+              className="h-[60px] w-auto sm:h-[84px]"
               priority
             />
           </Link>
@@ -127,6 +127,13 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
               </button>
             ))}
             <Link
+              href="/shop"
+              onMouseEnter={() => { cancelClose(); setOpen(null); }}
+              className="px-3 py-3 text-[10px] uppercase tracking-[0.22em] text-ink hover:text-gold-dark"
+            >
+              New Arrival
+            </Link>
+            <Link
               href="/about"
               onMouseEnter={() => { cancelClose(); setOpen(null); }}
               className="px-3 py-3 text-[10px] uppercase tracking-[0.22em] text-ink hover:text-gold-dark"
@@ -149,7 +156,7 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
               Search
             </span>
           </button>
-<Link href="/track" aria-label="Track Order" title="Track your order" className="p-2 text-ink hover:text-gold-dark">
+          <Link href="/track" aria-label="Track Order" title="Track your order" className="p-2 text-ink hover:text-gold-dark">
             <Package className="h-[18px] w-[18px]" />
           </Link>
           <Link href="/account" aria-label="Account" className="p-2 text-ink hover:text-gold-dark">
@@ -164,17 +171,17 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
 
       {open
         ? (() => {
-            const active = menus.find((m) => m.label === open);
-            return active ? (
-              <MegaPanel
-                menu={active}
-                categoryImages={categoryImages}
-                onClose={() => setOpen(null)}
-                onMouseEnter={cancelClose}
-                onMouseLeave={scheduleClose}
-              />
-            ) : null;
-          })()
+          const active = menus.find((m) => m.label === open);
+          return active ? (
+            <MegaPanel
+              menu={active}
+              categoryImages={categoryImages}
+              onClose={() => setOpen(null)}
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
+            />
+          ) : null;
+        })()
         : null}
 
       <MobileMenu menus={menus} open={mobileOpen} onClose={() => setMobileOpen(false)} />

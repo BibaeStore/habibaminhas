@@ -57,7 +57,7 @@ export function MobileMenu({
               alt="Habiba Minhas"
               width={180}
               height={60}
-              className="h-[40px] w-auto"
+              className="h-[80px] w-auto"
               priority
             />
           </Link>
@@ -108,9 +108,8 @@ export function MobileMenu({
                                 {it.label}
                                 {it.badge && (
                                   <span
-                                    className={`ml-2 text-[9px] uppercase tracking-[0.22em] ${
-                                      it.badge === "Sale" ? "text-sale" : "text-gold-dark"
-                                    }`}
+                                    className={`ml-2 text-[9px] uppercase tracking-[0.22em] ${it.badge === "Sale" ? "text-sale" : "text-gold-dark"
+                                      }`}
                                   >
                                     · {it.badge}
                                   </span>
@@ -126,6 +125,13 @@ export function MobileMenu({
               </div>
             ))}
 
+            <Link
+              href="/shop"
+              onClick={onClose}
+              className="border-b border-border-soft px-5 py-4 text-[12px] uppercase tracking-[0.28em] text-ink"
+            >
+              New Arrival
+            </Link>
             <Link
               href="/about"
               onClick={onClose}
