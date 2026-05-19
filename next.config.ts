@@ -63,13 +63,6 @@ const nextConfig: NextConfig = {
       { source: "/fragrances",         destination: "/accessories/", permanent: true },
       { source: "/fragrances/:slug*",  destination: "/accessories/", permanent: true },
 
-      // Footer sub-category links (avoid double redirect via catch-all)
-      { source: "/ladies/suits",       destination: "/ladies/",    permanent: false },
-      { source: "/kids/girls",         destination: "/kids/",      permanent: false },
-      { source: "/baby/bedding",       destination: "/baby/",      permanent: false },
-      { source: "/baby/nests",         destination: "/baby/",      permanent: false },
-      { source: "/accessories/hair",   destination: "/accessories/", permanent: false },
-
       // /shop → show ladies as primary collection
       { source: "/shop",               destination: "/ladies/",    permanent: false },
     ];

@@ -33,6 +33,22 @@ export default function NotFound() {
           >
             Shop ladies
           </Link>
+          <Link
+            href="/new"
+            className="inline-flex h-12 items-center gap-2 border border-ivory/50 px-7 text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-ivory hover:text-ink"
+          >
+            New arrivals
+          </Link>
+          <Link
+            href="/contact"
+            className="inline-flex h-12 items-center gap-2 border border-ivory/50 px-7 text-[12px] uppercase tracking-[0.28em] text-ivory hover:bg-ivory hover:text-ink"
+          >
+            Contact us
+          </Link>
+        </div>
+        <div className="mt-8 text-[12px] text-ivory/60">
+          Looking for something specific? Try our <Link href="/search" className="text-gold-light hover:text-gold underline">search</Link> or{" "}
+          <Link href="/help/faq" className="text-gold-light hover:text-gold underline">FAQs</Link>
         </div>
       </div>
     </div>

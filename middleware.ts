@@ -50,6 +50,20 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const normalised = stripTrailingSlash(pathname);
 
+  // ── Trailing slash enforcement ────────────────────────────────────────
+  // Skip for: API routes, static files, files with extensions
+  const shouldSkipTrailingSlash =
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.includes(".") && !pathname.endsWith("/") ||
+    pathname.startsWith("/favicon");
+
+  if (!shouldSkipTrailingSlash && !pathname.endsWith("/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = `${pathname}/`;
+    return NextResponse.redirect(url, 308); // 308 Permanent Redirect
+  }
+
   // ── Admin routes ──────────────────────────────────────────────────────
   if (pathname.startsWith("/admin")) {
     const isPublicAdminRoute =
@@ -94,7 +108,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
-    "/account/:path*",
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files with extensions
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)",
   ],
 };
