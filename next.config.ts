@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { productRedirects } from "./lib/product-redirects";
 
 const nextConfig: NextConfig = {
   trailingSlash: true,
@@ -63,8 +64,8 @@ const nextConfig: NextConfig = {
       { source: "/fragrances",         destination: "/accessories/", permanent: true },
       { source: "/fragrances/:slug*",  destination: "/accessories/", permanent: true },
 
-      // /shop → show ladies as primary collection
-      { source: "/shop",               destination: "/ladies/",    permanent: false },
+      // Product slug migrations (old → new SEO-friendly URLs)
+      ...productRedirects,
     ];
   },
 };

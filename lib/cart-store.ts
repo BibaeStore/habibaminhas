@@ -5,6 +5,7 @@ export type CartItem = {
   cartKey: string; // slug + ":" + (size ?? "onesize")
   id: string;
   slug: string;
+  category?: string; // Optional for backward compatibility with legacy cart items
   title: string;
   image: string | null;
   palette: string[];

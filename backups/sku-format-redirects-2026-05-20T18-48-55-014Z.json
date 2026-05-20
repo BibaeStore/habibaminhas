@@ -1,0 +1,282 @@
+[
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-tsh-002/",
+    "destination": "/product/ladies-suits/ld-sku-tsh-002/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-tsh-003/",
+    "destination": "/product/ladies-suits/ld-sku-tsh-003/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-tsh-004/",
+    "destination": "/product/ladies-suits/ld-sku-tsh-004/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-tsh-005/",
+    "destination": "/product/ladies-suits/ld-sku-tsh-005/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-tsh-006/",
+    "destination": "/product/ladies-suits/ld-sku-tsh-006/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-tel-slk-m-008/",
+    "destination": "/product/ladies-suits/ld-sku-tel-slk-m-008/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-brn-slk-m-009/",
+    "destination": "/product/ladies-suits/ld-sku-brn-slk-m-009/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-tsh-3/",
+    "destination": "/product/kids-formal/kd-sku-tsh-3/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-ivy-kds-s-010/",
+    "destination": "/product/kids-formal/kd-sku-ivy-kds-s-010/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-tau-slk-m-013/",
+    "destination": "/product/ladies-suits/ld-sku-tau-slk-m-013/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-wht-slk-m-014/",
+    "destination": "/product/ladies-suits/ld-sku-wht-slk-m-014/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-bz-slk-m-016/",
+    "destination": "/product/ladies-suits/ld-sku-bz-slk-m-016/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-mrn-kds-s-017/",
+    "destination": "/product/kids-formal/kd-sku-mrn-kds-s-017/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-blk-kds-s-018/",
+    "destination": "/product/kids-formal/kd-sku-blk-kds-s-018/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-tel-kds-s-019/",
+    "destination": "/product/kids-formal/kd-sku-tel-kds-s-019/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-red-kds-sh-020/",
+    "destination": "/product/kids-formal/kd-sku-red-kds-sh-020/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-pnk-kds-gn-021/",
+    "destination": "/product/kids-formal/kd-sku-pnk-kds-gn-021/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-pnk-kds-gn-022/",
+    "destination": "/product/kids-formal/kd-sku-pnk-kds-gn-022/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-ylw-red-gn-023/",
+    "destination": "/product/kids-formal/kd-sku-ylw-red-gn-023/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-pur-gld-gn-024/",
+    "destination": "/product/kids-formal/kd-sku-pur-gld-gn-024/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-plm-kds-s-025/",
+    "destination": "/product/kids-formal/kd-sku-plm-kds-s-025/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-mag-kds-s-026/",
+    "destination": "/product/kids-formal/kd-sku-mag-kds-s-026/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-bz-kds-s-027/",
+    "destination": "/product/kids-formal/kd-sku-bz-kds-s-027/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-moc-kds-s-028/",
+    "destination": "/product/kids-formal/kd-sku-moc-kds-s-028/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-saf-gry-029/",
+    "destination": "/product/baby-products/bb-sku-nur-saf-gry-029/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-nst-pch-030/",
+    "destination": "/product/baby-products/bb-sku-nur-nst-pch-030/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-nst-mnt-031/",
+    "destination": "/product/baby-products/bb-sku-nur-nst-mnt-031/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-nst-mnt-dlx-032/",
+    "destination": "/product/baby-products/bb-sku-nur-nst-mnt-dlx-032/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-swd-but-033/",
+    "destination": "/product/baby-products/bb-sku-nur-swd-but-033/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-bed-but-034/",
+    "destination": "/product/baby-products/bb-sku-nur-bed-but-034/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-bed-hrt-035/",
+    "destination": "/product/baby-products/bb-sku-nur-bed-hrt-035/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-spt-gry-036/",
+    "destination": "/product/baby-products/bb-sku-nur-spt-gry-036/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-swd-spt-037/",
+    "destination": "/product/baby-products/bb-sku-nur-swd-spt-037/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-stp-pch-038/",
+    "destination": "/product/baby-products/bb-sku-nur-stp-pch-038/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-nst-but-039/",
+    "destination": "/product/baby-products/bb-sku-nur-nst-but-039/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-nst-dino-040/",
+    "destination": "/product/baby-products/bb-sku-nur-nst-dino-040/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-bed-dino-041/",
+    "destination": "/product/baby-products/bb-sku-nur-bed-dino-041/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-mat-spt-042/",
+    "destination": "/product/baby-products/bb-sku-nur-mat-spt-042/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-plw-spt-043/",
+    "destination": "/product/baby-products/bb-sku-nur-plw-spt-043/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-nst-hrt-044/",
+    "destination": "/product/baby-products/bb-sku-nur-nst-hrt-044/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-stp-nvy-045/",
+    "destination": "/product/baby-products/bb-sku-nur-stp-nvy-045/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-acc-hrt-046/",
+    "destination": "/product/baby-products/bb-sku-nur-acc-hrt-046/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-bun-pm-047/",
+    "destination": "/product/baby-products/bb-sku-nur-bun-pm-047/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-char-wht-048/",
+    "destination": "/product/baby-products/bb-sku-nur-char-wht-048/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-bed-dino-049/",
+    "destination": "/product/baby-products/bb-sku-nur-bed-dino-049/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-acc-msh-050/",
+    "destination": "/product/baby-products/bb-sku-nur-acc-msh-050/",
+    "permanent": true
+  },
+  {
+    "source": "/product/accessories/ac-sku-biba-acc-hbt-mag-051/",
+    "destination": "/product/accessories/ac-sku-acc-hbt-mag-051/",
+    "permanent": true
+  },
+  {
+    "source": "/product/accessories/ac-sku-biba-acc-hbt-plm-052/",
+    "destination": "/product/accessories/ac-sku-acc-hbt-plm-052/",
+    "permanent": true
+  },
+  {
+    "source": "/product/accessories/ac-sku-biba-acc-hbt-mrn-053/",
+    "destination": "/product/accessories/ac-sku-acc-hbt-mrn-053/",
+    "permanent": true
+  },
+  {
+    "source": "/product/accessories/ac-sku-biba-acc-hbt-drs-054/",
+    "destination": "/product/accessories/ac-sku-acc-hbt-drs-054/",
+    "permanent": true
+  },
+  {
+    "source": "/product/accessories/ac-sku-biba-acc-hbt-brz-055/",
+    "destination": "/product/accessories/ac-sku-acc-hbt-brz-055/",
+    "permanent": true
+  },
+  {
+    "source": "/product/baby-products/bb-sku-biba-nur-bnd-bei-028/",
+    "destination": "/product/baby-products/bb-sku-nur-bnd-bei-028/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-nvy-slk-m-029/",
+    "destination": "/product/ladies-suits/ld-sku-nvy-slk-m-029/",
+    "permanent": true
+  },
+  {
+    "source": "/product/ladies-suits/ld-sku-biba-rwe-3pc-ss25-014/",
+    "destination": "/product/ladies-suits/ld-sku-rwe-3pc-ss25-014/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-bpc-gf-ss25-021/",
+    "destination": "/product/kids-formal/kd-sku-bpc-gf-ss25-021/",
+    "permanent": true
+  },
+  {
+    "source": "/product/kids-formal/kd-sku-biba-sbg-cs-fs25-047/",
+    "destination": "/product/kids-formal/kd-sku-sbg-cs-fs25-047/",
+    "permanent": true
+  }
+]

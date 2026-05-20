@@ -23,7 +23,6 @@ const linkCols = [
   {
     heading: "Information",
     links: [
-      { label: "About Us", href: "/about" },
       { label: "Privacy Policy", href: "/legal/privacy" },
       { label: "Terms of Service", href: "/legal/terms" },
       { label: "Wholesale Enquiries", href: "/contact" },
@@ -39,6 +38,7 @@ const linkCols = [
       { label: "Accessories", href: "/accessories" },
       { label: "New Arrivals", href: "/new" },
       { label: "Sale & Offers", href: "/offers" },
+      { label: "About Us", href: "/about" },
     ],
   },
 ];

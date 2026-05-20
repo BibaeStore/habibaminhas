@@ -13,6 +13,7 @@ export type EditorialBlockProps = {
   motif?: "lattice" | "floral" | "ogee" | "stripes" | "arch";
   orientation?: "left" | "right";
   image?: string;
+  imagePosition?: "left" | "center" | "right";
 };
 
 export function EditorialBlock({
@@ -24,8 +25,15 @@ export function EditorialBlock({
   motif = "floral",
   orientation = "left",
   image,
+  imagePosition = "center",
 }: EditorialBlockProps) {
   const reversed = orientation === "right";
+  const desktopPositionClass = {
+    left: "lg:object-left",
+    center: "lg:object-center",
+    right: "lg:object-right",
+  }[imagePosition];
+
   return (
     <section className="mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-8">
       <div
@@ -41,7 +49,7 @@ export function EditorialBlock({
                 alt={title}
                 fill
                 sizes="(max-width: 1024px) 100vw, 42vw"
-                className="object-cover object-center"
+                className={`object-cover object-right ${desktopPositionClass}`}
               />
             </div>
           ) : (

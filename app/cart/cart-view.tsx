@@ -87,7 +87,7 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <Link
-                        href={`/product/${item.slug}`}
+                        href={item.category ? `/product/${item.category}/${item.slug}` : `/product/${item.slug}`}
                         className="line-clamp-2 text-[14px] leading-snug text-ink hover:text-gold-dark"
                       >
                         {item.title}

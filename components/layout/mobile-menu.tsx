@@ -74,6 +74,13 @@ export function MobileMenu({
         {/* Scrollable nav */}
         <nav className="flex flex-1 flex-col overflow-y-auto">
           <div className="flex flex-col">
+            <Link
+              href="/shop"
+              onClick={onClose}
+              className="border-b border-border-soft px-5 py-4 text-[12px] uppercase tracking-[0.28em] text-ink"
+            >
+              Shop
+            </Link>
             {megaMenus.map((m) => (
               <div key={m.label} className="border-b border-border-soft">
                 <button
@@ -125,20 +132,6 @@ export function MobileMenu({
               </div>
             ))}
 
-            <Link
-              href="/shop"
-              onClick={onClose}
-              className="border-b border-border-soft px-5 py-4 text-[12px] uppercase tracking-[0.28em] text-ink"
-            >
-              New Arrival
-            </Link>
-            <Link
-              href="/about"
-              onClick={onClose}
-              className="border-b border-border-soft px-5 py-4 text-[12px] uppercase tracking-[0.28em] text-ink"
-            >
-              About
-            </Link>
             <Link
               href="/contact"
               onClick={onClose}

@@ -155,7 +155,7 @@ export function CartDrawer({ open, onClose }: Props) {
 
                   {/* Product image — larger, portrait */}
                   <Link
-                    href={`/product/${item.slug}`}
+                    href={item.category ? `/product/${item.category}/${item.slug}` : `/product/${item.slug}`}
                     onClick={handleClose}
                     className="relative h-[110px] w-[82px] flex-none overflow-hidden bg-cream"
                   >
@@ -181,7 +181,7 @@ export function CartDrawer({ open, onClose }: Props) {
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     {/* Title */}
                     <Link
-                      href={`/product/${item.slug}`}
+                      href={item.category ? `/product/${item.category}/${item.slug}` : `/product/${item.slug}`}
                       onClick={handleClose}
                       className="line-clamp-2 text-[12px] font-semibold uppercase leading-snug tracking-[0.12em] text-ink transition-colors hover:text-gold-dark"
                     >

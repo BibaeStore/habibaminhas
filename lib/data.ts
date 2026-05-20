@@ -17,32 +17,15 @@ export const megaMenus: MegaMenu[] = [
     href: "/ladies",
     columns: [
       {
-        heading: "Stitched Suits",
+        heading: "Shop by Type",
         items: [
-          { label: "All Ladies Suits", href: "/ladies", badge: "New" },
-          { label: "3-Piece Formal Suits", href: "/ladies" },
-          { label: "Silk Suits", href: "/ladies" },
-          { label: "Embroidered Suits", href: "/ladies" },
-          { label: "Gold Brocade", href: "/ladies" },
-          { label: "Mirror-Work Collection", href: "/ladies" },
-        ],
-      },
-      {
-        heading: "By Occasion",
-        items: [
-          { label: "Formal & Party Wear", href: "/ladies" },
-          { label: "Wedding Guest", href: "/ladies" },
-          { label: "Eid Collection", href: "/ladies" },
-          { label: "Daily Wear", href: "/ladies" },
-        ],
-      },
-      {
-        heading: "By Style",
-        items: [
-          { label: "Classic Elegance", href: "/ladies" },
-          { label: "Contemporary Chic", href: "/ladies" },
-          { label: "Heritage Craft", href: "/ladies" },
-          { label: "New Arrivals", href: "/new", badge: "Fresh" },
+          { label: "Stitch",        href: "/ladies/stitched-suits" },
+          { label: "Suit",          href: "/ladies/suits" },
+          { label: "Party Wear",    href: "/ladies/party-wear" },
+          { label: "Formal Wear",   href: "/ladies/formal-wear" },
+          { label: "Casual Wear",   href: "/ladies/casual-wear" },
+          { label: "3-Piece Suits", href: "/ladies/3-piece-suits" },
+          { label: "2-Piece Suits", href: "/ladies/2-piece-suits" },
         ],
       },
     ],
@@ -59,14 +42,13 @@ export const megaMenus: MegaMenu[] = [
     href: "/kids",
     columns: [
       {
-        heading: "Stitched Suits",
+        heading: "Shop by Age",
         items: [
-          { label: "All Kids Wear",          href: "/kids", badge: "New" },
-          { label: "3-Piece Stitched Suits", href: "/kids" },
-          { label: "Festive Co-Ord Sets",    href: "/kids" },
-          { label: "Embroidered Gowns",      href: "/kids" },
-          { label: "Eid Special Collection", href: "/kids", badge: "New" },
-          { label: "Kurtis & Shalwar",       href: "/kids" },
+          { label: "Girls Formal",   href: "/kids" },
+          { label: "2-3 Years",      href: "/kids/2-3-years" },
+          { label: "3-4 Years",      href: "/kids/3-4-years" },
+          { label: "5-6 Years",      href: "/kids/5-6-years" },
+          { label: "7-8 Years",      href: "/kids/7-8-years" },
         ],
       },
     ],
@@ -108,12 +90,12 @@ export const megaMenus: MegaMenu[] = [
     href: "/accessories",
     columns: [
       {
-        heading: "Hair Clips",
+        heading: "Shop by Type",
         items: [
-          { label: "All Hair Clips",       href: "/accessories" },
-          { label: "Floral Hair Clips",    href: "/accessories" },
-          { label: "Silk Headbands",       href: "/accessories" },
-          { label: "Clip & Headband Sets", href: "/accessories" },
+          { label: "All Accessories", href: "/accessories" },
+          { label: "Hair Clips",      href: "/accessories/hair-clips" },
+          { label: "Hair Bands",      href: "/accessories/hair-bands" },
+          { label: "Handcrafted",     href: "/accessories/handcrafted" },
         ],
       },
     ],

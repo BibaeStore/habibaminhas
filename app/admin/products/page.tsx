@@ -17,6 +17,7 @@ import { getMainCategories, getChildCategories } from "@/lib/actions/categories"
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
 import { PalettePicker, type Palette } from "@/components/admin/ui/palette-picker";
+import { generateProductSlug } from "@/lib/slug-generator";
 
 type Product = Tables<"products">;
 
@@ -471,7 +472,8 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [kidsSizes, setKidsSizes] = useState<Record<string, SizeEntry>>(
     Object.fromEntries(KIDS_SIZES.map((s) => [s, { enabled: false, stock: 0 }]))
   );
-  const [includeSizeGuide, setIncludeSizeGuide] = useState(false);
+  const [sizeGuideImage, setSizeGuideImage] = useState<string | null>(null);
+  const [uploadingSizeGuide, setUploadingSizeGuide] = useState(false);
   const [featured, setFeatured] = useState(false);
   const [name,     setName]     = useState("");
   const [sku,      setSku]      = useState("");
@@ -481,6 +483,8 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [price,    setPrice]    = useState("0");
   const [salePrice,setSalePrice]= useState("");
   const [stock,    setStock]    = useState("0");
+  const [description, setDescription] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
   const [images,   setImages]   = useState<string[]>([]);
   const [palette,  setPalette]  = useState<Palette>(["#f2e0d8", "#c97a86", "#5a2030"]);
   const [uploading,setUploading]= useState(false);
@@ -550,10 +554,24 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
     if (parsedSalePrice !== null && parsedSalePrice >= parsedPrice) { setError("Sale price must be less than the regular price."); return; }
 
     setSaving(true); setError("");
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").substring(0, 80) + "-" + Date.now();
+
+    // Generate SEO-friendly slug
+    const slug = generateProductSlug({
+      title: name.trim(),
+      category,
+      sku: sku.trim() || null,
+    });
+
     const totalStock = anySizeEnabled
       ? Object.values(sizes).filter((v) => v.enabled).reduce((s, v) => s + v.stock, 0)
       : parseInt(stock) || 0;
+
+    // Build sizes_stock JSON
+    const sizesStock = anySizeEnabled
+      ? Object.fromEntries(
+          sizeLabels.map((size) => [size, sizes[size].enabled ? sizes[size].stock : 0])
+        )
+      : null;
 
     const result = await createProduct({
       title: name.trim(),
@@ -566,7 +584,10 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
       compare_at: parsedSalePrice ? parsedPrice : null,
       stock: totalStock,
       featured,
-      size_guide: includeSizeGuide,
+      size_guide: sizeGuideImage,
+      sizes_stock: sizesStock as any,
+      description: description.trim() || null,
+      short_description: shortDescription.trim() || null,
       images,
       palette,
     });
@@ -617,6 +638,77 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
                 className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
               />
             </label>
+          </div>
+
+          <div>
+            <label className="flex flex-col gap-1.5">
+              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Short Description</span>
+              <input
+                value={shortDescription}
+                onChange={(e) => setShortDescription(e.target.value)}
+                placeholder="Brief one-line description for product cards..."
+                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+              />
+            </label>
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[14px] font-semibold text-[var(--admin-text)]">Full Description (HTML)</span>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const textarea = document.getElementById('description-textarea') as HTMLTextAreaElement;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selected = description.substring(start, end) || 'Text';
+                    const newText = description.substring(0, start) + `<strong>${selected}</strong>` + description.substring(end);
+                    setDescription(newText);
+                  }}
+                  className="rounded border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 py-1 text-xs font-bold hover:bg-[var(--admin-surface-alt)]"
+                  title="Bold"
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newText = description + '\n<h3>Heading</h3>\n';
+                    setDescription(newText);
+                  }}
+                  className="rounded border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 py-1 text-xs hover:bg-[var(--admin-surface-alt)]"
+                  title="Add Heading"
+                >
+                  H3
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newText = description + '\n<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>\n';
+                    setDescription(newText);
+                  }}
+                  className="rounded border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 py-1 text-xs hover:bg-[var(--admin-surface-alt)]"
+                  title="Add Bullet List"
+                >
+                  • List
+                </button>
+              </div>
+            </div>
+            <textarea
+              id="description-textarea"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Use HTML tags for formatting:&#10;&#10;<h3>Fabric</h3>&#10;<p>100% Premium Silk</p>&#10;&#10;<h3>Details</h3>&#10;<ul>&#10;  <li>Hand embroidery</li>&#10;  <li>Gold brocade trim</li>&#10;</ul>&#10;&#10;<strong>Care:</strong> Dry clean only"
+              rows={8}
+              className="w-full resize-none rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2 font-mono text-[13px] outline-none focus:border-[var(--admin-primary)]"
+            />
+            <div className="mt-1 text-xs text-[var(--admin-text-muted)]">
+              Use HTML: <code className="rounded bg-[var(--admin-surface-alt)] px-1">&lt;h3&gt;</code> headings,
+              <code className="rounded bg-[var(--admin-surface-alt)] px-1 ml-1">&lt;strong&gt;</code> bold,
+              <code className="rounded bg-[var(--admin-surface-alt)] px-1 ml-1">&lt;ul&gt;&lt;li&gt;</code> bullets,
+              <code className="rounded bg-[var(--admin-surface-alt)] px-1 ml-1">&lt;p&gt;</code> paragraphs
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -808,22 +900,63 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
           </div>
 
           <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
-            <label className="flex cursor-pointer items-start gap-3">
-              <button
-                onClick={() => setIncludeSizeGuide(!includeSizeGuide)}
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border transition-colors ${
-                  includeSizeGuide
-                    ? "border-[var(--admin-primary)] bg-[var(--admin-primary)]"
-                    : "border-[var(--admin-border)]"
-                }`}
-              >
-                {includeSizeGuide && <Check className="h-4 w-4 text-white" />}
-              </button>
-              <div>
-                <div className="text-[18px] font-semibold text-[var(--admin-text)]">Size Guide</div>
-                <div className="mt-0.5 text-sm text-[var(--admin-text-muted)]">Add a measurement table for this product.</div>
+            <div className="mb-3">
+              <div className="text-[14px] font-semibold text-[var(--admin-text)]">Size Guide (Optional)</div>
+              <div className="mt-0.5 text-[13px] text-[var(--admin-text-muted)]">Upload an image showing size measurements</div>
+            </div>
+            {sizeGuideImage ? (
+              <div className="group relative h-48 overflow-hidden rounded-[var(--admin-radius)] bg-[var(--admin-surface)]">
+                <Image src={sizeGuideImage} alt="Size Guide" fill sizes="400px" className="object-contain" />
+                <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                  <label className="flex cursor-pointer items-center gap-1.5 rounded-[var(--admin-radius)] bg-[var(--admin-surface)] px-3 py-1.5 text-sm font-medium text-[var(--admin-text)] transition-colors hover:bg-[var(--admin-surface-alt)]">
+                    <Upload className="h-4 w-4" /> Replace
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={async (e) => {
+                        if (!e.target.files || e.target.files.length === 0) return;
+                        setUploadingSizeGuide(true);
+                        const fd = new FormData();
+                        fd.append("file", e.target.files[0]);
+                        const result = await uploadProductImage(fd);
+                        if (result.url) setSizeGuideImage(result.url);
+                        else setError(`Size guide upload failed: ${result.error}`);
+                        setUploadingSizeGuide(false);
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideImage(null)}
+                    className="flex items-center gap-1.5 rounded-[var(--admin-radius)] bg-[var(--admin-danger)] px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                  >
+                    <X className="h-4 w-4" /> Remove
+                  </button>
+                </div>
               </div>
-            </label>
+            ) : (
+              <label className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--admin-border)] bg-[var(--admin-surface)] p-6 transition-colors hover:border-[var(--admin-primary)] ${uploadingSizeGuide ? "pointer-events-none opacity-60" : ""}`}>
+                <Upload className={`h-6 w-6 ${uploadingSizeGuide ? "animate-bounce text-[var(--admin-primary)]" : "text-[var(--admin-text-muted)]"}`} />
+                <span className="text-[15px] text-[var(--admin-text-soft)]">{uploadingSizeGuide ? "Uploading…" : "Click to upload size guide"}</span>
+                <span className="text-[13px] text-[var(--admin-text-muted)]">PNG, JPG, WebP • Recommended size chart image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={async (e) => {
+                    if (!e.target.files || e.target.files.length === 0) return;
+                    setUploadingSizeGuide(true);
+                    const fd = new FormData();
+                    fd.append("file", e.target.files[0]);
+                    const result = await uploadProductImage(fd);
+                    if (result.url) setSizeGuideImage(result.url);
+                    else setError(`Size guide upload failed: ${result.error}`);
+                    setUploadingSizeGuide(false);
+                  }}
+                />
+              </label>
+            )}
           </div>
 
           <PalettePicker value={palette} onChange={setPalette} />
@@ -863,9 +996,9 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
 function ViewProductModal({ product, onClose, onEdit }: { product: Product; onClose: () => void; onEdit: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="relative w-full max-w-sm rounded-[var(--admin-radius)] bg-[var(--admin-surface)] p-6 shadow-lg md:max-w-xl">
-        <div className="flex items-center justify-between border-b border-[var(--admin-border)] pb-5 mb-5">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 py-8">
+      <div className="relative w-full max-w-sm rounded-[var(--admin-radius)] bg-[var(--admin-surface)] shadow-lg md:max-w-xl">
+        <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-6 py-5">
           <div>
             <h2 className="text-[18px] font-semibold text-[var(--admin-text)]">Product Details</h2>
             <p className="mt-0.5 text-sm text-[var(--admin-text-muted)]">{product.sku ?? product.slug}</p>
@@ -878,7 +1011,8 @@ function ViewProductModal({ product, onClose, onEdit }: { product: Product; onCl
           </button>
         </div>
 
-        <div className="space-y-5">
+        <div className="max-h-[calc(100vh-16rem)] overflow-y-auto px-6 py-5">
+          <div className="space-y-5">
           <div className="space-y-3">
             <div className="text-[14px] font-semibold text-[var(--admin-text)]">Product Images</div>
             {product.images && product.images.length > 0 ? (
@@ -976,9 +1110,11 @@ function ViewProductModal({ product, onClose, onEdit }: { product: Product; onCl
               </div>
             </div>
             {product.size_guide && (
-              <div>
+              <div className="sm:col-span-2">
                 <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Size Guide</div>
-                <div className="mt-1 text-[14px] text-[var(--admin-text)]">✓ Included</div>
+                <div className="mt-2 relative h-32 overflow-hidden rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)]">
+                  <Image src={product.size_guide} alt="Size Guide" fill sizes="300px" className="object-contain" />
+                </div>
               </div>
             )}
             {product.palette && product.palette.length > 0 && (
@@ -997,9 +1133,10 @@ function ViewProductModal({ product, onClose, onEdit }: { product: Product; onCl
               </div>
             )}
           </div>
+          </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-[var(--admin-border)] pt-5 mt-5">
+        <div className="flex items-center justify-end gap-3 border-t border-[var(--admin-border)] px-6 py-5">
           <AdminButton variant="outline" onClick={onClose}>Close</AdminButton>
           <AdminButton variant="primary" onClick={onEdit}>Edit Product</AdminButton>
         </div>
@@ -1019,6 +1156,12 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [featuredVal, setFeaturedVal] = useState(product.featured);
   const [category,    setCategory]    = useState(product.category);
   const [subcategories, setSubcategories] = useState<string[]>(product.subcategory ?? []);
+  const [description, setDescription] = useState(product.description ?? "");
+  const [shortDescription, setShortDescription] = useState(product.short_description ?? "");
+  const [sizeGuideImage, setSizeGuideImage] = useState<string | null>(
+    typeof product.size_guide === "string" ? product.size_guide : null
+  );
+  const [uploadingSizeGuide, setUploadingSizeGuide] = useState(false);
   const [images,      setImages]      = useState<string[]>(product.images ?? []);
   const [palette,     setPalette]     = useState<Palette>(
     (Array.isArray(product.palette) && product.palette.length === 3
@@ -1029,6 +1172,26 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);
   const [error,       setError]       = useState("");
+
+  // Sizes & Stock
+  const [sizeType, setSizeType] = useState<"adult" | "kids">("adult");
+  const existingSizesStock = product.sizes_stock as Record<string, number> | null;
+  const [adultSizes, setAdultSizes] = useState<Record<string, SizeEntry>>(() => {
+    const entries: Record<string, SizeEntry> = {};
+    ADULT_SIZES.forEach((s) => {
+      const stock = existingSizesStock?.[s] ?? 0;
+      entries[s] = { enabled: stock > 0, stock };
+    });
+    return entries;
+  });
+  const [kidsSizes, setKidsSizes] = useState<Record<string, SizeEntry>>(() => {
+    const entries: Record<string, SizeEntry> = {};
+    KIDS_SIZES.forEach((s) => {
+      const stock = existingSizesStock?.[s] ?? 0;
+      entries[s] = { enabled: stock > 0, stock };
+    });
+    return entries;
+  });
 
   const [mainCategories, setMainCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [childCategories, setChildCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
@@ -1059,6 +1222,16 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
     );
   };
 
+  const sizes    = sizeType === "adult" ? adultSizes : kidsSizes;
+  const setSizes = sizeType === "adult" ? setAdultSizes : setKidsSizes;
+  const sizeLabels = sizeType === "adult" ? ADULT_SIZES : KIDS_SIZES;
+  const anySizeEnabled = Object.values(sizes).some((v) => v.enabled);
+
+  const toggleSize = (s: string) =>
+    setSizes((prev) => ({ ...prev, [s]: { ...prev[s], enabled: !prev[s].enabled } }));
+  const setStockSize = (s: string, val: number) =>
+    setSizes((prev) => ({ ...prev, [s]: { ...prev[s], stock: val } }));
+
   const handleImageFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
@@ -1081,15 +1254,32 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
     if (parsedCompare !== null && parsedCompare <= 0) { setError("Compare-at price must be greater than 0."); return; }
 
     setSaving(true); setError("");
+
+    // Calculate total stock from sizes if enabled
+    const totalStock = anySizeEnabled
+      ? Object.values(sizes).filter((v) => v.enabled).reduce((s, v) => s + v.stock, 0)
+      : parseInt(stockVal) || 0;
+
+    // Build sizes_stock JSON
+    const sizesStock = anySizeEnabled
+      ? Object.fromEntries(
+          sizeLabels.map((size) => [size, sizes[size].enabled ? sizes[size].stock : 0])
+        )
+      : null;
+
     const result = await updateProduct(product.id, {
       title:      name.trim(),
       category,
       subcategory: subcategories.length > 0 ? subcategories : null,
       price:      parsedPrice,
       compare_at: parsedCompare,
-      stock:      parseInt(stockVal) || 0,
+      stock:      totalStock,
       status:     statusVal,
       featured:   featuredVal,
+      description: description.trim() || null,
+      short_description: shortDescription.trim() || null,
+      size_guide: sizeGuideImage,
+      sizes_stock: sizesStock as any,
       images,
       palette,
     });
@@ -1169,6 +1359,75 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
             />
           </label>
 
+          <label className="flex flex-col gap-1.5">
+            <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Short Description</span>
+            <input
+              value={shortDescription}
+              onChange={(e) => setShortDescription(e.target.value)}
+              placeholder="Brief one-line description for product cards..."
+              className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+            />
+          </label>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[14px] font-semibold text-[var(--admin-text)]">Full Description (HTML)</span>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const textarea = document.getElementById('edit-description-textarea') as HTMLTextAreaElement;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selected = description.substring(start, end) || 'Text';
+                    const newText = description.substring(0, start) + `<strong>${selected}</strong>` + description.substring(end);
+                    setDescription(newText);
+                  }}
+                  className="rounded border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 py-1 text-xs font-bold hover:bg-[var(--admin-surface-alt)]"
+                  title="Bold"
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newText = description + '\n<h3>Heading</h3>\n';
+                    setDescription(newText);
+                  }}
+                  className="rounded border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 py-1 text-xs hover:bg-[var(--admin-surface-alt)]"
+                  title="Add Heading"
+                >
+                  H3
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newText = description + '\n<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>\n';
+                    setDescription(newText);
+                  }}
+                  className="rounded border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 py-1 text-xs hover:bg-[var(--admin-surface-alt)]"
+                  title="Add Bullet List"
+                >
+                  • List
+                </button>
+              </div>
+            </div>
+            <textarea
+              id="edit-description-textarea"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Use HTML tags for formatting:&#10;&#10;<h3>Fabric</h3>&#10;<p>100% Premium Silk</p>&#10;&#10;<h3>Details</h3>&#10;<ul>&#10;  <li>Hand embroidery</li>&#10;  <li>Gold brocade trim</li>&#10;</ul>&#10;&#10;<strong>Care:</strong> Dry clean only"
+              rows={8}
+              className="w-full resize-none rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2 font-mono text-[13px] outline-none focus:border-[var(--admin-primary)]"
+            />
+            <div className="mt-1 text-xs text-[var(--admin-text-muted)]">
+              Use HTML: <code className="rounded bg-[var(--admin-surface-alt)] px-1">&lt;h3&gt;</code> headings,
+              <code className="rounded bg-[var(--admin-surface-alt)] px-1 ml-1">&lt;strong&gt;</code> bold,
+              <code className="rounded bg-[var(--admin-surface-alt)] px-1 ml-1">&lt;ul&gt;&lt;li&gt;</code> bullets,
+              <code className="rounded bg-[var(--admin-surface-alt)] px-1 ml-1">&lt;p&gt;</code> paragraphs
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Price (Rs.)</span>
@@ -1191,26 +1450,80 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
             </label>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5">
+            <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Status</span>
+            <select
+              value={statusVal}
+              onChange={(e) => setStatusVal(e.target.value)}
+              className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+            >
+              <option value="active">Active</option>
+              <option value="draft">Draft</option>
+            </select>
+          </label>
+
+          <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
+            <div className="text-[18px] font-semibold text-[var(--admin-text)]">Sizes &amp; Stock</div>
+            <div className="mb-4 mt-0.5 text-sm text-[var(--admin-text-soft)]">Enable sizes and set stock per size.</div>
+            <div className="mb-4 flex items-center gap-0">
+              <span className="mr-3 text-sm font-medium text-[var(--admin-text-soft)]">Size Type:</span>
+              {(["adult", "kids"] as const).map((t, i) => (
+                <button
+                  key={t}
+                  onClick={() => setSizeType(t)}
+                  className={`px-4 py-2 text-sm border transition-colors ${i === 1 ? "border-l-0 rounded-r-[var(--admin-radius)]" : "rounded-l-[var(--admin-radius)]"} ${
+                    sizeType === t
+                      ? "border-[var(--admin-primary)] bg-[var(--admin-primary)] text-white"
+                      : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-soft)] hover:bg-[var(--admin-surface-alt)]"
+                  }`}
+                >
+                  {t === "adult" ? "Adult Sizes" : "Kids / Baby Sizes"}
+                </button>
+              ))}
+            </div>
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {sizeLabels.map((size) => {
+                const s = sizes[size];
+                return (
+                  <div
+                    key={size}
+                    className={`flex items-center gap-2 rounded-[var(--admin-radius)] border p-2.5 transition-colors ${
+                      s.enabled
+                        ? "border-[var(--admin-primary)] bg-[var(--admin-primary-soft)]"
+                        : "border-[var(--admin-border)] bg-[var(--admin-surface)]"
+                    }`}
+                  >
+                    <button
+                      onClick={() => toggleSize(size)}
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded border transition-colors ${
+                        s.enabled
+                          ? "border-[var(--admin-primary)] bg-[var(--admin-primary)]"
+                          : "border-[var(--admin-border)]"
+                      }`}
+                    >
+                      {s.enabled && <Check className="h-4 w-4 text-white" />}
+                    </button>
+                    <span className={`w-8 text-sm font-medium ${s.enabled ? "text-[var(--admin-primary)]" : "text-[var(--admin-text-muted)]"}`}>{size}</span>
+                    <input
+                      type="number"
+                      value={s.stock}
+                      disabled={!s.enabled}
+                      onChange={(e) => setStockSize(size, parseInt(e.target.value) || 0)}
+                      className="w-0 flex-1 border-0 bg-transparent text-right text-sm outline-none disabled:text-[var(--admin-text-muted)]"
+                    />
+                  </div>
+                );
+              })}
+            </div>
             <label className="flex flex-col gap-1.5">
-              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Stock</span>
+              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Global Stock (no sizes)</span>
               <input
                 type="number"
                 value={stockVal}
+                disabled={anySizeEnabled}
                 onChange={(e) => setStockVal(e.target.value)}
-                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)] disabled:opacity-40"
               />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Status</span>
-              <select
-                value={statusVal}
-                onChange={(e) => setStatusVal(e.target.value)}
-                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
-              >
-                <option value="active">Active</option>
-                <option value="draft">Draft</option>
-              </select>
             </label>
           </div>
 
@@ -1278,6 +1591,66 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
           </div>
 
           <PalettePicker value={palette} onChange={setPalette} />
+
+          <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
+            <div className="mb-3">
+              <div className="text-[14px] font-semibold text-[var(--admin-text)]">Size Guide (Optional)</div>
+              <div className="mt-0.5 text-[13px] text-[var(--admin-text-muted)]">Upload an image showing size measurements</div>
+            </div>
+            {sizeGuideImage ? (
+              <div className="group relative h-48 overflow-hidden rounded-[var(--admin-radius)] bg-[var(--admin-surface)]">
+                <Image src={sizeGuideImage} alt="Size Guide" fill sizes="400px" className="object-contain" />
+                <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                  <label className="flex cursor-pointer items-center gap-1.5 rounded-[var(--admin-radius)] bg-[var(--admin-surface)] px-3 py-1.5 text-sm font-medium text-[var(--admin-text)] transition-colors hover:bg-[var(--admin-surface-alt)]">
+                    <Upload className="h-4 w-4" /> Replace
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={async (e) => {
+                        if (!e.target.files || e.target.files.length === 0) return;
+                        setUploadingSizeGuide(true);
+                        const fd = new FormData();
+                        fd.append("file", e.target.files[0]);
+                        const result = await uploadProductImage(fd);
+                        if (result.url) setSizeGuideImage(result.url);
+                        else setError(`Size guide upload failed: ${result.error}`);
+                        setUploadingSizeGuide(false);
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideImage(null)}
+                    className="flex items-center gap-1.5 rounded-[var(--admin-radius)] bg-[var(--admin-danger)] px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                  >
+                    <X className="h-4 w-4" /> Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--admin-border)] bg-[var(--admin-surface)] p-6 transition-colors hover:border-[var(--admin-primary)] ${uploadingSizeGuide ? "pointer-events-none opacity-60" : ""}`}>
+                <Upload className={`h-6 w-6 ${uploadingSizeGuide ? "animate-bounce text-[var(--admin-primary)]" : "text-[var(--admin-text-muted)]"}`} />
+                <span className="text-[15px] text-[var(--admin-text-soft)]">{uploadingSizeGuide ? "Uploading…" : "Click to upload size guide"}</span>
+                <span className="text-[13px] text-[var(--admin-text-muted)]">PNG, JPG, WebP • Recommended size chart image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={async (e) => {
+                    if (!e.target.files || e.target.files.length === 0) return;
+                    setUploadingSizeGuide(true);
+                    const fd = new FormData();
+                    fd.append("file", e.target.files[0]);
+                    const result = await uploadProductImage(fd);
+                    if (result.url) setSizeGuideImage(result.url);
+                    else setError(`Size guide upload failed: ${result.error}`);
+                    setUploadingSizeGuide(false);
+                  }}
+                />
+              </label>
+            )}
+          </div>
 
           <label className="flex cursor-pointer items-center gap-3">
             <button

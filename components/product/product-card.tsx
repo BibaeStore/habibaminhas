@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, Plus, X, Eye, ShoppingBag } from "lucide-react";
@@ -17,6 +17,7 @@ export interface CardProduct {
   slug: string;
   title: string;
   price: number;
+  category: string;
   image?: string | null;
   compareAt?: number | null;
   collection?: string;
@@ -40,11 +41,17 @@ export function ProductCard({
   const motif = motifs[index % motifs.length];
   const [quickOpen, setQuickOpen] = useState(false);
   const [addedToBag, setAddedToBag] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const toggle      = useWishlistStore((s) => s.toggle);
   const isWishlisted = useWishlistStore((s) => s.has(product.slug));
   const addItem     = useCartStore((s) => s.addItem);
   const openDrawer  = useCartStore((s) => s.openDrawer);
+
+  // Prevent hydration mismatch by only checking wishlist after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const img       = product.image ?? product.images?.[0] ?? null;
   const compareAt = product.compareAt ?? product.compare_at ?? null;
@@ -70,6 +77,7 @@ export function ProductCard({
     addItem({
       id:         String(product.id),
       slug:       product.slug,
+      category:   product.category,
       title:      product.title,
       image:      img,
       palette:    product.palette as string[],
@@ -99,15 +107,15 @@ export function ProductCard({
         {/* Wishlist button */}
         <button
           type="button"
-          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          aria-label={mounted && isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
           onClick={handleWishlist}
           className={`rounded-full p-2 shadow-soft backdrop-blur-sm transition-all duration-300 group-hover:opacity-100 ${
-            isWishlisted
+            mounted && isWishlisted
               ? "bg-ink text-ivory opacity-100"
               : "bg-ivory/90 text-ink opacity-0 hover:bg-ink hover:text-ivory"
           }`}
         >
-          <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-current" : ""}`} />
+          <Heart className={`h-3.5 w-3.5 ${mounted && isWishlisted ? "fill-current" : ""}`} />
         </button>
       </div>
 
@@ -138,7 +146,7 @@ export function ProductCard({
   return (
     <>
       <article className="group relative flex flex-col">
-        <Link href={`/product/${product.slug}`} className="relative block">
+        <Link href={`/product/${product.category}/${product.slug}`} className="relative block">
           {img ? (
             <div
               className="relative w-full overflow-hidden bg-cream"
@@ -167,7 +175,7 @@ export function ProductCard({
 
         <div className="flex flex-1 flex-col gap-1 pt-4">
           <Link
-            href={`/product/${product.slug}`}
+            href={`/product/${product.category}/${product.slug}`}
             className="line-clamp-1 text-[13px] leading-snug text-ink hover:text-gold-dark"
           >
             {product.title}
@@ -287,7 +295,7 @@ export function ProductCard({
                 </button>
 
                 <Link
-                  href={`/product/${product.slug}`}
+                  href={`/product/${product.category}/${product.slug}`}
                   onClick={() => setQuickOpen(false)}
                   className="flex h-12 items-center justify-center gap-2 border border-border-soft text-[12px] uppercase tracking-[0.28em] text-ink transition-colors hover:bg-cream"
                 >
@@ -298,13 +306,13 @@ export function ProductCard({
                   type="button"
                   onClick={handleWishlist}
                   className={`flex h-10 items-center justify-center gap-2 text-[11px] uppercase tracking-[0.24em] transition-colors ${
-                    isWishlisted
+                    mounted && isWishlisted
                       ? "text-ink font-medium"
                       : "text-ink-soft hover:text-ink"
                   }`}
                 >
-                  <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-current" : ""}`} />
-                  {isWishlisted ? "Saved to Wishlist" : "Save to Wishlist"}
+                  <Heart className={`h-3.5 w-3.5 ${mounted && isWishlisted ? "fill-current" : ""}`} />
+                  {mounted && isWishlisted ? "Saved to Wishlist" : "Save to Wishlist"}
                 </button>
               </div>
             </div>

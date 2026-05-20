@@ -103,6 +103,13 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
 
           {/* Desktop nav links */}
           <div className="hidden lg:flex items-center gap-0.5">
+            <Link
+              href="/shop"
+              onMouseEnter={() => { cancelClose(); setOpen(null); }}
+              className="px-3 py-3 text-[10px] uppercase tracking-[0.22em] text-ink hover:text-gold-dark"
+            >
+              Shop
+            </Link>
             {menus.map((m) => (
               <button
                 key={m.label}
@@ -126,20 +133,6 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
                 />
               </button>
             ))}
-            <Link
-              href="/shop"
-              onMouseEnter={() => { cancelClose(); setOpen(null); }}
-              className="px-3 py-3 text-[10px] uppercase tracking-[0.22em] text-ink hover:text-gold-dark"
-            >
-              New Arrival
-            </Link>
-            <Link
-              href="/about"
-              onMouseEnter={() => { cancelClose(); setOpen(null); }}
-              className="px-3 py-3 text-[10px] uppercase tracking-[0.22em] text-ink hover:text-gold-dark"
-            >
-              About
-            </Link>
           </div>
         </div>
 

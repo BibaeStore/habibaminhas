@@ -48,8 +48,8 @@ export default async function HomePage() {
         image="/editorial/ladies-collection.webp"
         links={[
           { label: "Shop Ladies Suits", href: "/ladies" },
-          { label: "Formal & Party Wear", href: "/ladies" },
-          { label: "Gold Brocade Collection", href: "/ladies" },
+          { label: "Formal & Party Wear", href: "/ladies/formal-wear" },
+          { label: "Stitched Suits", href: "/ladies/stitched-suits" },
         ]}
       />
 
@@ -61,10 +61,11 @@ export default async function HomePage() {
         motif="ogee"
         orientation="right"
         image="/HeroSection/kids-formal.webp"
+        imagePosition="right"
         links={[
           { label: "Shop Girls Formal", href: "/kids" },
-          { label: "Festive Co-Ord Sets", href: "/kids" },
-          { label: "Embroidered Gowns", href: "/kids" },
+          { label: "Festive Wear", href: "/kids" },
+          { label: "Kids Suits", href: "/kids" },
         ]}
       />
 
@@ -76,9 +77,9 @@ export default async function HomePage() {
         motif="stripes"
         image="/HeroSection/baby-bedding.webp"
         links={[
-          { label: "Shop Crib Bedding Sets", href: "/baby" },
-          { label: "Baby Nests & Loungers", href: "/baby" },
-          { label: "Swaddles & Accessories", href: "/baby" },
+          { label: "Shop Baby Products", href: "/baby" },
+          { label: "Bedding Sets", href: "/baby/baby-bedding-set" },
+          { label: "Baby Nests", href: "/baby/baby-nest" },
         ]}
       />
 
@@ -91,8 +92,9 @@ export default async function HomePage() {
         orientation="right"
         image="/HeroSection/accessories.webp"
         links={[
-          { label: "Shop Hair Accessories", href: "/accessories" },
-          { label: "Headband & Clip Sets", href: "/accessories" },
+          { label: "Shop Accessories", href: "/accessories" },
+          { label: "Hair Clips", href: "/accessories/hair-clips" },
+          { label: "Hair Bands", href: "/accessories/hair-bands" },
         ]}
       />
 

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MobileDetailTabs } from "@/components/product/mobile-detail-tabs";
 import {
   ChevronRight,
   Ruler,
@@ -14,14 +13,19 @@ import { Badge } from "@/components/ui/badge";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductCard, type CardProduct } from "@/components/product/product-card";
 import { AddToCartSection } from "@/components/product/add-to-cart-section";
+import { ProductDetailsTabs } from "@/components/product/product-details-tabs";
+import { SizeGuideButton } from "@/components/product/size-guide-button";
 import type { Tables } from "@/lib/supabase/types";
 
 type Product = Tables<"products">;
-type Params = { slug: string };
+type Params = { category: string; slug: string };
 
 export async function generateStaticParams() {
   const products = await getProducts({ status: "active" }).catch(() => []);
-  return products.map((p: Product) => ({ slug: p.slug }));
+  return products.map((p: Product) => ({
+    category: p.category,
+    slug: p.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -29,14 +33,14 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }) {
-  const { slug } = await params;
+  const { category, slug } = await params;
   try {
     const p = await getProductBySlug(slug);
     return {
       title: p.seo_title ?? p.title,
       description: p.seo_description ?? `${p.title} — Handcrafted in Pakistan. Flat Rs. 250 delivery nationwide.`,
       alternates: {
-        canonical: `/product/${slug}/`,
+        canonical: `/product/${category}/${slug}/`,
       },
     };
   } catch {
@@ -56,7 +60,7 @@ export default async function ProductPage({
 }: {
   params: Promise<Params>;
 }) {
-  const { slug } = await params;
+  const { category, slug } = await params;
 
   let product: Product;
   try {
@@ -64,6 +68,14 @@ export default async function ProductPage({
   } catch {
     notFound();
   }
+
+  // Verify category matches (SEO safety)
+  if (product.category !== category) {
+    notFound();
+  }
+
+  // Handle out of stock products - DON'T show 404
+  const isOutOfStock = product.status === "inactive" || product.stock === 0;
 
   const hasSale = product.compare_at && product.compare_at > product.price;
   const mainImage = product.images?.[0] ?? null;
@@ -105,13 +117,28 @@ export default async function ProductPage({
 
         {/* Info panel — pb-24 on mobile reserves space above the sticky Add to Bag bar */}
         <div className="pb-24 lg:col-span-5 lg:pb-0 lg:sticky lg:top-[116px] lg:self-start">
+          {/* Out of Stock Banner */}
+          {isOutOfStock && (
+            <div className="mb-4 rounded-md border-2 border-ink/20 bg-cream p-4 text-center">
+              <h3 className="font-display text-xl italic text-ink">Currently Unavailable</h3>
+              <p className="mt-2 text-[13px] text-ink-soft">
+                This item is currently out of stock. Check back soon or explore similar products below.
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
             {product.badge ? (
               <Badge variant={product.badge === "Bestseller" ? "gold" : "default"}>
                 {product.badge}
               </Badge>
             ) : null}
-            {hasSale ? <Badge variant="sale">Sale</Badge> : null}
+            {hasSale && !isOutOfStock ? <Badge variant="sale">Sale</Badge> : null}
+            {isOutOfStock ? (
+              <Badge variant="default" className="bg-muted text-ink-soft">
+                Out of Stock
+              </Badge>
+            ) : null}
             <div className="ml-auto flex items-center gap-1 text-[11px] text-ink-soft">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
@@ -126,9 +153,8 @@ export default async function ProductPage({
           <h1 className="mt-4 font-display text-4xl font-light italic leading-[1.05] sm:text-5xl">
             {product.title}
           </h1>
-          <p className="mt-2 text-[12px] uppercase tracking-[0.26em] text-muted">
-            {subcategoryLabel}
-            {product.sku ? ` · SKU ${product.sku.toUpperCase()}` : ""}
+          <p className="mt-2 text-[11px] uppercase tracking-[0.28em] text-muted">
+            SKU: {product.sku?.toUpperCase() || "N/A"}
           </p>
 
           <div className="mt-6 flex items-baseline gap-3">
@@ -146,97 +172,76 @@ export default async function ProductPage({
               </>
             ) : null}
           </div>
-          <p className="mt-1 text-[12px] text-muted">
-            Inclusive of all taxes. Flat Rs. 250 delivery across Pakistan.
-          </p>
-
-          {/* Colour swatches */}
-          {product.palette.length > 0 && (
-            <div className="mt-8">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-[0.26em]">Colour</span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {product.palette.map((c, i) => (
-                  <button
-                    key={i}
-                    aria-label={`Colour ${i + 1}`}
-                    className={`h-9 w-9 rounded-full border ${i === 0 ? "border-ink ring-2 ring-ink/10 ring-offset-2 ring-offset-ivory" : "border-border-soft"}`}
-                    style={{ background: c }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Size selector label */}
-          {hasSizes && (
+          {hasSizes && !isOutOfStock && (
             <div className="mt-8">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] uppercase tracking-[0.26em]">Size</span>
-                <Link
-                  href="/content/size-guide"
-                  className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.22em] text-gold-dark hover:text-gold-dark-dark"
-                >
-                  <Ruler className="h-3 w-3" /> Size guide
-                </Link>
+                <SizeGuideButton sizeGuideUrl={product.size_guide} />
               </div>
             </div>
           )}
 
-          {/* Interactive add-to-cart (client component) */}
-          <AddToCartSection
-            id={product.id}
-            slug={product.slug}
-            title={product.title}
-            image={mainImage}
-            palette={product.palette}
-            price={product.price}
-            compare_at={product.compare_at}
-            sku={product.sku}
-            hasSizes={hasSizes}
+          {/* Interactive add-to-cart (client component) - hide if out of stock */}
+          {!isOutOfStock && (
+            <AddToCartSection
+              id={product.id}
+              slug={product.slug}
+              category={product.category}
+              title={product.title}
+              image={mainImage}
+              palette={product.palette}
+              price={product.price}
+              compare_at={product.compare_at}
+              sku={product.sku}
+              hasSizes={hasSizes}
+              sizesStock={product.sizes_stock as Record<string, number> | null}
+            />
+          )}
+
+          {/* Notify when back in stock */}
+          {isOutOfStock && (
+            <div className="mt-8">
+              <button className="w-full border border-ink bg-ink px-6 py-4 text-[12px] uppercase tracking-[0.28em] text-ivory transition-colors hover:bg-ink/90">
+                Notify me when available
+              </button>
+              <p className="mt-2 text-center text-[11px] text-muted">
+                We'll email you when this item is back in stock
+              </p>
+            </div>
+          )}
+
+          {/* Details & Description Tabs */}
+          <ProductDetailsTabs
+            description={product.description}
+            shortDescription={product.short_description}
           />
 
-          <ul className="mt-10 grid grid-cols-3 gap-4 border-y border-border-soft py-6">
+          {/* Feature Cards - moved below tabs */}
+          <ul className="mt-8 grid grid-cols-1 gap-4 border-y border-border-soft py-6 sm:grid-cols-3">
             {[
-              { icon: Truck,      label: "Flat Rs. 250 Delivery", sub: "Nationwide across Pakistan" },
-              { icon: RotateCcw, label: "14-day Returns",          sub: "Hassle-free exchanges"    },
-              { icon: Ruler,     label: "Finished by Hand",        sub: "Small-batch construction" },
+              { icon: Truck,      label: "Flat Rs. 250", sub: "Nationwide delivery" },
+              { icon: RotateCcw, label: "14-day Returns", sub: "Easy exchanges" },
+              { icon: Ruler,     label: "Finished by Hand", sub: "Artisan crafted" },
             ].map(({ icon: Icon, label, sub }) => (
-              <li key={label} className="flex items-start gap-3">
-                <Icon className="h-4 w-4 text-gold-dark" />
+              <li key={label} className="flex items-center gap-3">
+                <Icon className="h-5 w-5 text-gold-dark" />
                 <div>
-                  <div className="text-[12px] uppercase tracking-[0.22em]">{label}</div>
-                  <div className="text-[12px] text-ink-soft">{sub}</div>
+                  <div className="text-[12px] font-medium uppercase tracking-[0.22em]">{label}</div>
+                  <div className="text-[11px] text-ink-soft">{sub}</div>
                 </div>
               </li>
             ))}
           </ul>
-
-          {/* Mobile: Details | Description tab switcher */}
-          <MobileDetailTabs description={product.description ?? ""} />
-
-          {/* Desktop: inline details section */}
-          <div className="mt-8 hidden space-y-3 text-[13px] leading-relaxed text-ink-soft lg:block">
-            <h3 className="font-display text-xl italic text-ink">Details</h3>
-            {product.description ? (
-              <p>{product.description}</p>
-            ) : (
-              <p>
-                Cut from a featherweight lawn and finished with hand-threaded
-                embroidery at the neckline and cuff. Pair the dupatta loose, or
-                tucked at the shoulder for a cleaner line.
-              </p>
-            )}
-          </div>
         </div>
       </section>
 
       {/* Related products */}
       {related.length > 0 && (
-        <section className="mt-24">
+        <section className="mt-24 pb-16">
           <h2 className="font-display text-3xl italic sm:text-4xl">
-            You may also love
+            You May Also Like
           </h2>
           <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 md:grid-cols-4">
             {related.map((p, i) => (

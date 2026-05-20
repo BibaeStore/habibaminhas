@@ -201,7 +201,7 @@ export function SearchOverlay({ open, onClose }: Props) {
                       return (
                         <Link
                           key={p.id}
-                          href={`/product/${p.slug}`}
+                          href={`/product/${p.category}/${p.slug}`}
                           onClick={onClose}
                           className="group flex items-center gap-5 bg-ivory px-4 py-4 transition-colors hover:bg-cream"
                         >

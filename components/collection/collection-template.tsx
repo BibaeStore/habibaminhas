@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, SlidersHorizontal, ArrowDownAZ } from "lucide-react";
 import type { CardProduct } from "@/components/product/product-card";
-import { ProductGrid } from "@/components/product/product-grid";
+import { PaginatedProducts } from "@/components/collection/paginated-products";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 
 type Crumb = { label: string; href?: string };
@@ -33,7 +33,7 @@ export function CollectionTemplate({
     <>
       <section className="relative">
         {image ? (
-          <div className="relative aspect-[21/9] w-full overflow-hidden">
+          <div className="relative aspect-square w-full overflow-hidden sm:aspect-[21/9]">
             <Image
               src={image}
               alt={title}
@@ -47,7 +47,7 @@ export function CollectionTemplate({
         ) : (
           <PlaceholderImage tone={tone} motif={motif} aspect="21/9" overlay animate />
         )}
-        <div className="absolute inset-0 mx-auto flex w-full max-w-[1440px] flex-col justify-end px-6 pb-10 text-ivory sm:px-12 sm:pb-16">
+        <div className="absolute inset-x-0 bottom-0 top-24 mx-auto flex w-full max-w-[1440px] flex-col justify-end px-6 pb-10 text-ivory sm:top-0 sm:px-12 sm:pb-16">
           <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.28em] text-ivory/85">
             {crumbs.map((c, i) => (
               <span key={c.label} className="flex items-center gap-2">
@@ -107,13 +107,24 @@ export function CollectionTemplate({
           </div>
         </div>
 
-        <ProductGrid products={products} cols="4" />
-
-        <div className="mt-16 flex items-center justify-center">
-          <button className="border border-ink px-7 py-3 text-[12px] uppercase tracking-[0.28em] hover:bg-ink hover:text-ivory">
-            Load more
-          </button>
-        </div>
+        {products.length === 0 ? (
+          <div className="flex min-h-[400px] flex-col items-center justify-center py-16">
+            <div className="text-center">
+              <h3 className="font-display text-2xl italic text-ink">No Products Available</h3>
+              <p className="mt-3 text-[14px] text-ink-soft">
+                Check back soon for new arrivals in this collection.
+              </p>
+              <Link
+                href="/shop"
+                className="mt-6 inline-block border border-ink px-7 py-3 text-[12px] uppercase tracking-[0.28em] hover:bg-ink hover:text-ivory"
+              >
+                Browse All Products
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <PaginatedProducts products={products} />
+        )}
       </section>
     </>
   );

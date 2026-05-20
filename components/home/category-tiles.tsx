@@ -8,19 +8,19 @@ import { getFeaturedCategories } from "@/lib/actions/categories";
 const ALLOWED_SLUGS = [
   "ladies-suits",
   "kids-formal",
-  "baby-bedding",
-  "baby-nests",
+  "baby-products",
   "accessories",
   "new-arrivals",
+  "shop-all",
 ];
 
 const SLUG_TO_HREF: Record<string, string> = {
-  "ladies-suits": "/ladies",
-  "kids-formal":  "/kids",
-  "baby-bedding": "/baby",
-  "baby-nests":   "/baby",
-  "accessories":  "/accessories",
-  "new-arrivals": "/new",
+  "ladies-suits":  "/ladies",
+  "kids-formal":   "/kids",
+  "baby-products": "/baby",
+  "accessories":   "/accessories",
+  "new-arrivals":  "/new",
+  "shop-all":      "/shop",
 };
 
 // Static fallbacks for all categories — ensures they always show even if DB isn't populated yet
@@ -34,24 +34,17 @@ const STATIC_FALLBACKS = [
   },
   {
     id: "kids-formal-static",
-    name: "Kids Formal",
+    name: "Kids",
     slug: "kids-formal",
     image: "/HeroSection/kids-formal.webp",
     color: "#f5e8c0",
   },
   {
-    id: "baby-bedding-static",
-    name: "Baby Bedding",
-    slug: "baby-bedding",
+    id: "baby-products-static",
+    name: "Baby Products",
+    slug: "baby-products",
     image: "/HeroSection/baby-bedding.webp",
     color: "#f0e0f0",
-  },
-  {
-    id: "baby-nests-static",
-    name: "Baby Nests",
-    slug: "baby-nests",
-    image: "/HeroSection/baby-bedding.webp",
-    color: "#e8e0f0",
   },
   {
     id: "accessories-static",
@@ -62,10 +55,17 @@ const STATIC_FALLBACKS = [
   },
   {
     id: "new-arrivals-static",
-    name: "New Arrival",
+    name: "New Arrivals",
     slug: "new-arrivals",
     image: "/HeroSection/new-arrivals.webp",
     color: "#f0ece4",
+  },
+  {
+    id: "shop-all-static",
+    name: "Shop All",
+    slug: "shop-all",
+    image: "/HeroSection/ladies-suits.webp",
+    color: "#e8dcd0",
   },
 ];
 
@@ -103,7 +103,7 @@ export async function CategoryTiles() {
           description="From elegant ladies suits to premium baby essentials — curated with love in Pakistan."
         />
         <Link
-          href="/ladies"
+          href="/shop"
           className="link-underline text-[12px] uppercase tracking-[0.28em] text-ink"
         >
           View All

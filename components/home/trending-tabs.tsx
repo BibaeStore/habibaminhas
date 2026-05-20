@@ -67,7 +67,7 @@ export function TrendingTabs({ products }: { products: TrendingProduct[] }) {
         </div>
         <div className="flex justify-center">
           <Link
-            href="/ladies"
+            href="/shop"
             className="group inline-flex items-center gap-2 border border-ink px-6 py-3 text-[12px] uppercase tracking-[0.28em] text-ink hover:bg-ink hover:text-ivory"
           >
             View all products

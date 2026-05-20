@@ -4,12 +4,14 @@ import { useState } from "react";
 import { Minus, Plus, Heart, Share2 } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useWishlistStore } from "@/lib/wishlist-store";
+import Image from "next/image";
 
 const SIZES = ["XS", "S", "M", "L", "XL"];
 
 interface Props {
   id: string;
   slug: string;
+  category: string;
   title: string;
   image: string | null;
   palette: string[];
@@ -17,10 +19,11 @@ interface Props {
   compare_at: number | null;
   sku: string | null;
   hasSizes: boolean;
+  sizesStock?: Record<string, number> | null;
 }
 
 export function AddToCartSection({
-  id, slug, title, image, palette, price, compare_at, sku, hasSizes,
+  id, slug, category, title, image, palette, price, compare_at, sku, hasSizes, sizesStock,
 }: Props) {
   const [selectedSize, setSelectedSize] = useState<string | null>(hasSizes ? null : "onesize");
   const [mobileQty, setMobileQty] = useState(1);
@@ -35,31 +38,63 @@ export function AddToCartSection({
 
   function handleAdd() {
     if (!canAdd) return;
-    addItem({ id, slug, title, image, palette, price, compare_at, size: hasSizes ? selectedSize : null, sku });
+    addItem({ id, slug, category, title, image, palette, price, compare_at, size: hasSizes ? selectedSize : null, sku });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
     openDrawer();
+  }
+
+  function handleShare() {
+    const url = `${window.location.origin}/product/${category}/${slug}`;
+    if (navigator.share) {
+      navigator.share({
+        title,
+        text: `Check out ${title} at Habiba Minhas`,
+        url,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url);
+      alert("Product link copied to clipboard!");
+    }
+  }
+
+  function handleWhatsApp() {
+    const url = `${window.location.origin}/product/${category}/${slug}`;
+    const message = `Hi, I'm interested in:\n\n${title}\nSKU: ${sku || "N/A"}\n${url}`;
+    const whatsappUrl = `https://wa.me/923120295812?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, "_blank");
+  }
+
+  function isSizeInStock(size: string): boolean {
+    if (!sizesStock) return false; // If no stock data, disable all sizes
+    return (sizesStock[size] ?? 0) > 0;
   }
 
   return (
     <>
       {/* Size selector — shown on both mobile and desktop */}
       {hasSizes && (
-        <div className="mt-8 grid grid-cols-5 gap-2">
-          {SIZES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSelectedSize(s)}
-              className={`h-11 border text-[12px] uppercase tracking-[0.22em] transition-colors ${
-                selectedSize === s
-                  ? "border-ink bg-ink text-ivory"
-                  : "border-border-soft text-ink hover:border-ink"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+        <div className="mt-3 grid grid-cols-5 gap-2">
+          {SIZES.map((s) => {
+            const inStock = isSizeInStock(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => inStock && setSelectedSize(s)}
+                disabled={!inStock}
+                className={`h-11 border text-[12px] uppercase tracking-[0.22em] transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:line-through ${
+                  selectedSize === s
+                    ? "border-ink bg-ink text-ivory"
+                    : inStock
+                      ? "border-border-soft text-ink hover:border-ink"
+                      : "border-border-soft text-muted"
+                }`}
+              >
+                {s}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -88,11 +123,20 @@ export function AddToCartSection({
           </button>
           <button
             type="button"
+            onClick={handleShare}
             className="flex h-12 flex-1 items-center justify-center gap-2 border border-ink/20 text-[12px] uppercase tracking-[0.26em] transition-colors hover:border-ink"
           >
             <Share2 className="h-4 w-4" /> Share
           </button>
         </div>
+        <button
+          type="button"
+          onClick={handleWhatsApp}
+          className="flex h-12 items-center justify-center gap-2 border border-[#25D366] bg-[#25D366] text-[12px] uppercase tracking-[0.26em] text-white transition-colors hover:bg-[#20BA5A]"
+        >
+          <Image src="/icons/whatsapp.svg" alt="" width={16} height={16} className="h-4 w-4" />
+          Inquire on WhatsApp
+        </button>
       </div>
 
       {/* ── Mobile sticky bottom bar ────────────────────────────── */}

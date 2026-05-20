@@ -107,7 +107,10 @@
       "PowerShell(npm install *)",
       "PowerShell(npx tsx scripts/fix-category-urls.ts)",
       "PowerShell(npx tsx scripts/check-product-subcategories.ts)",
-      "PowerShell(npx tsx scripts/migrate-product-subcategories.ts)"
+      "PowerShell(npx tsx scripts/migrate-product-subcategories.ts)",
+      "Bash(npx tsx *)",
+      "Bash(npx supabase *)",
+      "mcp__supabase__apply_migration"
     ]
   },
   "enableAllProjectMcpServers": true,
