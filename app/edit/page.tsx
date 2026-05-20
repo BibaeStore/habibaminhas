@@ -17,6 +17,7 @@ export default async function EditPage() {
     slug:        p.slug,
     title:       p.title,
     price:       p.price,
+    category:    p.category,
     images:      p.images,
     compare_at:  p.compare_at,
     palette:     p.palette,
