@@ -4,8 +4,22 @@ import { productRedirects } from "./lib/product-redirects";
 const nextConfig: NextConfig = {
   trailingSlash: true,
 
+  // Enable CSS optimization and compression
+  experimental: {
+    optimizeCss: true,
+  },
+
+  // Enable production optimizations
+  compress: true,
+
+  // Optimize bundles
+  productionBrowserSourceMaps: false,
+
   images: {
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year
     remotePatterns: [
       { protocol: "https", hostname: "ftrwdknlckzcwbibdicu.supabase.co" },
       { protocol: "https", hostname: "goykebkdqjrgbofmusjv.supabase.co" },
@@ -15,6 +29,7 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
+      // Security headers for all routes
       {
         source: "/:path*",
         headers: [
@@ -46,6 +61,34 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'self'",
               "upgrade-insecure-requests",
             ].join("; "),
+          },
+        ],
+      },
+      // Cache static assets
+      {
+        source: "/HeroSection/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/editorial/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/banners/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },

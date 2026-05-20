@@ -48,6 +48,8 @@ export function EditorialBlock({
                 src={image}
                 alt={title}
                 fill
+                loading="lazy"
+                quality={75}
                 sizes="(max-width: 1024px) 100vw, 42vw"
                 className={`object-cover object-right ${desktopPositionClass}`}
               />

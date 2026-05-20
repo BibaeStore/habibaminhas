@@ -110,7 +110,8 @@
       "PowerShell(npx tsx scripts/migrate-product-subcategories.ts)",
       "Bash(npx tsx *)",
       "Bash(npx supabase *)",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "WebFetch(domain:pagespeed.web.dev)"
     ]
   },
   "enableAllProjectMcpServers": true,
