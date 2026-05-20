@@ -76,6 +76,18 @@ export default async function RootLayout({
       lang="en"
       className={`${fraunces.variable} ${manrope.variable} antialiased`}
     >
+      <head>
+        <link
+          rel="preload"
+          as="image"
+          href="/HeroSection/ladies-suits.webp"
+          type="image/webp"
+          fetchPriority="high"
+        />
+        <link rel="preconnect" href="https://goykebkdqjrgbofmusjv.supabase.co" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://widget.trustpilot.com" />
+      </head>
       <body className="min-h-screen flex flex-col bg-ivory text-ink">
         <LayoutShell navMenus={navMenus}>{children}</LayoutShell>
         {/* TrustBox bootstrap script */}

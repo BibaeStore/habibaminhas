@@ -124,6 +124,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic product routes from database
   let productRoutes: MetadataRoute.Sitemap = [];
+  let subcategoryRoutes: MetadataRoute.Sitemap = [];
   try {
     const products = await getProducts({ status: "active" });
     productRoutes = products.map((product) => ({
@@ -132,6 +133,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }));
+
+    // Extract unique subcategories
+    const subcategoryMap = new Map<string, string>();
+    products.forEach((product) => {
+      if (product.subcategory && Array.isArray(product.subcategory)) {
+        product.subcategory.forEach((sub: string) => {
+          const key = `${product.category}/${sub}`;
+          subcategoryMap.set(key, product.category);
+        });
+      }
+    });
+
+    // Generate subcategory routes
+    subcategoryRoutes = Array.from(subcategoryMap.entries()).map(([key, category]) => {
+      const subcategory = key.split('/')[1];
+      return {
+        url: `${baseUrl}/${category === 'ladies-suits' ? 'ladies' : category === 'kids-formal' ? 'kids' : category === 'baby-products' ? 'baby' : category}/${subcategory}/`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.85,
+      };
+    });
   } catch (error) {
     console.error("Error fetching products for sitemap:", error);
   }
@@ -143,6 +166,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...helpRoutes,
     ...legalRoutes,
     ...contentRoutes,
+    ...subcategoryRoutes,
     ...productRoutes,
   ];
 }

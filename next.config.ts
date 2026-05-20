@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { productRedirects } from "./lib/product-redirects";
+import { legacyProductRedirects } from "./lib/legacy-product-redirects";
 
 const nextConfig: NextConfig = {
   trailingSlash: true,
@@ -109,6 +110,9 @@ const nextConfig: NextConfig = {
 
       // Product slug migrations (old → new SEO-friendly URLs)
       ...productRedirects,
+
+      // Legacy /shop/ URL structure redirects
+      ...legacyProductRedirects,
     ];
   },
 };
