@@ -111,7 +111,11 @@
       "Bash(npx tsx *)",
       "Bash(npx supabase *)",
       "mcp__supabase__apply_migration",
-      "WebFetch(domain:pagespeed.web.dev)"
+      "WebFetch(domain:pagespeed.web.dev)",
+      "Bash(git log *)",
+      "Bash(xargs -I {} git log --all --pretty=format: --name-only -- {})",
+      "Bash(xargs -I {} sh -c 'git cat-file -s HEAD:{} 2>/dev/null && echo \" {}\"')",
+      "Bash(git ls-tree *)"
     ]
   },
   "enableAllProjectMcpServers": true,
