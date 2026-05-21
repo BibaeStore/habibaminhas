@@ -142,3 +142,10 @@ vite.config.ts.timestamp-*
 # Playwright MCP runtime artifacts (QA screenshots, snapshots)
 .playwright-mcp/
 qa-*.png
+
+# Design source files (keep in separate design repo)
+*.ai
+*.psd
+*.sketch
+*.fig
+*.xd
