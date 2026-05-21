@@ -42,9 +42,9 @@ export const metadata: Metadata = {
     description: "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
     images: [
       {
-        url: "/logo/habiba-minhas-logo.png",
+        url: "/logo/habiba-minhas-icon-t.png",
         width: 1200,
-        height: 630,
+        height: 1200,
         alt: "Habiba Minhas Logo",
       },
     ],
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear",
     description: "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
-    images: ["/logo/habiba-minhas-logo.png"],
+    images: ["/logo/habiba-minhas-icon-t.png"],
   },
   robots: {
     index: true,
