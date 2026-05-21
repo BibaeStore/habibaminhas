@@ -11,18 +11,20 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   weight: ["300", "400", "600"],
   style: ["normal", "italic"],
-  display: "swap",
+  display: "optional",
   preload: true,
   fallback: ["Georgia", "serif"],
+  adjustFontFallback: true,
 });
 
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  display: "swap",
+  display: "optional",
   preload: true,
   fallback: ["system-ui", "sans-serif"],
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
@@ -87,6 +89,8 @@ export default async function RootLayout({
       className={`${fraunces.variable} ${manrope.variable} antialiased`}
     >
       <head>
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <link
           rel="preload"
           as="image"
@@ -94,7 +98,7 @@ export default async function RootLayout({
           type="image/webp"
           fetchPriority="high"
         />
-        <link rel="preconnect" href="https://goykebkdqjrgbofmusjv.supabase.co" />
+        <link rel="preconnect" href="https://goykebkdqjrgbofmusjv.supabase.co" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://widget.trustpilot.com" />
       </head>
