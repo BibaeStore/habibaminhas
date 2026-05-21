@@ -2,64 +2,17 @@ name: Deploy to Vercel
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch: # Allows manual trigger from GitHub UI
-
-permissions:
-  contents: write
-  deployments: write
+    branches: [main]
 
 jobs:
   deploy:
-    name: Deploy to Vercel Production
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - uses: amondnet/vercel-action@v25
         with:
-          fetch-depth: 0
-
-      - name: Configure Git as BibaeStore
-        run: |
-          git config --global user.name "BibaeStore"
-          git config --global user.email "bibaestore@gmail.com"
-
-      - name: Create deployment commit as BibaeStore
-        run: |
-          # Create a deployment marker (doesn't change code, just triggers as BibaeStore)
-          git commit --allow-empty -m "deploy: trigger Vercel deployment [skip ci]
-
-          Original commit by: ${{ github.actor }}
-          Commit SHA: ${{ github.sha }}
-          Deployed by: GitHub Actions (BibaeStore)"
-
-          echo "✅ Deployment commit created as BibaeStore"
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deployment Complete
-        run: |
-          echo "✅ Deployment to Vercel successful!"
-          echo "🚀 Deployed by: BibaeStore (via GitHub Actions)"
-          echo "👤 Original commit by: ${{ github.actor }}"
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
