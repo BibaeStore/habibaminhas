@@ -42,9 +42,8 @@ export function HeroCarousel() {
               alt={slide.title}
               fill
               priority={i === 0}
-              loading={i === 0 ? "eager" : "lazy"}
               fetchPriority={i === 0 ? "high" : "low"}
-              quality={i === 0 ? 95 : 75}
+              quality={i === 0 ? 90 : 75}
               sizes="100vw"
               className="object-cover object-right lg:object-center"
             />

@@ -9,8 +9,6 @@ import { TestimonialRow } from "@/components/home/testimonial-row";
 import { JournalTeaser } from "@/components/home/journal-teaser";
 import { getProducts } from "@/lib/actions/products";
 
-export const revalidate = 3600; // Revalidate every hour
-
 export const metadata: Metadata = {
   title: "Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear",
   description: "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
