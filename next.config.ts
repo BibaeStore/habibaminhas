@@ -22,9 +22,9 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
 
-  // Target modern browsers (uses .browserslistrc)
-  // Reduces polyfills for ES2022+ features
-  // Note: SWC minification is default in Next.js 16, no config needed
+  // Target ES2022 to eliminate unnecessary polyfills
+  // Removes: Array.at, Array.flat, Object.hasOwn, String.trim*, etc.
+  transpilePackages: [],
 
   images: {
     formats: ["image/avif", "image/webp"],
