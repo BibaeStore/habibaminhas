@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   // Enable production optimizations
   compress: true,
 
-  // Optimize bundles
+  // Optimize bundles - Turbopack handles tree-shaking automatically
   productionBrowserSourceMaps: false,
 
   images: {
