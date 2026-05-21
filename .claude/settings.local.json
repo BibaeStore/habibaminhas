@@ -115,7 +115,8 @@
       "Bash(git log *)",
       "Bash(xargs -I {} git log --all --pretty=format: --name-only -- {})",
       "Bash(xargs -I {} sh -c 'git cat-file -s HEAD:{} 2>/dev/null && echo \" {}\"')",
-      "Bash(git ls-tree *)"
+      "Bash(git ls-tree *)",
+      "Bash(gh api *)"
     ]
   },
   "enableAllProjectMcpServers": true,
