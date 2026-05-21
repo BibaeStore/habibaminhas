@@ -74,8 +74,6 @@ export const legacyProductRedirects = [
 
   // Misc invalid URLs
   { source: "/unstitched%20Suit/:path*", destination: "/ladies/", permanent: true },
-  { source: "/:dollar/", destination: "/", permanent: true },
-  { source: "/:ampersand/", destination: "/", permanent: true },
 
   // Missing assets redirects
   { source: "/habiba-minhas-logo.jpeg", destination: "/logo/habiba-minhas-logo.png", permanent: true },
