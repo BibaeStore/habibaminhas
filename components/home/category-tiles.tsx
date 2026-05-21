@@ -15,12 +15,12 @@ const ALLOWED_SLUGS = [
 ];
 
 const SLUG_TO_HREF: Record<string, string> = {
-  "ladies-suits":  "/ladies",
-  "kids-formal":   "/kids",
-  "baby-products": "/baby",
-  "accessories":   "/accessories",
-  "new-arrivals":  "/new",
-  "shop-all":      "/shop",
+  "ladies-suits":  "/ladies/",
+  "kids-formal":   "/kids/",
+  "baby-products": "/baby/",
+  "accessories":   "/accessories/",
+  "new-arrivals":  "/new/",
+  "shop-all":      "/shop/",
 };
 
 // Static fallbacks for all categories — ensures they always show even if DB isn't populated yet
