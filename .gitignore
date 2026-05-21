@@ -149,3 +149,8 @@ qa-*.png
 *.sketch
 *.fig
 *.xd
+
+# MCP (Model Context Protocol) configuration files
+.mcp
+*.mcp.json
+.mcp.json
