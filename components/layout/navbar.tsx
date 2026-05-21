@@ -77,6 +77,7 @@ export function Navbar({ menus: serverMenus }: { menus?: MegaMenu[] }) {
               onClick={() => setMobileOpen(true)}
               className="p-2 -ml-2"
             >
+
               <Menu className="h-5 w-5" />
             </button>
             <button
