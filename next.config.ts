@@ -16,6 +16,16 @@ const nextConfig: NextConfig = {
   // Optimize bundles - Turbopack handles tree-shaking automatically
   productionBrowserSourceMaps: false,
 
+  // Compiler optimizations for modern browsers
+  compiler: {
+    // Remove console logs in production
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
+
+  // Target modern browsers (uses .browserslistrc)
+  // Reduces polyfills for ES2022+ features
+  swcMinify: true,
+
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
