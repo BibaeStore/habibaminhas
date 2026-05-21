@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
 
   // Target modern browsers (uses .browserslistrc)
   // Reduces polyfills for ES2022+ features
-  swcMinify: true,
+  // Note: SWC minification is default in Next.js 16, no config needed
 
   images: {
     formats: ["image/avif", "image/webp"],
