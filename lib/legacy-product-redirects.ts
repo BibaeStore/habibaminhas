@@ -1,6 +1,7 @@
 /**
  * Legacy product URL redirects
  * Maps old /shop/[sku] URLs to new /product/[category]/[slug] structure
+ * Last updated: 2026-05-21
  */
 
 export const legacyProductRedirects = [
