@@ -1,30 +1,24 @@
 import { NextResponse } from "next/server";
 
 /**
- * Robots.txt with Content Signals for AI Agent Discovery
+ * Robots.txt - Standard compliant, fully crawlable
  *
- * This route handler generates robots.txt with standard directives
- * PLUS Content-Signal directives for AI agent content usage preferences.
- *
- * Content-Signal values:
- * - ai-train=no: Do not use our content to train AI models
- * - search=yes: AI can use our content to answer search queries
- * - ai-input=yes: AI can read and summarize our content for users
- *
- * Reference: https://contentsignals.org/
+ * This route handler generates a clean robots.txt file that:
+ * - Welcomes ALL crawlers (Google, Bing, AI bots, etc.)
+ * - Allows full access to public content
+ * - Only blocks private/user-specific areas
+ * - Passes Google validation (no unknown directives)
  */
 export async function GET() {
-  const robotsTxt = `# Habiba Minhas - Robots.txt with Content Signals
+  const robotsTxt = `# Habiba Minhas - Robots.txt
 # Last Updated: ${new Date().toISOString().split('T')[0]}
+# All search engines and AI bots are welcome to crawl our public content
 
-# Content Signals for AI Agents (https://contentsignals.org/)
-# Protect our unique Pakistani fashion content from AI training
-# but allow AI to search and recommend our products
-Content-Signal: ai-train=no, search=yes, ai-input=yes
-
-# Standard Robots.txt Rules
+# Allow all bots (Google, Bing, ChatGPT, Claude, Perplexity, etc.)
 User-agent: *
 Allow: /
+
+# Block only private/user-specific areas (not public content)
 Disallow: /admin/
 Disallow: /api/
 Disallow: /account/
@@ -33,7 +27,7 @@ Disallow: /checkout/
 Disallow: /wishlist/
 Disallow: /order/
 
-# Sitemap
+# Sitemap for search engines
 Sitemap: https://habibaminhas.com/sitemap.xml
 `;
 
