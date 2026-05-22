@@ -2,12 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 
+// SEO Focus Keyword: "Pakistani fashion blog"
+// Target: Fashion-conscious Pakistanis seeking style guides and cultural insights
 export const metadata: Metadata = {
-  title: "Journal",
-  description: "Field notes, fabric notes, and the occasional recipe. We publish once a week — no algorithms, no sponsored posts.",
+  title: "Fashion Journal Pakistan — Habiba Minhas Blog | Style & Fabric Notes",
+  description: "Pakistani fashion blog by Habiba Minhas. Style guides, fabric notes, Eid outfit ideas & cultural insights from Karachi. Weekly posts on Pakistani fashion, traditional wear & modern styling.",
   alternates: {
     canonical: "/journal/",
   },
+  keywords: "Pakistani fashion blog, fashion blog Pakistan, style guide Pakistan, Pakistani fashion tips, Eid outfit ideas, fabric notes Pakistan, Karachi fashion blog",
 };
 
 const posts = [

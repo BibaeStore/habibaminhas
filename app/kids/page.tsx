@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
+// SEO Focus Keyword: "kids festive wear Pakistan" / "Pakistani kids formal dress"
+// Target: Mothers shopping for kids Eid outfits, wedding wear, festive clothing
 export const metadata: Metadata = {
-  title: "Kids",
-  description: "Festive co-ord sets, embroidered gowns, and silk suits for girls — handcrafted for Eid, weddings, and every celebration.",
+  title: "Kids Festive Wear Pakistan | Girls Formal Dresses | Habiba Minhas",
+  description: "Festive co-ord sets, embroidered gowns & silk suits for girls in Pakistan — handcrafted for Eid, weddings & celebrations. Made in Karachi. Shop Pakistani kids formal wear online.",
   alternates: {
     canonical: "/kids/",
   },
+  keywords: "kids festive wear Pakistan, Pakistani kids formal dress, girls Eid dress Pakistan, kids wedding outfits Pakistan, embroidered girls suits, children formal wear Pakistan",
 };
 
 export default async function KidsPage() {

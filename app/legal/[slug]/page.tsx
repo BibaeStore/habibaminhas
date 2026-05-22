@@ -51,6 +51,7 @@ export async function generateStaticParams() {
   return Object.keys(legal).map((slug) => ({ slug }));
 }
 
+// SEO-optimized metadata for legal pages
 export async function generateMetadata({
   params,
 }: {
@@ -58,9 +59,31 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const page = legal[slug];
-  return {
+
+  // Pakistan-optimized SEO for legal pages
+  const seoMetadata: Record<string, { title: string; description: string; keywords: string }> = {
+    privacy: {
+      title: "Privacy Policy — Habiba Minhas Pakistan | Data Protection",
+      description: "Privacy policy for Habiba Minhas Pakistan. How we collect, use & protect your personal data. GDPR-compliant privacy practices for Pakistani customers. Registered in Karachi, Pakistan.",
+      keywords: "privacy policy Pakistan, data protection Pakistan, Habiba Minhas privacy, Pakistan privacy policy, customer data protection",
+    },
+    terms: {
+      title: "Terms of Service — Habiba Minhas Pakistan | Terms & Conditions",
+      description: "Terms and conditions for shopping at Habiba Minhas Pakistan. Your rights, our policies, and legal terms governing online purchases in Pakistan. Governed by laws of Pakistan.",
+      keywords: "terms of service Pakistan, terms and conditions Pakistan, online shopping terms Pakistan, Habiba Minhas terms, Pakistan e-commerce terms",
+    },
+  };
+
+  const seo = seoMetadata[slug] || {
     title: page?.title ?? "Legal",
-    description: page?.body[0]?.p ?? "Legal information for Habiba Minhas",
+    description: page?.body[0]?.p ?? "Legal information for Habiba Minhas Pakistan",
+    keywords: "",
+  };
+
+  return {
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
     alternates: {
       canonical: `/legal/${slug}/`,
     },

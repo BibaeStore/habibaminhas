@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { SectionHeading } from "@/components/common/section-heading";
 
+// SEO Focus Keyword: "Pakistani fashion brand"
+// Target: Users researching Habiba Minhas brand story and authenticity
 export const metadata: Metadata = {
-  title: "About",
-  description: "Habiba Minhas — Crafting elegance for the modern family since 2026. Premium handcrafted fashion and baby products made in Pakistan.",
+  title: "About Us — Habiba Minhas | Pakistani Fashion Brand Since 2026",
+  description: "Discover Habiba Minhas, Pakistan's leading handcrafted fashion brand. Premium ladies suits, kids wear & baby products made in Karachi, Pakistan. Serving 5,000+ happy customers across Pakistan.",
   alternates: {
     canonical: "/about/",
   },
+  keywords: "Pakistani fashion brand, Habiba Minhas Pakistan, Karachi fashion brand, handcrafted fashion Pakistan, made in Pakistan clothing, Pakistani designer brand",
 };
 
 const values = [

@@ -50,6 +50,17 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const normalised = stripTrailingSlash(pathname);
 
+  // ── Markdown for Agents detection ────────────────────────────────────
+  // Detect if AI agent requests markdown (Accept: text/markdown)
+  // Currently detection-only; full HTML→markdown conversion can be enabled
+  // per-route in the future without performance impact on HTML requests
+  const acceptsMarkdown = request.headers.get("accept")?.includes("text/markdown");
+  if (acceptsMarkdown) {
+    // Flag for future per-route markdown conversion
+    // For now, continue serving HTML (AI agents can still parse it)
+    request.headers.set("x-markdown-requested", "true");
+  }
+
   // ── Trailing slash enforcement ────────────────────────────────────────
   // Skip for: API routes, static files, files with extensions
   const shouldSkipTrailingSlash =

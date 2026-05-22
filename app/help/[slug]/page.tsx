@@ -29,12 +29,14 @@ const helpPages: Record<
     eyebrow: "Policy",
     title: "Exchanges & returns.",
     intro:
-      "We want you to love everything you receive. If something isn't quite right, here's how it works.",
+      "We want you to love everything you receive. If something isn't quite right, here's how exchanges and returns work in Pakistan.",
     faqs: [
-      { q: "How long do I have to return?", a: "14 days from the day your parcel is delivered. The piece must be unworn and in its original packaging." },
-      { q: "Are returns free?", a: "Exchanges are free within Pakistan. For returns (refund to original payment), a flat Rs. 250 pickup fee is deducted from the refund." },
-      { q: "What isn't eligible?", a: "Sale items, fragrance, unstitched fabric once cut, and anything marked final sale." },
-      { q: "How long does a refund take?", a: "Cards: 5–7 business days after we receive the parcel. Wallets (JazzCash/Easypaisa): within 48 hours." },
+      { q: "What is your return policy?", a: "We accept returns for defective or damaged products only. If you receive an item with manufacturing defects, stitching issues, color discrepancies, or shipping damage, contact us within 7 days of delivery. Returns for defective items are free — we'll arrange pickup at no cost to you across Pakistan." },
+      { q: "What is your exchange policy?", a: "We accept exchanges for size, fit, or style preferences within 14 days of delivery. The item must be unworn, unwashed, and in its original packaging with all tags attached. Exchange shipping is free within Pakistan (Karachi, Lahore, Islamabad, and all major cities)." },
+      { q: "How do I start a return or exchange?", a: "Log into your account at habibaminhas.com, go to 'My Orders', select the item, and submit a return/exchange request. For defective items, upload photos showing the defect. Our team will review and respond within 24 hours with pickup details or next steps." },
+      { q: "What items cannot be returned or exchanged?", a: "Sale items marked 'Final Sale', fragrance products, unstitched fabric once cut to size, and intimate wear cannot be returned or exchanged for hygiene reasons. Custom or made-to-order pieces are also non-returnable unless defective." },
+      { q: "How long does a refund or exchange take?", a: "Exchanges: Replacement ships within 2-3 business days after we receive your return. Refunds (for defective items): Cards take 5-7 business days, JazzCash/Easypaisa wallets within 48 hours after inspection." },
+      { q: "What if I receive a defective item?", a: "We're sorry if this happens. Contact us immediately at team@habibaminhas.com or WhatsApp +92 312 0295812 with your order number and photos of the defect. We'll arrange free pickup across Pakistan and issue a full refund or replacement, whichever you prefer." },
     ],
   },
   shipping: {
@@ -65,6 +67,7 @@ export async function generateStaticParams() {
   return Object.keys(helpPages).map((slug) => ({ slug }));
 }
 
+// SEO-optimized metadata for each help page
 export async function generateMetadata({
   params,
 }: {
@@ -72,9 +75,41 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const page = helpPages[slug];
-  return {
+
+  // Pakistan-optimized SEO metadata for each help page
+  const seoMetadata: Record<string, { title: string; description: string; keywords: string }> = {
+    faq: {
+      title: "FAQ Pakistan — Habiba Minhas Help Center | Shipping, Returns & Orders",
+      description: "Frequently asked questions about Habiba Minhas Pakistan. Shipping within Pakistan, returns policy, order tracking, payment methods & fabric care. Get help shopping in Pakistan.",
+      keywords: "Habiba Minhas FAQ Pakistan, Pakistani fashion FAQ, help center Pakistan, shipping questions Pakistan, returns FAQ Pakistan",
+    },
+    returns: {
+      title: "Returns & Exchanges Pakistan — Habiba Minhas Return Policy",
+      description: "Return and exchange policy for Habiba Minhas Pakistan. Returns for defective products, 14-day exchanges for size/fit. Free exchange shipping across Pakistan. Easy returns in Karachi, Lahore, Islamabad.",
+      keywords: "return policy Pakistan, exchange policy Pakistan fashion, defective product returns Pakistan, free exchanges Pakistan, Habiba Minhas returns, Pakistan e-commerce returns",
+    },
+    shipping: {
+      title: "Shipping Pakistan — Nationwide Delivery | Habiba Minhas Shipping Info",
+      description: "Shipping across Pakistan — Rs. 250 flat rate nationwide. Delivery to Karachi, Lahore, Islamabad & all cities. Same-day express available. International shipping via DHL.",
+      keywords: "shipping Pakistan, Pakistan delivery, nationwide shipping Pakistan, Rs 250 delivery, Karachi Lahore Islamabad delivery, international shipping Pakistan",
+    },
+    payments: {
+      title: "Payment Methods Pakistan — Habiba Minhas | Cards, COD, JazzCash, Easypaisa",
+      description: "Payment methods accepted in Pakistan — Visa, Mastercard, JazzCash, Easypaisa & Cash on Delivery (COD). Secure checkout for Pakistani customers. Safe & encrypted.",
+      keywords: "payment methods Pakistan, COD Pakistan, JazzCash payment, Easypaisa payment, cash on delivery Pakistan, secure payment Pakistan",
+    },
+  };
+
+  const seo = seoMetadata[slug] || {
     title: page?.title ?? "Help",
     description: page?.intro ?? "Get help with your Habiba Minhas order",
+    keywords: "",
+  };
+
+  return {
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
     alternates: {
       canonical: `/help/${slug}/`,
     },

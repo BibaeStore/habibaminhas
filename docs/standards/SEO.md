@@ -1,6 +1,6 @@
 # SEO Standards & Implementation Guide
 
-**Last Updated:** May 11, 2026  
+**Last Updated:** May 22, 2026  
 **Site:** habibaminhas.com  
 **Framework:** Next.js 16.2.4 (App Router)
 
@@ -399,6 +399,149 @@ Use this checklist when creating new pages:
 
 ---
 
+## 🤖 Agent-Ready Features (2026-05-22 Audit)
+
+**Last Audit Date:** May 22, 2026  
+**Auditor:** Ismail SEO  
+**Status:** Partially Implemented (Strategic Selection)
+
+---
+
+### Background
+
+The May 2026 SEO audit requested implementation of "Agent-Ready" features — modern standards (2025-2026) that help AI agents (ChatGPT, Claude, Perplexity, etc.) discover and interact with website content. These are **NOT traditional security issues** but rather advanced discovery features.
+
+---
+
+### ✅ IMPLEMENTED Features
+
+#### 1. Content Signals in robots.txt
+
+**What it is:** Declares how AI agents can use our content (training, search, input).
+
+**Implementation:**
+```
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+```
+
+**Rationale:**
+- `ai-train=no` - Protect our unique Pakistani fashion content from AI training
+- `search=yes` - Allow AI to use our content in search results
+- `ai-input=yes` - Allow AI to read and recommend our products to users
+
+**File:** `app/robots.txt/route.ts`  
+**Impact:** Zero breaking changes, better control over AI usage  
+**Reference:** https://contentsignals.org/
+
+---
+
+#### 2. Link Response Headers (RFC 8288)
+
+**What it is:** HTTP headers that point AI agents to useful resources.
+
+**Implementation:**
+```
+Link: </sitemap.xml>; rel="sitemap"; type="application/xml",
+      </journal/>; rel="collection"; title="Fashion & Lifestyle Blog",
+      </ladies/>; rel="collection"; title="Ladies Collection",
+      </kids/>; rel="collection"; title="Kids Festive Wear",
+      </baby/>; rel="collection"; title="Baby & Nursery",
+      </about/>; rel="about"; title="About Habiba Minhas"
+```
+
+**File:** `next.config.ts` lines 66-75  
+**Impact:** Improved AI agent discovery of key pages  
+**Reference:** https://www.rfc-editor.org/rfc/rfc8288
+
+---
+
+#### 3. Markdown for Agents (Detection)
+
+**What it is:** Detects when AI agents request markdown instead of HTML.
+
+**Implementation:**
+- Middleware detects `Accept: text/markdown` header
+- Sets `x-markdown-requested: true` flag
+- **Note:** Detection only, conversion deferred for performance
+
+**File:** `middleware.ts` lines 53-61  
+**Impact:** Zero performance impact, future-ready for per-route conversion  
+**Reference:** https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/
+
+---
+
+### ❌ NOT IMPLEMENTED (Strategic Decision)
+
+The following 6 features were recommended but **NOT implemented** because they are **NOT applicable** for an e-commerce storefront:
+
+#### 4. API Catalog (/.well-known/api-catalog)
+- **What it is:** Discovery endpoint for public APIs
+- **Why skipped:** We don't expose public APIs (Supabase is internal)
+- **Decision:** Only relevant for API providers (Stripe, Twilio, Google Maps, etc.)
+
+#### 5. OAuth/OIDC Discovery Metadata
+- **What it is:** Authentication discovery for OAuth providers
+- **Why skipped:** We use Supabase auth, not a public OAuth provider
+- **Decision:** Only relevant if building a login provider like Google/Facebook
+
+#### 6. OAuth Protected Resource Metadata
+- **What it is:** Tells AI agents how to authenticate with protected APIs
+- **Why skipped:** No public protected APIs to expose
+- **Decision:** Same as #5
+
+#### 7. MCP Server Card
+- **What it is:** Model Context Protocol server discovery
+- **Why skipped:** Experimental feature for developer tools, not e-commerce
+- **Decision:** Not production-ready, not relevant for our use case
+
+#### 8. Agent Skills Discovery Index
+- **What it is:** Index of AI agent skills/tools the site provides
+- **Why skipped:** Only relevant for sites exposing programmatic actions to AI
+- **Decision:** E-commerce storefront doesn't need this
+
+#### 9. WebMCP
+- **What it is:** Browser API to expose site actions to AI agents
+- **Why skipped:** Experimental Chrome-only feature, not production-stable
+- **Decision:** Too early, not cross-browser compatible, not business-critical
+
+---
+
+### Security Headers (Already Implemented ✓)
+
+The audit also mentioned three security headers, which were **ALREADY implemented** before the May 2026 audit:
+
+| Header | Status | Value | Location |
+|--------|--------|-------|----------|
+| **X-Frame-Options** | ✅ Implemented | `SAMEORIGIN` | `next.config.ts` line 38 |
+| **X-Content-Type-Options** | ✅ Implemented | `nosniff` | `next.config.ts` line 42 |
+| **Referrer-Policy** | ✅ Implemented | `strict-origin-when-cross-origin` | `next.config.ts` line 46 |
+| **Content-Security-Policy** | ✅ Implemented | Comprehensive CSP | `next.config.ts` lines 50-64 |
+
+**Note:** See `docs/standards/security.md` for complete security header documentation.
+
+---
+
+### Audit Summary
+
+**Total Features Recommended:** 9  
+**Implemented:** 3 (Content Signals, Link headers, Markdown detection)  
+**Already Had:** 4 (Security headers)  
+**Strategically Skipped:** 6 (Not applicable for e-commerce)
+
+**Performance Impact:** Zero - All implementations are headers/detection only  
+**Breaking Changes:** None  
+**SEO Benefit:** Improved AI agent discovery and content usage control
+
+---
+
+### Future Enhancements (Agent-Ready)
+
+- [ ] **Markdown Conversion (Per-Route):** Enable HTML→markdown conversion for `/journal/` posts when AI agents request it
+- [ ] **Structured Data Enhancement:** Add more detailed JSON-LD schema for products, blog posts, organization
+- [ ] **Agent-Friendly Sitemaps:** Add priority/frequency hints for AI crawlers
+
+---
+
 ## 📝 Notes
 
 ### URL Trailing Slash Policy
@@ -431,4 +574,4 @@ Use this checklist when creating new pages:
 
 **Document Owner:** Development Team  
 **Review Frequency:** Quarterly  
-**Last Audit:** May 11, 2026
+**Last Audit:** May 22, 2026 (Agent-Ready Features)

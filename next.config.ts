@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
-      // Security headers for all routes
+      // Security headers + Link headers for all routes
       {
         source: "/:path*",
         headers: [
@@ -62,6 +62,19 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'self'",
               "upgrade-insecure-requests",
             ].join("; "),
+          },
+          // Link headers for AI agent discovery (RFC 8288)
+          // Help AI agents discover sitemap, collections, and key pages
+          {
+            key: "Link",
+            value: [
+              '</sitemap.xml>; rel="sitemap"; type="application/xml"',
+              '</journal/>; rel="collection"; title="Fashion & Lifestyle Blog"',
+              '</ladies/>; rel="collection"; title="Ladies Collection"',
+              '</kids/>; rel="collection"; title="Kids Festive Wear"',
+              '</baby/>; rel="collection"; title="Baby & Nursery"',
+              '</about/>; rel="about"; title="About Habiba Minhas"',
+            ].join(", "),
           },
         ],
       },

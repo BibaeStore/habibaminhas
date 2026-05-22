@@ -9,12 +9,15 @@ import { TestimonialRow } from "@/components/home/testimonial-row";
 import { JournalTeaser } from "@/components/home/journal-teaser";
 import { getProducts } from "@/lib/actions/products";
 
+// SEO Focus Keyword: "Pakistani fashion online"
+// Target: Pakistani women looking to buy fashion online in Pakistan
 export const metadata: Metadata = {
-  title: "Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear",
-  description: "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
+  title: "Habiba Minhas — Pakistani Fashion Online | Ladies, Kids & Baby Products Pakistan",
+  description: "Shop premium Pakistani fashion online — handcrafted ladies suits, kids festive wear & baby products. Made in Karachi, Pakistan. Nationwide delivery Rs. 250.",
   alternates: {
     canonical: "/",
   },
+  keywords: "Pakistani fashion online, buy Pakistani clothes online, Pakistani designer wear, ladies suits Pakistan, kids wear Pakistan, baby products Pakistan, Karachi fashion",
 };
 
 export default async function HomePage() {

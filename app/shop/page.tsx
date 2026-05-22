@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
 
+// SEO Focus Keyword: "shop Pakistani fashion online"
+// Target: Users browsing complete product catalog in Pakistan
 export const metadata: Metadata = {
-  title: "Shop All Products | Habiba Minhas",
-  description: "Browse our complete collection of handcrafted Pakistani formal wear, baby products, and accessories.",
+  title: "Shop All Pakistani Fashion Online | Habiba Minhas Pakistan",
+  description: "Shop Pakistani fashion online — complete collection of handcrafted ladies suits, kids festive wear, baby products & accessories. Made in Karachi, Pakistan. Nationwide delivery Rs. 250.",
   alternates: {
     canonical: "/shop/",
   },
+  keywords: "shop Pakistani fashion online, buy Pakistani clothes, Pakistani fashion store, online shopping Pakistan, Habiba Minhas shop, Pakistan clothes online",
 };
 
 export default async function ShopPage() {
