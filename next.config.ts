@@ -123,6 +123,7 @@ const nextConfig: NextConfig = {
 
       // Deleted products → category pages (301 redirects for SEO)
       { source: "/product/biba-mrn-kds-s-017/", destination: "/kids/", permanent: true },
+      { source: "/product/biba-midnight-noirs-stitched-3-piece-silk-suit-with-organza-dupatta/", destination: "/ladies/", permanent: true },
 
       // Product slug migrations (old → new SEO-friendly URLs)
       ...productRedirects,
