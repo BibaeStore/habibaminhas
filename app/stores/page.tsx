@@ -29,7 +29,7 @@ export default function StoresPage() {
         <SectionHeading
           eyebrow="Karachi Studio"
           title="Handcrafted in Pakistan, delivered nationwide."
-          description="We're an online-first boutique. Order from anywhere in Pakistan and receive your items within 3–5 business days with flat Rs. 250 delivery."
+          description="We're an online-first Pakistani fashion brand. Shop 24/7 online and receive your items within 3–5 business days with flat Rs. 250 delivery nationwide."
         />
 
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

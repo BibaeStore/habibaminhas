@@ -194,7 +194,7 @@ export default function AdminSettingsPage() {
 
   // ── SEO state ──
   const [seo, setSeo] = useState({
-    siteTitle: "Habiba Minhas — Luxury Boutique Pakistan",
+    siteTitle: "Habiba Minhas — Luxury Fashion Brand Pakistan",
     metaDesc: "Premium ladies suits, kids festive wear, baby bedding, and handcrafted accessories — made with love in Pakistan.",
     ogTitle: "Habiba Minhas", ogDesc: "Shop handcrafted fashion & nursery essentials.",
     robotsTxt: true, sitemap: true, structuredData: true,

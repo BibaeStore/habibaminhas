@@ -41,14 +41,13 @@ export default function ContactPage() {
           <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
             Get in touch
           </span>
-          <strong> This is message for trustpilot to review and give me acccess to my business account on habibaminhas989@gmail.com email</strong>
           <h1 className="mt-3 font-display text-5xl italic leading-tight sm:text-6xl">
             Say hello.
           </h1>
           <p className="mt-4 max-w-md text-[14px] leading-relaxed text-ink-soft">
             Order queries, return requests, or anything else — send us a note
             or reach us directly on WhatsApp. We respond within 24 hours,
-            Monday to Friday.
+            Monday to Friday. Online shopping available 24/7.
           </p>
           <ul className="mt-10 flex flex-col gap-6 text-[14px]">
             <li className="flex items-start gap-4">
@@ -83,8 +82,9 @@ export default function ContactPage() {
                 <Clock className="h-4 w-4" />
               </span>
               <div>
-                <div className="text-[11px] uppercase tracking-[0.24em] text-muted">Hours</div>
-                <div>Mon–Fri · 9a — 6p PKT</div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-muted">Operating Hours</div>
+                <div>Mon–Fri · 9:00 AM — 6:00 PM (PKT)</div>
+                <div className="mt-1 text-[11px] text-sage">🛍️ Shop online 24/7</div>
               </div>
             </li>
           </ul>
