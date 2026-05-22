@@ -37,7 +37,6 @@ export default async function HomePage() {
   }));
   return (
     <>
-      <h1 className="sr-only">Habiba Minhas — Modern Heritage, Unstitched & Ready to Wear</h1>
       <HeroCarousel />
       <AnnouncementStrip />
       <CategoryTiles />
