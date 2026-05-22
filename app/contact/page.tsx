@@ -41,6 +41,7 @@ export default function ContactPage() {
           <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
             Get in touch
           </span>
+          <strong> This is message for trustpilot to review and give me acccess to my business account on habibaminhas989@gmail.com email</strong>
           <h1 className="mt-3 font-display text-5xl italic leading-tight sm:text-6xl">
             Say hello.
           </h1>
