@@ -121,6 +121,9 @@ const nextConfig: NextConfig = {
       { source: "/fragrances",         destination: "/accessories/", permanent: true },
       { source: "/fragrances/:slug*",  destination: "/accessories/", permanent: true },
 
+      // Deleted products → category pages (301 redirects for SEO)
+      { source: "/product/biba-mrn-kds-s-017/", destination: "/kids/", permanent: true },
+
       // Product slug migrations (old → new SEO-friendly URLs)
       ...productRedirects,
 
