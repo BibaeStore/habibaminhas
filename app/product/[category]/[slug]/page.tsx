@@ -16,6 +16,8 @@ import { AddToCartSection } from "@/components/product/add-to-cart-section";
 import { ProductDetailsTabs } from "@/components/product/product-details-tabs";
 import { SizeGuideButton } from "@/components/product/size-guide-button";
 import type { Tables } from "@/lib/supabase/types";
+import { ProductSchema } from "@/components/seo/product-schema";
+import { BreadcrumbSchema } from "@/components/seo/breadcrumb-schema";
 
 type Product = Tables<"products">;
 type Params = { category: string; slug: string };
@@ -250,6 +252,16 @@ export default async function ProductPage({
           </div>
         </section>
       )}
+
+      {/* Schema Markup for SEO */}
+      <ProductSchema product={product} />
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: "/" },
+          { name: catLink?.label || "Shop", url: catLink?.href || "/ladies" },
+          { name: product.title, url: `/product/${category}/${slug}/` }
+        ]}
+      />
     </div>
   );
 }

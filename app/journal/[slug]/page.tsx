@@ -10,6 +10,9 @@ import {
   InstagramIcon, FacebookIcon, YouTubeIcon, TikTokIcon,
   XIcon, PinterestIcon, QuoraIcon, RedditIcon,
 } from "@/components/common/social-icons";
+import { ArticleSchema } from "@/components/seo/article-schema";
+import { BreadcrumbSchema } from "@/components/seo/breadcrumb-schema";
+import { FAQSchema } from "@/components/seo/faq-schema";
 
 type Params = { slug: string };
 
@@ -283,6 +286,23 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
             </div>
           </aside>
         </div>
+
+        {/* Schema Markup for SEO */}
+        <ArticleSchema
+          title={post.title}
+          description={post.excerpt}
+          slug={slug}
+          heroImage={post.image}
+          publishedAt={`2026-${post.date.split(' ')[1] === 'Apr' ? '04' : post.date.split(' ')[1] === 'Mar' ? '03' : '01'}-${post.date.split(' ')[0].padStart(2, '0')}T09:00:00+05:00`}
+          author="Habiba Minhas"
+        />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", url: "/" },
+            { name: "Journal", url: "/journal/" },
+            { name: post.title, url: `/journal/${slug}/` }
+          ]}
+        />
       </div>
     );
   }
@@ -642,6 +662,25 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
           </div>
         </aside>
       </div>
+
+      {/* Schema Markup for SEO */}
+      <ArticleSchema
+        title={post.title}
+        description={post.excerpt || post.meta_description || ""}
+        slug={slug}
+        heroImage={post.hero_image || "/editorial/ladies-collection.webp"}
+        publishedAt={post.published_at || new Date().toISOString()}
+        updatedAt={post.updated_at || post.published_at || undefined}
+        author={post.author || "Habiba Minhas"}
+        keywords={post.keywords || undefined}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: "/" },
+          { name: "Journal", url: "/journal/" },
+          { name: post.title, url: `/journal/${slug}/` }
+        ]}
+      />
     </div>
   );
 }

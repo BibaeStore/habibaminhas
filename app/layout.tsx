@@ -5,6 +5,8 @@ import "./globals.css";
 import { LayoutShell } from "@/components/layout/layout-shell";
 import { getStorefrontSettings } from "@/lib/actions/settings";
 import { getNavMenu } from "@/lib/actions/categories";
+import { OrganizationSchema } from "@/components/seo/organization-schema";
+import { WebSiteSchema } from "@/components/seo/website-schema";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -99,6 +101,8 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://widget.trustpilot.com" />
       </head>
       <body className="min-h-screen flex flex-col bg-ivory text-ink">
+        <OrganizationSchema />
+        <WebSiteSchema />
         <LayoutShell navMenus={navMenus}>{children}</LayoutShell>
         {/* TrustBox bootstrap script */}
         <Script
