@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { getProducts } from "@/lib/actions/products";
+import { createClient } from "@/lib/supabase/server";
 
 // SEO Focus Keyword: "Pakistani fashion blog"
 // Target: Fashion-conscious Pakistanis seeking style guides and cultural insights
@@ -13,7 +15,8 @@ export const metadata: Metadata = {
   keywords: "Pakistani fashion blog, fashion blog Pakistan, style guide Pakistan, Pakistani fashion tips, Eid outfit ideas, fabric notes Pakistan, Karachi fashion blog",
 };
 
-const posts = [
+// Editorial posts (hardcoded original content)
+const editorialPosts = [
   {
     slug: "dupatta-five-ways",
     title: "How to style a dupatta in five ways",
@@ -21,6 +24,7 @@ const posts = [
     tag: "Style Notes",
     date: "12 Apr 2026",
     image: "/editorial/ladies-collection.webp",
+    published_at: "2026-04-12T09:00:00+05:00",
   },
   {
     slug: "linen-notes",
@@ -29,6 +33,7 @@ const posts = [
     tag: "Fabric",
     date: "04 Apr 2026",
     image: "/trending/sage-bloom.webp",
+    published_at: "2026-04-04T09:00:00+05:00",
   },
   {
     slug: "layering-oud",
@@ -37,6 +42,7 @@ const posts = [
     tag: "Fragrance",
     date: "29 Mar 2026",
     image: "/trending/emerald-embroidery.webp",
+    published_at: "2026-03-29T09:00:00+05:00",
   },
   {
     slug: "summer-wardrobe-edit",
@@ -45,6 +51,7 @@ const posts = [
     tag: "Travel",
     date: "18 Mar 2026",
     image: "/trending/floral-lawn.webp",
+    published_at: "2026-03-18T09:00:00+05:00",
   },
   {
     slug: "behind-the-sukoon",
@@ -53,10 +60,42 @@ const posts = [
     tag: "The Studio",
     date: "09 Mar 2026",
     image: "/editorial/accessories.webp",
+    published_at: "2026-03-09T09:00:00+05:00",
   },
 ];
 
-export default function JournalPage() {
+export default async function JournalPage() {
+  // Fetch a featured product for the sidebar
+  const products = await getProducts({ status: "active", limit: 1 }).catch(() => []);
+  const featuredProduct = products?.[0];
+
+  // Fetch all published blog posts from database
+  const supabase = await createClient();
+  const { data: dbPosts } = await supabase
+    .from("journal_posts")
+    .select("slug, title, excerpt, category_tag, hero_image, published_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
+
+  // Format database posts to match editorial format
+  const formattedDbPosts = (dbPosts || []).map((post) => ({
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt || "",
+    tag: post.category_tag,
+    date: new Date(post.published_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }),
+    image: post.hero_image || "/editorial/ladies-collection.webp",
+    published_at: post.published_at,
+  }));
+
+  // Combine editorial and database posts, sort by published_at
+  const allPosts = [...editorialPosts, ...formattedDbPosts].sort((a, b) => {
+    return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+  });
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-8">
       <div className="flex flex-col gap-3">
@@ -70,81 +109,151 @@ export default function JournalPage() {
           We publish once a week. Everything is written in-house — no algorithms, no sponsored posts.
         </p>
       </div>
-      <div className="mt-14 grid grid-cols-1 gap-10 lg:grid-cols-12">
-        <Link href={`/journal/${posts[0].slug}`} className="group block lg:col-span-8">
-          <div className="relative aspect-[16/9] w-full overflow-hidden">
-            <Image
-              src={posts[0].image}
-              alt={posts[0].title}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 66vw"
-              className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
-            />
-          </div>
-          <div className="mt-6">
-            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.28em] text-gold-dark">
-              {posts[0].tag}
-              <span className="h-px w-8 bg-gold/40" />
-              <span className="text-ink-soft">{posts[0].date}</span>
-            </div>
-            <h2 className="mt-3 font-display text-4xl italic leading-tight group-hover:text-gold-dark sm:text-5xl">
-              {posts[0].title}
-            </h2>
-            <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-ink-soft">
-              {posts[0].excerpt}
-            </p>
-          </div>
-        </Link>
-        <div className="flex flex-col gap-10 lg:col-span-4">
-          {posts.slice(1, 3).map((p) => (
-            <Link key={p.slug} href={`/journal/${p.slug}`} className="group block">
-              <div className="relative aspect-[4/5] w-full overflow-hidden">
+
+      <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-[1fr_380px]">
+        {/* Left Column: All Blog Posts */}
+        <div className="flex flex-col gap-16">
+          {allPosts.map((post, index) => (
+            <Link
+              key={post.slug}
+              href={`/journal/${post.slug}`}
+              className="group block"
+            >
+              <div className="relative aspect-[16/9] w-full overflow-hidden">
                 <Image
-                  src={p.image}
-                  alt={p.title}
+                  src={post.image}
+                  alt={post.title}
                   fill
-                  sizes="(max-width: 1024px) 100vw, 33vw"
-                  className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
+                  priority={index === 0}
+                  sizes="(max-width: 1024px) 100vw, 65vw"
+                  className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
                 />
               </div>
-              <div className="mt-4">
-                <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
-                  {p.tag} · <span className="text-ink-soft">{p.date}</span>
+              <div className="mt-6">
+                <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.28em] text-gold-dark">
+                  {post.tag}
+                  <span className="h-px w-8 bg-gold/40" />
+                  <span className="text-ink-soft">{post.date}</span>
                 </div>
-                <h3 className="mt-2 font-display text-2xl italic leading-tight group-hover:text-gold-dark">
-                  {p.title}
-                </h3>
+                <h2 className="mt-3 font-display text-4xl italic leading-tight transition-colors group-hover:text-gold-dark sm:text-5xl">
+                  {post.title}
+                </h2>
+                <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-ink-soft">
+                  {post.excerpt}
+                </p>
               </div>
             </Link>
           ))}
         </div>
-      </div>
-      <div className="mt-16 grid grid-cols-1 gap-10 md:grid-cols-2">
-        {posts.slice(3).map((p) => (
-          <Link key={p.slug} href={`/journal/${p.slug}`} className="group block">
-            <div className="relative aspect-[16/9] w-full overflow-hidden">
-              <Image
-                src={p.image}
-                alt={p.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
-              />
-            </div>
-            <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
-                {p.tag} · <span className="text-ink-soft">{p.date}</span>
+
+        {/* Right Column: Sticky Sidebar */}
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <div className="flex flex-col gap-8">
+            {/* Featured Collection CTA */}
+            {featuredProduct && (
+              <div className="overflow-hidden border border-border-soft bg-ivory">
+                <div className="relative aspect-[4/5] overflow-hidden">
+                  <Image
+                    src={featuredProduct.images[0]}
+                    alt={featuredProduct.title}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 380px"
+                    className="object-cover object-top transition-transform duration-700 hover:scale-105"
+                  />
+                </div>
+                <div className="p-6">
+                  <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
+                    New Arrivals
+                  </div>
+                  <h3 className="mt-2 font-display text-2xl italic leading-tight">
+                    Fresh from the studio.
+                  </h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+                    Handcrafted ladies suits, kids festive wear & baby essentials.
+                  </p>
+                  <Link
+                    href="/new/"
+                    className="mt-4 inline-flex h-11 w-full items-center justify-center bg-ink text-[11px] uppercase tracking-[0.26em] text-ivory transition-colors hover:bg-gold-dark"
+                  >
+                    Shop Now
+                  </Link>
+                </div>
               </div>
-              <h3 className="mt-2 font-display text-3xl italic leading-tight group-hover:text-gold-dark">
-                {p.title}
+            )}
+
+            {/* Quick Shop Links */}
+            <div className="border border-border-soft bg-cream p-6">
+              <h3 className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
+                Quick Shop
               </h3>
-              <p className="mt-2 max-w-md text-[13px] leading-relaxed text-ink-soft">
-                {p.excerpt}
-              </p>
+              <nav className="mt-4 flex flex-col gap-3">
+                <Link
+                  href="/ladies/"
+                  className="flex items-center justify-between text-[14px] transition-colors hover:text-gold-dark"
+                >
+                  <span>Ladies Formal Suits</span>
+                  <span className="text-gold-dark">→</span>
+                </Link>
+                <Link
+                  href="/kids/"
+                  className="flex items-center justify-between text-[14px] transition-colors hover:text-gold-dark"
+                >
+                  <span>Kids Festive Wear</span>
+                  <span className="text-gold-dark">→</span>
+                </Link>
+                <Link
+                  href="/baby/"
+                  className="flex items-center justify-between text-[14px] transition-colors hover:text-gold-dark"
+                >
+                  <span>Baby Bedding Sets</span>
+                  <span className="text-gold-dark">→</span>
+                </Link>
+                <Link
+                  href="/accessories/"
+                  className="flex items-center justify-between text-[14px] transition-colors hover:text-gold-dark"
+                >
+                  <span>Accessories</span>
+                  <span className="text-gold-dark">→</span>
+                </Link>
+              </nav>
             </div>
-          </Link>
-        ))}
+
+            {/* Popular Topics */}
+            <div className="border border-border-soft bg-ivory p-6">
+              <h3 className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">
+                Popular Topics
+              </h3>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["Style Notes", "Fabric Guides", "Travel", "The Studio", "Fragrance"].map((topic) => (
+                  <span
+                    key={topic}
+                    className="border border-border-soft bg-cream px-3 py-1.5 text-[11px] uppercase tracking-[0.24em] text-ink transition-colors hover:border-gold-dark hover:text-gold-dark"
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Contact CTA */}
+            <div className="border border-border-soft bg-cream p-6">
+              <h3 className="font-display text-xl italic leading-tight">
+                Need styling advice?
+              </h3>
+              <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+                Our team is here to help with fabric questions, size guidance, and styling tips.
+              </p>
+              <a
+                href="https://wa.me/923120295812"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex h-11 w-full items-center justify-center border border-ink text-[11px] uppercase tracking-[0.26em] transition-colors hover:bg-ink hover:text-ivory"
+              >
+                WhatsApp Us
+              </a>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

@@ -1,11 +1,20 @@
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ChevronRight, ArrowLeft } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { ChevronRight, ArrowLeft, Clock, Share2, ChevronDown } from "lucide-react";
+import { ShareButtons } from "@/components/blog/share-buttons";
+import { FAQAccordion } from "@/components/blog/faq-accordion";
+import {
+  InstagramIcon, FacebookIcon, YouTubeIcon, TikTokIcon,
+  XIcon, PinterestIcon, QuoraIcon, RedditIcon,
+} from "@/components/common/social-icons";
 
 type Params = { slug: string };
 
-const posts: Record<string, {
+// Hard-coded original editorial posts (dupatta-five-ways, linen-notes, etc.)
+const editorialPosts: Record<string, {
   title: string; tag: string; date: string; author: string;
   image: string; excerpt: string;
   body: { type: "p" | "h2" | "h3" | "pull"; text: string }[];
@@ -118,36 +127,205 @@ const posts: Record<string, {
   },
 };
 
-const allPosts = Object.entries(posts).map(([slug, post]) => ({ slug, ...post }));
+const allEditorialPosts = Object.entries(editorialPosts).map(([slug, post]) => ({ slug, ...post }));
 
-export async function generateStaticParams() {
-  return Object.keys(posts).map((slug) => ({ slug }));
-}
-
-export async function generateMetadata({ params }: { params: Promise<Params> }) {
+// Generate metadata dynamically from database OR editorial posts
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = posts[slug];
+
+  // Check editorial posts first
+  if (editorialPosts[slug]) {
+    const post = editorialPosts[slug];
+    return {
+      title: `${post.title} | Habiba Minhas`,
+      description: post.excerpt,
+      alternates: { canonical: `/journal/${slug}/` },
+    };
+  }
+
+  // Check database posts
+  const supabase = await createClient();
+  const { data: post } = await supabase
+    .from("journal_posts")
+    .select("title, meta_description, keywords, hero_image")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .single();
+
+  if (!post) {
+    return { title: "Post Not Found | Habiba Minhas Journal" };
+  }
+
   return {
-    title: post?.title ?? "Journal",
-    description: post?.excerpt ?? "From the Habiba Minhas journal",
-    alternates: {
-      canonical: `/journal/${slug}/`,
-    },
+    title: `${post.title} | Habiba Minhas`,
+    description: post.meta_description || "",
+    keywords: post.keywords || "",
+    alternates: { canonical: `/journal/${slug}/` },
+    openGraph: { images: post.hero_image ? [post.hero_image] : [] },
   };
 }
 
 export default async function JournalPostPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
-  const post = posts[slug];
-  if (!post) notFound();
 
-  const relatedPosts = post.related
-    .map((s) => allPosts.find((p) => p.slug === s))
-    .filter(Boolean) as typeof allPosts;
+  // Check if this is an editorial post first
+  if (editorialPosts[slug]) {
+    const post = editorialPosts[slug];
+    const relatedPosts = post.related
+      .map((s) => allEditorialPosts.find((p) => p.slug === s))
+      .filter(Boolean) as typeof allEditorialPosts;
+
+    return (
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
+        <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.26em] text-muted">
+          <Link href="/" className="hover:text-ink">Home</Link>
+          <ChevronRight className="h-3 w-3" />
+          <Link href="/journal" className="hover:text-ink">Journal</Link>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-ink-soft line-clamp-1 max-w-[200px]">{post.title}</span>
+        </nav>
+
+        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-12">
+          <article className="lg:col-span-8">
+            <div className="relative aspect-[16/9] w-full overflow-hidden">
+              <Image
+                src={post.image}
+                alt={post.title}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 66vw"
+                className="object-cover object-top"
+              />
+            </div>
+
+            <div className="mt-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.28em] text-gold-dark">
+              {post.tag}
+              <span className="h-px w-8 bg-gold/40" />
+              <span className="text-ink-soft">{post.date}</span>
+              <span className="h-px w-8 bg-gold/40" />
+              <span className="text-ink-soft">{post.author}</span>
+            </div>
+
+            <h1 className="mt-4 font-display text-4xl italic leading-tight sm:text-5xl lg:text-6xl">
+              {post.title}
+            </h1>
+            <p className="mt-4 text-[16px] leading-relaxed text-ink-soft border-l-2 border-gold/40 pl-5">
+              {post.excerpt}
+            </p>
+
+            <div className="mt-10 flex flex-col gap-5">
+              {post.body.map((block, i) => {
+                if (block.type === "h2") return (
+                  <h2 key={i} className="font-display text-3xl italic text-ink mt-4">{block.text}</h2>
+                );
+                if (block.type === "h3") return (
+                  <h3 key={i} className="font-display text-2xl italic text-ink mt-2">{block.text}</h3>
+                );
+                if (block.type === "pull") return (
+                  <blockquote key={i} className="my-4 border-l-4 border-gold-dark pl-6 font-display text-2xl italic leading-relaxed text-ink-soft">
+                    {block.text}
+                  </blockquote>
+                );
+                return (
+                  <p key={i} className="text-[15px] leading-[1.8] text-ink-soft">{block.text}</p>
+                );
+              })}
+            </div>
+
+            <div className="mt-14 border-t border-border-soft pt-8">
+              <Link href="/journal" className="flex items-center gap-2 text-[12px] uppercase tracking-[0.26em] text-ink-soft hover:text-ink">
+                <ArrowLeft className="h-3.5 w-3.5" /> Back to journal
+              </Link>
+            </div>
+          </article>
+
+          <aside className="lg:col-span-4">
+            <div className="sticky top-[116px] flex flex-col gap-8">
+              {relatedPosts.length > 0 && (
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.3em] text-gold-dark">Read next</div>
+                  <div className="mt-4 flex flex-col gap-6">
+                    {relatedPosts.map((p) => (
+                      <Link key={p.slug} href={`/journal/${p.slug}`} className="group block">
+                        <div className="relative aspect-[16/9] w-full overflow-hidden">
+                          <Image
+                            src={p.image}
+                            alt={p.title}
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 33vw"
+                            className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </div>
+                        <div className="mt-3">
+                          <div className="text-[11px] uppercase tracking-[0.24em] text-gold-dark">{p.tag}</div>
+                          <h3 className="mt-1.5 font-display text-xl italic leading-snug group-hover:text-gold-dark">
+                            {p.title}
+                          </h3>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="border border-border-soft bg-cream p-5">
+                <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">The Journal</div>
+                <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
+                  Written in-house from Karachi. Field notes, fabric notes, and the occasional recipe. Published weekly — no algorithms, no sponsored posts.
+                </p>
+                <Link
+                  href="/journal"
+                  className="mt-4 inline-flex items-center gap-2 text-[12px] uppercase tracking-[0.24em] text-ink hover:text-gold-dark"
+                >
+                  All posts →
+                </Link>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, fetch from database
+  const supabase = await createClient();
+  const { data: post, error } = await supabase
+    .from("journal_posts")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .single();
+
+  if (error || !post) {
+    notFound();
+  }
+
+  // Increment views
+  await supabase
+    .from("journal_posts")
+    .update({ views: (post.views || 0) + 1 })
+    .eq("id", post.id);
+
+  // Fetch related articles from same category
+  const { data: relatedArticles = [] } = await supabase
+    .from("journal_posts")
+    .select("slug, title, excerpt, hero_image, category_tag, published_at")
+    .eq("status", "published")
+    .eq("category_tag", post.category_tag)
+    .neq("id", post.id)
+    .order("published_at", { ascending: false })
+    .limit(3);
+
+  // Calculate read time (average 200 words per minute)
+  const contentText = JSON.stringify(post.content);
+  const wordCount = contentText.split(/\s+/).length;
+  const readTime = Math.ceil(wordCount / 200);
+
+  const contentSections = post.content as any[];
+  const currentUrl = `https://habibaminhas.com/journal/${slug}/`;
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
-      {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.26em] text-muted">
         <Link href="/" className="hover:text-ink">Home</Link>
         <ChevronRight className="h-3 w-3" />
@@ -157,25 +335,30 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
       </nav>
 
       <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-12">
-        {/* Article */}
         <article className="lg:col-span-8">
-          {/* Hero image */}
-          <div className="relative aspect-[16/9] w-full overflow-hidden">
-            <Image
-              src={post.image}
-              alt={post.title}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 66vw"
-              className="object-cover object-top"
-            />
-          </div>
+          {post.hero_image && (
+            <div className="relative aspect-[16/9] w-full overflow-hidden">
+              <Image
+                src={post.hero_image}
+                alt={post.title}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 66vw"
+                className="object-cover object-top"
+              />
+            </div>
+          )}
 
-          {/* Meta */}
           <div className="mt-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.28em] text-gold-dark">
-            {post.tag}
+            {post.category_tag}
             <span className="h-px w-8 bg-gold/40" />
-            <span className="text-ink-soft">{post.date}</span>
+            <time dateTime={new Date(post.published_at).toISOString()} className="text-ink-soft">
+              {new Date(post.published_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}
+            </time>
             <span className="h-px w-8 bg-gold/40" />
             <span className="text-ink-soft">{post.author}</span>
           </div>
@@ -183,31 +366,152 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
           <h1 className="mt-4 font-display text-4xl italic leading-tight sm:text-5xl lg:text-6xl">
             {post.title}
           </h1>
-          <p className="mt-4 text-[16px] leading-relaxed text-ink-soft border-l-2 border-gold/40 pl-5">
-            {post.excerpt}
-          </p>
 
-          {/* Body */}
+          {/* Author & Read Time */}
+          <div className="mt-4 flex items-center gap-4 text-[13px] text-ink-soft">
+            <span>Written by <strong className="text-ink">Umm-e-Habiba</strong></span>
+            <span className="h-1 w-1 rounded-full bg-muted" />
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5" />
+              {readTime} min read
+            </span>
+          </div>
+
+          {post.excerpt && (
+            <p className="mt-4 text-[16px] leading-relaxed text-ink-soft border-l-2 border-gold/40 pl-5">
+              {post.excerpt}
+            </p>
+          )}
+
+          {/* Social Share Buttons */}
+          <div className="mt-6">
+            <ShareButtons title={post.title} url={currentUrl} />
+          </div>
+
           <div className="mt-10 flex flex-col gap-5">
-            {post.body.map((block, i) => {
-              if (block.type === "h2") return (
-                <h2 key={i} className="font-display text-3xl italic text-ink mt-4">{block.text}</h2>
-              );
-              if (block.type === "h3") return (
-                <h3 key={i} className="font-display text-2xl italic text-ink mt-2">{block.text}</h3>
-              );
-              if (block.type === "pull") return (
-                <blockquote key={i} className="my-4 border-l-4 border-gold-dark pl-6 font-display text-2xl italic leading-relaxed text-ink-soft">
-                  {block.text}
-                </blockquote>
-              );
-              return (
-                <p key={i} className="text-[15px] leading-[1.8] text-ink-soft">{block.text}</p>
-              );
+            {contentSections.map((section, index) => {
+              if (section.type === "intro") {
+                return (
+                  <p key={index} className="text-[15px] leading-[1.8] text-ink-soft">
+                    {section.content}
+                  </p>
+                );
+              }
+
+              if (section.type === "section") {
+                return (
+                  <div key={index}>
+                    <h2 className="font-display text-3xl italic text-ink mt-4">
+                      {section.heading}
+                    </h2>
+                    {section.content && (
+                      <p className="mt-4 text-[15px] leading-[1.8] text-ink-soft">
+                        {section.content}
+                      </p>
+                    )}
+                    {section.subsections && section.subsections.map((sub: any, subIndex: number) => (
+                      <div key={subIndex} className="mt-6">
+                        <h3 className="font-display text-2xl italic text-ink">{sub.title}</h3>
+                        <p className="mt-2 text-[15px] leading-[1.8] text-ink-soft">
+                          {sub.content}
+                        </p>
+                      </div>
+                    ))}
+                    {section.list && (
+                      <ul className="mt-4 space-y-2 list-disc list-inside">
+                        {section.list.map((item: string, itemIndex: number) => (
+                          <li key={itemIndex} className="text-[15px] leading-[1.8] text-ink-soft">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {section.dos && (
+                      <>
+                        <h3 className="mt-6 font-display text-2xl italic text-ink">✅ Do:</h3>
+                        <ul className="mt-2 space-y-2 list-disc list-inside">
+                          {section.dos.map((item: string, itemIndex: number) => (
+                            <li key={itemIndex} className="text-[15px] leading-[1.8] text-ink-soft">
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {section.donts && (
+                      <>
+                        <h3 className="mt-6 font-display text-2xl italic text-ink">❌ Don't:</h3>
+                        <ul className="mt-2 space-y-2 list-disc list-inside">
+                          {section.donts.map((item: string, itemIndex: number) => (
+                            <li key={itemIndex} className="text-[15px] leading-[1.8] text-ink-soft">
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                );
+              }
+
+              if (section.type === "faq" && section.questions?.length > 0) {
+                return (
+                  <div key={index} className="mt-8">
+                    <h2 className="font-display text-3xl italic text-ink mb-6">
+                      Frequently Asked Questions
+                    </h2>
+                    <FAQAccordion questions={section.questions} />
+                  </div>
+                );
+              }
+
+              return null;
             })}
           </div>
 
-          {/* Back link */}
+          {/* Related Articles */}
+          {relatedArticles?.length > 0 && (
+            <div className="mt-14 border-t border-border-soft pt-8">
+              <h2 className="text-[11px] uppercase tracking-[0.3em] text-gold-dark mb-6">
+                Related Articles
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {relatedArticles.map((article) => (
+                  <Link
+                    key={article.slug}
+                    href={`/journal/${article.slug}`}
+                    className="group block"
+                  >
+                    {article.hero_image && (
+                      <div className="relative aspect-[16/9] w-full overflow-hidden">
+                        <Image
+                          src={article.hero_image}
+                          alt={article.title}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    )}
+                    <div className="mt-4">
+                      <div className="text-[11px] uppercase tracking-[0.24em] text-gold-dark">
+                        {article.category_tag}
+                      </div>
+                      <h3 className="mt-2 font-display text-xl italic leading-snug transition-colors group-hover:text-gold-dark">
+                        {article.title}
+                      </h3>
+                      {article.excerpt && (
+                        <p className="mt-2 text-[13px] leading-relaxed text-ink-soft line-clamp-2">
+                          {article.excerpt}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-14 border-t border-border-soft pt-8">
             <Link href="/journal" className="flex items-center gap-2 text-[12px] uppercase tracking-[0.26em] text-ink-soft hover:text-ink">
               <ArrowLeft className="h-3.5 w-3.5" /> Back to journal
@@ -215,38 +519,21 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
           </div>
         </article>
 
-        {/* Sidebar */}
         <aside className="lg:col-span-4">
           <div className="sticky top-[116px] flex flex-col gap-8">
-            {/* Related posts */}
-            {relatedPosts.length > 0 && (
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.3em] text-gold-dark">Read next</div>
-                <div className="mt-4 flex flex-col gap-6">
-                  {relatedPosts.map((p) => (
-                    <Link key={p.slug} href={`/journal/${p.slug}`} className="group block">
-                      <div className="relative aspect-[16/9] w-full overflow-hidden">
-                        <Image
-                          src={p.image}
-                          alt={p.title}
-                          fill
-                          sizes="(max-width: 1024px) 100vw, 33vw"
-                          className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                      <div className="mt-3">
-                        <div className="text-[11px] uppercase tracking-[0.24em] text-gold-dark">{p.tag}</div>
-                        <h3 className="mt-1.5 font-display text-xl italic leading-snug group-hover:text-gold-dark">
-                          {p.title}
-                        </h3>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="border border-border-soft bg-cream p-5">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">Shop the Collection</div>
+              <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
+                Handcrafted suits with artisan embroidery.
+              </p>
+              <Link
+                href="/ladies/"
+                className="mt-4 inline-flex items-center justify-center h-11 w-full bg-ink text-[11px] uppercase tracking-[0.26em] text-ivory hover:bg-gold-dark transition-colors"
+              >
+                Shop Now
+              </Link>
+            </div>
 
-            {/* About */}
             <div className="border border-border-soft bg-cream p-5">
               <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">The Journal</div>
               <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
@@ -258,6 +545,95 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
               >
                 All posts →
               </Link>
+            </div>
+
+            {/* Social Media Follow */}
+            <div className="border border-border-soft bg-ivory p-5">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark mb-4">
+                Follow Us
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="https://www.instagram.com/habibaminhas.official/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center border border-border-soft bg-cream transition-colors hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
+                  aria-label="Follow us on Instagram"
+                  title="Instagram"
+                >
+                  <InstagramIcon className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://www.facebook.com/profile.php?id=61573309750795"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center border border-border-soft bg-cream transition-colors hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
+                  aria-label="Follow us on Facebook"
+                  title="Facebook"
+                >
+                  <FacebookIcon className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://www.youtube.com/@HabibaMinhas989"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center border border-border-soft bg-cream transition-colors hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
+                  aria-label="Follow us on YouTube"
+                  title="YouTube"
+                >
+                  <YouTubeIcon className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://www.tiktok.com/@habibaminhas._official"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center border border-border-soft bg-cream transition-colors hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
+                  aria-label="Follow us on TikTok"
+                  title="TikTok"
+                >
+                  <TikTokIcon className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://x.com/HabibaMinhas_"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center border border-border-soft bg-cream transition-colors hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
+                  aria-label="Follow us on X (Twitter)"
+                  title="X (Twitter)"
+                >
+                  <XIcon className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://www.pinterest.com/habibaminhas_official/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center border border-border-soft bg-cream transition-colors hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
+                  aria-label="Follow us on Pinterest"
+                  title="Pinterest"
+                >
+                  <PinterestIcon className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://www.quora.com/profile/Habiba-Minhas-6"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center border border-border-soft bg-cream transition-colors hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
+                  aria-label="Follow us on Quora"
+                  title="Quora"
+                >
+                  <QuoraIcon className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://www.reddit.com/user/HabibaMinhas_989/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center border border-border-soft bg-cream transition-colors hover:border-gold-dark hover:bg-gold-dark hover:text-ivory"
+                  aria-label="Follow us on Reddit"
+                  title="Reddit"
+                >
+                  <RedditIcon className="h-4 w-4" />
+                </a>
+              </div>
             </div>
           </div>
         </aside>
