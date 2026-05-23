@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -178,6 +176,60 @@ export type Database = {
           total_orders?: number
           total_spent?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      journal_posts: {
+        Row: {
+          author: string | null
+          category_tag: string | null
+          content: Json
+          created_at: string | null
+          excerpt: string | null
+          hero_image: string | null
+          id: string
+          keywords: string | null
+          meta_description: string | null
+          published_at: string | null
+          slug: string
+          status: string | null
+          title: string
+          updated_at: string | null
+          views: number | null
+        }
+        Insert: {
+          author?: string | null
+          category_tag?: string | null
+          content?: Json
+          created_at?: string | null
+          excerpt?: string | null
+          hero_image?: string | null
+          id?: string
+          keywords?: string | null
+          meta_description?: string | null
+          published_at?: string | null
+          slug: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          views?: number | null
+        }
+        Update: {
+          author?: string | null
+          category_tag?: string | null
+          content?: Json
+          created_at?: string | null
+          excerpt?: string | null
+          hero_image?: string | null
+          id?: string
+          keywords?: string | null
+          meta_description?: string | null
+          published_at?: string | null
+          slug?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          views?: number | null
         }
         Relationships: []
       }
@@ -355,7 +407,7 @@ export type Database = {
           seo_keywords: string | null
           seo_title: string | null
           short_description: string | null
-          size_guide: string | null
+          size_guide: boolean | null
           sizes_stock: Json | null
           sku: string | null
           slug: string
@@ -381,7 +433,7 @@ export type Database = {
           seo_keywords?: string | null
           seo_title?: string | null
           short_description?: string | null
-          size_guide?: string | null
+          size_guide?: boolean | null
           sizes_stock?: Json | null
           sku?: string | null
           slug: string
@@ -407,7 +459,7 @@ export type Database = {
           seo_keywords?: string | null
           seo_title?: string | null
           short_description?: string | null
-          size_guide?: string | null
+          size_guide?: boolean | null
           sizes_stock?: Json | null
           sku?: string | null
           slug?: string
@@ -510,7 +562,6 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
