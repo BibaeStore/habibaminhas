@@ -307,14 +307,18 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
     .eq("id", post.id);
 
   // Fetch related articles from same category
-  const { data: relatedArticles = [] } = await supabase
-    .from("journal_posts")
-    .select("slug, title, excerpt, hero_image, category_tag, published_at")
-    .eq("status", "published")
-    .eq("category_tag", post.category_tag)
-    .neq("id", post.id)
-    .order("published_at", { ascending: false })
-    .limit(3);
+  let relatedArticles: any[] = [];
+  if (post.category_tag) {
+    const { data } = await supabase
+      .from("journal_posts")
+      .select("slug, title, excerpt, hero_image, category_tag, published_at")
+      .eq("status", "published")
+      .eq("category_tag", post.category_tag)
+      .neq("id", post.id)
+      .order("published_at", { ascending: false })
+      .limit(3);
+    relatedArticles = data || [];
+  }
 
   // Calculate read time (average 200 words per minute)
   const contentText = JSON.stringify(post.content);
@@ -352,8 +356,8 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
           <div className="mt-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.28em] text-gold-dark">
             {post.category_tag}
             <span className="h-px w-8 bg-gold/40" />
-            <time dateTime={new Date(post.published_at).toISOString()} className="text-ink-soft">
-              {new Date(post.published_at).toLocaleDateString('en-US', {
+            <time dateTime={new Date(post.published_at || new Date()).toISOString()} className="text-ink-soft">
+              {new Date(post.published_at || new Date()).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
@@ -470,7 +474,7 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
           </div>
 
           {/* Related Articles */}
-          {relatedArticles?.length > 0 && (
+          {relatedArticles.length > 0 && (
             <div className="mt-14 border-t border-border-soft pt-8">
               <h2 className="text-[11px] uppercase tracking-[0.3em] text-gold-dark mb-6">
                 Related Articles

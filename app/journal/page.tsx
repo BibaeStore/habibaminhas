@@ -66,7 +66,7 @@ const editorialPosts = [
 
 export default async function JournalPage() {
   // Fetch a featured product for the sidebar
-  const products = await getProducts({ status: "active", limit: 1 }).catch(() => []);
+  const products = await getProducts({ status: "active", featured: true }).catch(() => []);
   const featuredProduct = products?.[0];
 
   // Fetch all published blog posts from database
@@ -83,13 +83,13 @@ export default async function JournalPage() {
     title: post.title,
     excerpt: post.excerpt || "",
     tag: post.category_tag,
-    date: new Date(post.published_at).toLocaleDateString('en-US', {
+    date: new Date(post.published_at || new Date()).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     }),
     image: post.hero_image || "/editorial/ladies-collection.webp",
-    published_at: post.published_at,
+    published_at: post.published_at || new Date().toISOString(),
   }));
 
   // Combine editorial and database posts, sort by published_at

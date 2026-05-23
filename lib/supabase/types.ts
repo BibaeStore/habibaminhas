@@ -407,7 +407,7 @@ export type Database = {
           seo_keywords: string | null
           seo_title: string | null
           short_description: string | null
-          size_guide: boolean | null
+          size_guide: string | null
           sizes_stock: Json | null
           sku: string | null
           slug: string
@@ -433,7 +433,7 @@ export type Database = {
           seo_keywords?: string | null
           seo_title?: string | null
           short_description?: string | null
-          size_guide?: boolean | null
+          size_guide?: string | null
           sizes_stock?: Json | null
           sku?: string | null
           slug: string
@@ -459,7 +459,7 @@ export type Database = {
           seo_keywords?: string | null
           seo_title?: string | null
           short_description?: string | null
-          size_guide?: boolean | null
+          size_guide?: string | null
           sizes_stock?: Json | null
           sku?: string | null
           slug?: string
