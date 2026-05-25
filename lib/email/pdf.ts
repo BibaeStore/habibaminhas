@@ -1,4 +1,6 @@
-import PDFDocument from "pdfkit";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
 export type InvoiceData = {
   orderNumber:    string;
@@ -28,189 +30,247 @@ export type InvoiceData = {
   status:        string;
 };
 
-const GOLD   = "#9a7b38";
-const INK    = "#1a1612";
-const MUTED  = "#8a8179";
-const BORDER = "#e8e2d8";
-const BG     = "#f9f6f0";
+// Brand colors
+const GOLD   = rgb(0.60, 0.48, 0.22);  // #9a7b38
+const INK    = rgb(0.10, 0.09, 0.07);  // #1a1612
+const MUTED  = rgb(0.54, 0.51, 0.47);  // #8a8179
+const WHITE  = rgb(1, 1, 1);
+const GOLD_LIGHT = rgb(0.78, 0.66, 0.47); // #c8a978
+const BG     = rgb(0.98, 0.96, 0.94);  // #f9f6f0
 
 function formatPKR(amount: number) {
   return `Rs. ${amount.toLocaleString("en-PK")}`;
 }
 
 export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
-      size: "A4",
-      margins: { top: 50, bottom: 50, left: 55, right: 55 },
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595, 842]); // A4
+  const { width, height } = page.getSize();
+
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Load and embed logo
+  let logoImage;
+  try {
+    const logoPath = join(process.cwd(), "public", "logo", "habiba-minhas-logo-t.png");
+    const logoBytes = await readFile(logoPath);
+    logoImage = await pdfDoc.embedPng(logoBytes);
+  } catch (error) {
+    console.warn("Logo not found for email invoice, using text fallback");
+  }
+
+  const L = 55;
+  const R = width - 55;
+
+  // ── Header background ───────────────────────────────────────────
+  page.drawRectangle({ x: 0, y: height - 110, width, height: 110, color: INK });
+
+  // Logo (if available) - bigger and more prominent
+  if (logoImage) {
+    const logoHeight = 50; // Increased from 35 to 50
+    const logoWidth = (logoImage.width / logoImage.height) * logoHeight;
+    page.drawImage(logoImage, {
+      x: L,
+      y: height - 80,
+      width: logoWidth,
+      height: logoHeight,
     });
 
-    const chunks: Buffer[] = [];
-    doc.on("data",  (c) => chunks.push(c));
-    doc.on("end",   () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
+    // Logo already contains "HABIBA MINHAS" text - only show tagline
+    page.drawText("Handcrafted with Love in Pakistan", {
+      x: L,
+      y: height - 95,
+      size: 9,
+      font: regularFont,
+      color: GOLD_LIGHT,
+    });
+  } else {
+    // Fallback if logo not available
+    page.drawText("HABIBA MINHAS", {
+      x: L,
+      y: height - 60,
+      size: 22,
+      font: boldFont,
+      color: WHITE,
+    });
 
-    const { width } = doc.page;
-    const L = 55;
-    const R = width - 55;
+    page.drawText("Handcrafted with Love in Pakistan", {
+      x: L,
+      y: height - 84,
+      size: 9,
+      font: regularFont,
+      color: GOLD_LIGHT,
+    });
+  }
 
-    // ── Header background ───────────────────────────────────────────
-    doc.rect(0, 0, width, 110).fill(INK);
-
-    // Brand name (logo placeholder — text-based)
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(22)
-      .fillColor("#ffffff")
-      .text("HABIBA MINHAS", L, 30);
-
-    doc
-      .font("Helvetica")
-      .fontSize(9)
-      .fillColor("#c8a978")
-      .text("Handcrafted with Love in Pakistan", L, 56);
-
-    // Invoice label top-right
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(28)
-      .fillColor("#ffffff")
-      .text("INVOICE", 0, 28, { align: "right", width: R })
-      .font("Helvetica")
-      .fontSize(9)
-      .fillColor("#c8a978")
-      .text(`#${data.orderNumber}`, 0, 62, { align: "right", width: R });
-
-    // ── Gold accent bar ─────────────────────────────────────────────
-    doc.rect(0, 110, width, 4).fill(GOLD);
-
-    let y = 130;
-
-    // ── Order meta ──────────────────────────────────────────────────
-    doc
-      .font("Helvetica-Bold").fontSize(10).fillColor(GOLD)
-      .text("ORDER DETAILS", L, y);
-    y += 16;
-
-    const metaData = [
-      ["Order Number",   data.orderNumber],
-      ["Order Date",     data.orderDate],
-      ["Payment Method", data.paymentMethod],
-      ["Status",         data.status.toUpperCase()],
-    ];
-
-    for (const [label, val] of metaData) {
-      doc.font("Helvetica").fontSize(9).fillColor(MUTED).text(label + ":", L, y, { continued: false });
-      doc.font("Helvetica-Bold").fontSize(9).fillColor(INK).text(val, L + 115, y - 9);
-      y += 14;
-    }
-
-    // ── Two columns: Bill To + Ship To ─────────────────────────────
-    y += 12;
-    const colW = (R - L - 20) / 2;
-
-    doc.rect(L, y, colW, 90).fill(BG).stroke(BORDER);
-    doc.rect(L + colW + 20, y, colW, 90).fill(BG).stroke(BORDER);
-
-    // Bill To
-    doc.font("Helvetica-Bold").fontSize(8).fillColor(GOLD)
-      .text("BILL TO", L + 10, y + 10);
-    doc.font("Helvetica-Bold").fontSize(10).fillColor(INK)
-      .text(data.customerName, L + 10, y + 24, { width: colW - 20 });
-    doc.font("Helvetica").fontSize(8).fillColor(MUTED)
-      .text(data.customerEmail, L + 10, y + 40, { width: colW - 20 })
-      .text(data.customerPhone, L + 10, y + 54, { width: colW - 20 });
-
-    // Ship To
-    const shipX = L + colW + 30;
-    const addr = data.address;
-    doc.font("Helvetica-Bold").fontSize(8).fillColor(GOLD)
-      .text("SHIP TO", shipX, y + 10);
-    doc.font("Helvetica-Bold").fontSize(10).fillColor(INK)
-      .text(data.customerName, shipX, y + 24, { width: colW - 20 });
-    doc.font("Helvetica").fontSize(8).fillColor(MUTED)
-      .text(addr.street + (addr.apartment ? `, ${addr.apartment}` : ""), shipX, y + 40, { width: colW - 20 })
-      .text(`${addr.city}, ${addr.province}${addr.postalCode ? " " + addr.postalCode : ""}`, shipX, y + 54, { width: colW - 20 });
-
-    y += 110;
-
-    // ── Items table header ──────────────────────────────────────────
-    doc.rect(L, y, R - L, 22).fill(INK);
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#ffffff");
-    doc.text("ITEM DESCRIPTION",  L + 10, y + 7);
-    doc.text("QTY",   R - 160, y + 7, { width: 40, align: "right" });
-    doc.text("UNIT PRICE", R - 115, y + 7, { width: 55, align: "right" });
-    doc.text("TOTAL",  R - 55, y + 7, { width: 55, align: "right" });
-    y += 22;
-
-    // Items rows
-    let altRow = false;
-    for (const item of data.items) {
-      const rowH = item.size || item.sku ? 34 : 24;
-      if (altRow) doc.rect(L, y, R - L, rowH).fill("#f3ede4").stroke(BORDER);
-      else        doc.rect(L, y, R - L, rowH).fill("#ffffff").stroke(BORDER);
-      altRow = !altRow;
-
-      doc.font("Helvetica-Bold").fontSize(9).fillColor(INK)
-        .text(item.title, L + 10, y + 6, { width: R - L - 180, ellipsis: true });
-      if (item.size || item.sku) {
-        const meta = [item.size && `Size: ${item.size}`, item.sku && `SKU: ${item.sku}`]
-          .filter(Boolean).join("  ·  ");
-        doc.font("Helvetica").fontSize(7.5).fillColor(MUTED)
-          .text(meta, L + 10, y + 19, { width: R - L - 180 });
-      }
-
-      doc.font("Helvetica").fontSize(9).fillColor(INK);
-      doc.text(String(item.quantity), R - 160, y + 7, { width: 40, align: "right" });
-      doc.text(formatPKR(item.unitPrice),  R - 115, y + 7, { width: 55, align: "right" });
-      doc.font("Helvetica-Bold")
-        .text(formatPKR(item.totalPrice), R - 55, y + 7, { width: 55, align: "right" });
-
-      y += rowH;
-    }
-
-    // ── Totals block ────────────────────────────────────────────────
-    y += 10;
-    const totW = 230;
-    const totX = R - totW;
-
-    const totals = [
-      ["Subtotal",  formatPKR(data.subtotal)],
-      ["Shipping",  data.shipping === 0 ? "Free" : formatPKR(data.shipping)],
-    ];
-
-    for (const [label, val] of totals) {
-      doc.font("Helvetica").fontSize(9).fillColor(MUTED).text(label, totX, y);
-      doc.font("Helvetica").fontSize(9).fillColor(INK).text(val, totX, y, { width: totW, align: "right" });
-      y += 16;
-    }
-
-    // Total line
-    doc.moveTo(totX, y).lineTo(R, y).strokeColor(GOLD).lineWidth(1.5).stroke();
-    y += 8;
-    doc.rect(totX, y, totW, 28).fill(INK);
-    doc.font("Helvetica-Bold").fontSize(11).fillColor(GOLD)
-      .text("TOTAL",  totX + 10, y + 8);
-    doc.font("Helvetica-Bold").fontSize(11).fillColor("#ffffff")
-      .text(formatPKR(data.total), totX, y + 8, { width: totW - 10, align: "right" });
-    y += 40;
-
-    // ── Footer ──────────────────────────────────────────────────────
-    const footY = doc.page.height - 80;
-    doc.rect(0, footY, width, 80).fill(INK);
-
-    doc
-      .font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
-      .text("HABIBA MINHAS", L, footY + 14);
-    doc
-      .font("Helvetica").fontSize(8).fillColor("#c8a978")
-      .text("Handcrafted with Love in Pakistan", L, footY + 28)
-      .text("info@habibaminhas.com  |  +92 312 0295812", L, footY + 42)
-      .text("14-Day Easy Returns  ·  Cash on Delivery Available Nationwide", L, footY + 56);
-
-    doc.font("Helvetica").fontSize(7.5).fillColor("#c8a978")
-      .text("Thank you for your order!", 0, footY + 14, { width: R + 55, align: "right" });
-
-    doc.end();
+  // Invoice label top-right
+  page.drawText("INVOICE", {
+    x: R - 120,
+    y: height - 58,
+    size: 28,
+    font: boldFont,
+    color: WHITE,
   });
+
+  page.drawText(`#${data.orderNumber}`, {
+    x: R - 120,
+    y: height - 88,
+    size: 9,
+    font: regularFont,
+    color: GOLD_LIGHT,
+  });
+
+  // ── Gold accent bar ─────────────────────────────────────────────
+  page.drawRectangle({ x: 0, y: height - 114, width, height: 4, color: GOLD });
+
+  let y = height - 130;
+
+  // ── Order meta ──────────────────────────────────────────────────
+  page.drawText("ORDER DETAILS", { x: L, y: y - 16, size: 10, font: boldFont, color: GOLD });
+  y -= 32;
+
+  const metaData = [
+    ["Order Number",   data.orderNumber],
+    ["Order Date",     data.orderDate],
+    ["Payment Method", data.paymentMethod],
+    ["Status",         data.status.toUpperCase()],
+  ];
+
+  for (const [label, val] of metaData) {
+    page.drawText(label + ":", { x: L, y, size: 9, font: regularFont, color: MUTED });
+    page.drawText(val, { x: L + 115, y, size: 9, font: boldFont, color: INK });
+    y -= 14;
+  }
+
+  // ── Two columns: Bill To + Ship To ─────────────────────────────
+  y -= 12;
+  const colW = (R - L - 20) / 2;
+  const boxHeight = 105; // Increased from 90 to 105 for proper spacing
+
+  // Bill To box
+  page.drawRectangle({
+    x: L,
+    y: y - boxHeight,
+    width: colW,
+    height: boxHeight,
+    color: BG,
+    borderColor: rgb(0.91, 0.89, 0.85),
+    borderWidth: 1,
+  });
+
+  page.drawText("BILL TO", { x: L + 10, y: y - 18, size: 8, font: boldFont, color: GOLD });
+  page.drawText(data.customerName, { x: L + 10, y: y - 32, size: 10, font: boldFont, color: INK, maxWidth: colW - 20 });
+  page.drawText(data.customerEmail, { x: L + 10, y: y - 47, size: 8, font: regularFont, color: MUTED, maxWidth: colW - 20 });
+  page.drawText(data.customerPhone, { x: L + 10, y: y - 60, size: 8, font: regularFont, color: MUTED, maxWidth: colW - 20 });
+
+  // Ship To box
+  const shipX = L + colW + 20;
+  page.drawRectangle({
+    x: shipX,
+    y: y - boxHeight,
+    width: colW,
+    height: boxHeight,
+    color: BG,
+    borderColor: rgb(0.91, 0.89, 0.85),
+    borderWidth: 1,
+  });
+
+  const addr = data.address;
+  page.drawText("SHIP TO", { x: shipX + 10, y: y - 18, size: 8, font: boldFont, color: GOLD });
+  page.drawText(data.customerName, { x: shipX + 10, y: y - 32, size: 10, font: boldFont, color: INK, maxWidth: colW - 20 });
+
+  const streetText = addr.street + (addr.apartment ? `, ${addr.apartment}` : "");
+  page.drawText(streetText, { x: shipX + 10, y: y - 47, size: 8, font: regularFont, color: MUTED, maxWidth: colW - 20 });
+
+  const cityText = `${addr.city}, ${addr.province}${addr.postalCode ? " " + addr.postalCode : ""}`;
+  page.drawText(cityText, { x: shipX + 10, y: y - 60, size: 8, font: regularFont, color: MUTED, maxWidth: colW - 20 });
+
+  y -= 120; // Adjusted to match new box height
+
+  // ── Items table header ──────────────────────────────────────────
+  page.drawRectangle({ x: L, y: y - 22, width: R - L, height: 22, color: INK });
+
+  page.drawText("ITEM DESCRIPTION", { x: L + 10, y: y - 15, size: 9, font: boldFont, color: WHITE });
+  page.drawText("QTY", { x: R - 160, y: y - 15, size: 9, font: boldFont, color: WHITE });
+  page.drawText("UNIT PRICE", { x: R - 115, y: y - 15, size: 9, font: boldFont, color: WHITE });
+  page.drawText("TOTAL", { x: R - 55, y: y - 15, size: 9, font: boldFont, color: WHITE });
+
+  y -= 22;
+
+  // Items rows
+  let altRow = false;
+  for (const item of data.items) {
+    const rowH = item.size || item.sku ? 34 : 24;
+
+    const rowColor = altRow ? rgb(0.95, 0.93, 0.89) : WHITE;
+    page.drawRectangle({
+      x: L,
+      y: y - rowH,
+      width: R - L,
+      height: rowH,
+      color: rowColor,
+      borderColor: rgb(0.91, 0.89, 0.85),
+      borderWidth: 1,
+    });
+    altRow = !altRow;
+
+    const title = item.title.length > 45 ? item.title.substring(0, 42) + "..." : item.title;
+    page.drawText(title, { x: L + 10, y: y - 18, size: 9, font: boldFont, color: INK, maxWidth: R - L - 180 });
+
+    if (item.size || item.sku) {
+      const meta = [item.size && `Size: ${item.size}`, item.sku && `SKU: ${item.sku}`]
+        .filter(Boolean).join("  ·  ");
+      page.drawText(meta, { x: L + 10, y: y - 29, size: 7.5, font: regularFont, color: MUTED, maxWidth: R - L - 180 });
+    }
+
+    page.drawText(String(item.quantity), { x: R - 155, y: y - 17, size: 9, font: regularFont, color: INK });
+    page.drawText(formatPKR(item.unitPrice), { x: R - 115, y: y - 17, size: 9, font: regularFont, color: INK });
+    page.drawText(formatPKR(item.totalPrice), { x: R - 90, y: y - 17, size: 9, font: boldFont, color: INK });
+
+    y -= rowH;
+  }
+
+  // ── Totals block ────────────────────────────────────────────────
+  y -= 20; // Increased spacing before totals
+  const totW = 230;
+  const totX = R - totW;
+
+  const totals = [
+    ["Subtotal",  formatPKR(data.subtotal)],
+    ["Shipping",  data.shipping === 0 ? "Free" : formatPKR(data.shipping)],
+  ];
+
+  for (const [label, val] of totals) {
+    page.drawText(label, { x: totX, y, size: 9, font: regularFont, color: MUTED });
+    page.drawText(val, { x: R - 60, y, size: 9, font: regularFont, color: INK });
+    y -= 20; // Increased from 16 to 20 for better spacing
+  }
+
+  // Total line
+  page.drawLine({
+    start: { x: totX, y: y + 10 },
+    end: { x: R, y: y + 10 },
+    color: GOLD,
+    thickness: 1.5,
+  });
+
+  y -= 10;
+  page.drawRectangle({ x: totX, y: y - 28, width: totW, height: 28, color: INK });
+  page.drawText("TOTAL", { x: totX + 10, y: y - 20, size: 11, font: boldFont, color: GOLD });
+  page.drawText(formatPKR(data.total), { x: R - 60, y: y - 20, size: 11, font: boldFont, color: WHITE });
+
+  // ── Footer ──────────────────────────────────────────────────────
+  const footY = 80;
+  page.drawRectangle({ x: 0, y: 0, width, height: footY, color: INK });
+
+  page.drawText("HABIBA MINHAS", { x: L, y: footY - 26, size: 9, font: boldFont, color: GOLD });
+  page.drawText("Handcrafted with Love in Pakistan", { x: L, y: footY - 42, size: 8, font: regularFont, color: GOLD_LIGHT });
+  page.drawText("info@habibaminhas.com  |  +92 312 0295812", { x: L, y: footY - 58, size: 8, font: regularFont, color: GOLD_LIGHT });
+  page.drawText("14-Day Easy Returns  |  Cash on Delivery Available Nationwide", { x: L, y: footY - 72, size: 8, font: regularFont, color: GOLD_LIGHT });
+
+  page.drawText("Thank you for your order!", { x: R - 150, y: footY - 26, size: 7.5, font: regularFont, color: GOLD_LIGHT });
+
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 }

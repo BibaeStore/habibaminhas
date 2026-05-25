@@ -15,7 +15,8 @@ import { AdminCard } from "@/components/admin/ui/card";
 import { AdminButton } from "@/components/admin/ui/button";
 import { StatusPill, type StatusTone } from "@/components/admin/ui/status-pill";
 import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
-import { getOrderById, updateOrderStatus, updateOrder } from "@/lib/actions/orders";
+import { getOrderById, updateOrderStatus, updateOrder, getOrderActivityLog } from "@/lib/actions/orders";
+import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -95,6 +96,10 @@ export default function OrderDetailPage() {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [copied,        setCopied]        = useState(false);
 
+  // ✅ PHASE 3: Activity logging state
+  const [adminEmail,    setAdminEmail]    = useState("");
+  const [activityLog,   setActivityLog]   = useState<any[]>([]);
+
   const load = useCallback(async () => {
     try {
       const data = await getOrderById(id) as Order;
@@ -102,6 +107,10 @@ export default function OrderDetailPage() {
       setNote(data.admin_note ?? "");
       setTrackingNum(data.tracking_number ?? "");
       setCourierName(data.courier ?? "");
+
+      // ✅ PHASE 3: Load activity log
+      const logs = await getOrderActivityLog(data.id);
+      setActivityLog(logs);
     } catch {
       setNotFound(true);
     } finally {
@@ -109,14 +118,20 @@ export default function OrderDetailPage() {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    // ✅ PHASE 3: Fetch admin email
+    createClient().auth.getUser().then(({ data }) => {
+      if (data.user?.email) setAdminEmail(data.user.email);
+    });
+  }, [load]);
 
   const handleStatusAdvance = async () => {
     if (!order) return;
     const cfg = STATUS_NEXT[order.status];
     if (!cfg) return;
     setSaving(true);
-    await updateOrderStatus(order.id, cfg.next);
+    await updateOrderStatus(order.id, cfg.next, adminEmail);
     await load();
     setSaving(false);
   };
@@ -128,14 +143,14 @@ export default function OrderDetailPage() {
       admin_note:      note      || null,
       tracking_number: trackingNum.trim() || null,
       courier:         courierName.trim() || null,
-    });
+    }, adminEmail);
     await load();
     setSaving(false);
   };
 
   const handleCancel = async () => {
     if (!order) return;
-    await updateOrderStatus(order.id, "cancelled");
+    await updateOrderStatus(order.id, "cancelled", adminEmail);
     setConfirmCancel(false);
     await load();
   };
@@ -711,6 +726,84 @@ export default function OrderDetailPage() {
                   ))}
                 </dl>
               </AdminCard>
+
+              {/* ✅ PHASE 3: Activity Timeline */}
+              {activityLog.length > 0 && (
+                <AdminCard>
+                  <div className="mb-4 flex items-center gap-2">
+                    <ClipboardList className="h-4 w-4" style={{ color: "var(--admin-text-muted)" }} />
+                    <span className="text-[13px] font-semibold uppercase tracking-wide" style={{ color: "var(--admin-text-muted)" }}>
+                      Activity Timeline
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {activityLog.map((log) => {
+                      const timestamp = new Date(log.created_at).toLocaleString("en-PK", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
+
+                      let actionLabel = "";
+                      let details = "";
+
+                      if (log.action_type === "status_change") {
+                        actionLabel = "Status changed";
+                        details = `${log.old_value?.status} → ${log.new_value?.status}`;
+                      } else if (log.action_type === "customer_update") {
+                        actionLabel = "Customer details updated";
+                        const changes: string[] = [];
+                        if (log.old_value?.name !== log.new_value?.name) changes.push("name");
+                        if (log.old_value?.email !== log.new_value?.email) changes.push("email");
+                        if (log.old_value?.phone !== log.new_value?.phone) changes.push("phone");
+                        if (JSON.stringify(log.old_value?.address) !== JSON.stringify(log.new_value?.address)) changes.push("address");
+                        details = changes.join(", ");
+                      } else if (log.action_type === "tracking_update") {
+                        actionLabel = "Tracking updated";
+                        const changes: string[] = [];
+                        if (log.old_value?.courier !== log.new_value?.courier) changes.push(`courier: ${log.new_value?.courier}`);
+                        if (log.old_value?.tracking_number !== log.new_value?.tracking_number) changes.push(`tracking #: ${log.new_value?.tracking_number}`);
+                        details = changes.join(", ");
+                      } else if (log.action_type === "payment_update") {
+                        actionLabel = "Payment status changed";
+                        details = `${log.old_value?.payment_status} → ${log.new_value?.payment_status}`;
+                      } else {
+                        actionLabel = log.action_type.replace(/_/g, " ");
+                        details = "";
+                      }
+
+                      return (
+                        <div
+                          key={log.id}
+                          className="flex gap-3 rounded-[var(--admin-radius)] p-3"
+                          style={{ background: "var(--admin-surface-alt)" }}
+                        >
+                          <div className="flex-1">
+                            <div className="text-[14px] font-semibold" style={{ color: "var(--admin-text)" }}>
+                              {actionLabel}
+                            </div>
+                            {details && (
+                              <div className="mt-0.5 text-[13px]" style={{ color: "var(--admin-text-soft)" }}>
+                                {details}
+                              </div>
+                            )}
+                            <div className="mt-1.5 flex items-center gap-2 text-[12px]" style={{ color: "var(--admin-text-muted)" }}>
+                              <span>{timestamp}</span>
+                              {log.admin_email && (
+                                <>
+                                  <span>•</span>
+                                  <span>{log.admin_email}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </AdminCard>
+              )}
 
             </div>
           </div>

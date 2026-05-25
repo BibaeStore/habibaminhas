@@ -191,8 +191,13 @@ export function Footer() {
       {/* ── Bottom bar — copyright + payment logos ─────────────────── */}
       <div className="mx-auto w-full max-w-[1440px] px-4 pb-8 sm:px-8">
         <div className="flex flex-col items-start justify-between gap-4 border-t border-ivory/10 pt-6 sm:flex-row sm:items-center">
-          <div className="text-[11px] uppercase tracking-[0.22em] text-ivory/30">
-            © 2026 Habiba Minhas Atelier — All rights reserved
+          <div className="flex flex-col gap-1">
+            <div className="text-[11px] uppercase tracking-[0.22em] text-ivory/30">
+              © 2026 Habiba Minhas Clothing (SMC-Private) Limited — All rights reserved
+            </div>
+            <div className="text-[10px] text-ivory/20">
+              Company Registration No. 0338396 | Registered in Pakistan
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {paymentLogos.map(({ src, alt, w, h }) => (

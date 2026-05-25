@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { AdminButton } from "./button";
 
 export interface ConfirmModalProps {
   open: boolean;
   title: string;
-  description?: string;
+  description?: string | ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
@@ -48,9 +48,9 @@ export function ConfirmModal({
           {title}
         </h2>
         {description && (
-          <p className="mt-2 text-[15px] text-[var(--admin-text-soft)]">
+          <div className="mt-2 text-[15px] text-[var(--admin-text-soft)]">
             {description}
-          </p>
+          </div>
         )}
         <div className="mt-6 flex justify-end gap-2">
           <AdminButton variant="outline" onClick={onCancel} disabled={loading}>

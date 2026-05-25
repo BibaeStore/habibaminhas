@@ -164,8 +164,37 @@ export async function createOrder(
   return { order: newOrder, error: null };
 }
 
-export async function updateOrderStatus(id: string, status: string) {
+/**
+ * ✅ PHASE 3: Log activity to order_activity_log table
+ * Helper function to record all order changes
+ */
+async function logOrderActivity(
+  orderId: string,
+  actionType: string,
+  oldValue: any,
+  newValue: any,
+  adminEmail?: string
+) {
   const sb = createAdminClient();
+  await sb.from("order_activity_log").insert({
+    order_id: orderId,
+    action_type: actionType,
+    old_value: oldValue,
+    new_value: newValue,
+    admin_email: adminEmail,
+  });
+}
+
+export async function updateOrderStatus(id: string, status: string, adminEmail?: string) {
+  const sb = createAdminClient();
+
+  // Get current order to log old status
+  const { data: currentOrder } = await sb
+    .from("orders")
+    .select("status")
+    .eq("id", id)
+    .single();
+
   const { data, error } = await sb
     .from("orders")
     .update({ status })
@@ -173,12 +202,36 @@ export async function updateOrderStatus(id: string, status: string) {
     .select()
     .single();
   if (error) throw new Error(error.message);
+
+  // Log status change
+  if (currentOrder && currentOrder.status !== status) {
+    await logOrderActivity(
+      id,
+      "status_change",
+      { status: currentOrder.status },
+      { status },
+      adminEmail
+    );
+  }
+
   revalidatePath("/admin/orders");
   return data;
 }
 
-export async function updateOrder(id: string, payload: TablesUpdate<"orders">) {
+export async function updateOrder(
+  id: string,
+  payload: TablesUpdate<"orders">,
+  adminEmail?: string
+) {
   const sb = createAdminClient();
+
+  // Get current order to compare changes
+  const { data: currentOrder } = await sb
+    .from("orders")
+    .select("*")
+    .eq("id", id)
+    .single();
+
   const { data, error } = await sb
     .from("orders")
     .update(payload)
@@ -186,6 +239,64 @@ export async function updateOrder(id: string, payload: TablesUpdate<"orders">) {
     .select()
     .single();
   if (error) throw new Error(error.message);
+
+  // Log different types of changes
+  if (currentOrder) {
+    // Customer details update
+    if (
+      payload.customer_name ||
+      payload.customer_email ||
+      payload.customer_phone ||
+      payload.address
+    ) {
+      await logOrderActivity(
+        id,
+        "customer_update",
+        {
+          name: currentOrder.customer_name,
+          email: currentOrder.customer_email,
+          phone: currentOrder.customer_phone,
+          address: currentOrder.address,
+        },
+        {
+          name: payload.customer_name ?? currentOrder.customer_name,
+          email: payload.customer_email ?? currentOrder.customer_email,
+          phone: payload.customer_phone ?? currentOrder.customer_phone,
+          address: payload.address ?? currentOrder.address,
+        },
+        adminEmail
+      );
+    }
+
+    // Tracking update
+    if (payload.courier || payload.tracking_number) {
+      await logOrderActivity(
+        id,
+        "tracking_update",
+        {
+          courier: currentOrder.courier,
+          tracking_number: currentOrder.tracking_number,
+        },
+        {
+          courier: payload.courier ?? currentOrder.courier,
+          tracking_number: payload.tracking_number ?? currentOrder.tracking_number,
+        },
+        adminEmail
+      );
+    }
+
+    // Payment status update
+    if (payload.payment_status) {
+      await logOrderActivity(
+        id,
+        "payment_update",
+        { payment_status: currentOrder.payment_status },
+        { payment_status: payload.payment_status },
+        adminEmail
+      );
+    }
+  }
+
   revalidatePath("/admin/orders");
   return data;
 }
@@ -303,4 +414,58 @@ export async function getOrderStats() {
       cancelled:  data.filter((o: Row) => o.status === "cancelled").length,
     },
   };
+}
+
+/**
+ * ✅ PHASE 3: Get activity log for an order
+ * Returns all activity entries for a specific order, ordered by most recent first
+ */
+export async function getOrderActivityLog(orderId: string) {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("order_activity_log")
+    .select("*")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/**
+ * ✅ PHASE 1: Delete Order (Permanently removes order and order_items)
+ * Used for deleting test orders or mistakes.
+ * Cascade delete: order_items are automatically deleted via foreign key ON DELETE CASCADE.
+ */
+export async function deleteOrder(id: string) {
+  const sb = createAdminClient();
+
+  // Delete order (order_items cascade delete automatically)
+  const { error } = await sb
+    .from("orders")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/orders");
+  return { success: true };
+}
+
+/**
+ * ✅ PHASE 1: Bulk Delete Orders
+ * Deletes multiple orders at once.
+ */
+export async function bulkDeleteOrders(ids: string[]) {
+  const sb = createAdminClient();
+
+  const { error } = await sb
+    .from("orders")
+    .delete()
+    .in("id", ids);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/orders");
+  return { success: true, count: ids.length };
 }
