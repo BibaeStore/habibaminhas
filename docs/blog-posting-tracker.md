@@ -1,24 +1,24 @@
 # Blog Posting Tracker — Habiba Minhas
-## Progress: 5/100 Blogs Posted ✅
+## Progress: 10/100 Blogs Posted ✅
 
-**Last Updated:** 2026-05-22  
-**Session:** Batch 1 - Initial 5 blogs posted  
-**Next Action:** Post next 5 blogs (Posts 6-10)
+**Last Updated:** 2026-05-26  
+**Session:** Batch 2 - Posts 6-10 completed  
+**Next Action:** Post next 5 blogs (Posts 11-15)
 
 ---
 
-## NEXT 5 BLOGS TO POST (Batch 2)
+## NEXT 5 BLOGS TO POST (Batch 3)
 When user says "post next 5 blogs", these are next:
 
-1. **Post 6** — `how-to-dress-eid-dawat-pakistan`
-2. **Post 7** — `pakistani-formal-wear-guide-party-semi-formal-festive`
-3. **Post 8** — `unstitched-vs-ready-to-wear-suits-pakistan`
-4. **Post 9** — `how-to-pick-size-pakistani-ready-to-wear`
-5. **Post 10** — `5-things-check-buying-unstitched-suit-online-pakistan`
+1. **Post 11** — `how-to-care-for-silk-suits-at-home-pakistan`
+2. **Post 12** — `gold-brocade-fabric-what-it-is-how-to-style`
+3. **Post 13** — `7-ways-drape-dupatta-weddings-formal-events`
+4. **Post 14** — `how-to-match-accessories-formal-pakistani-suit`
+5. **Post 15** — `hair-accessories-pakistani-women-styling-guide`
 
 ---
 
-## POSTED BLOGS (5)
+## POSTED BLOGS (10)
 
 ### Batch 1 — Posted 2026-05-22
 | # | Title | Slug | Status | Date Posted |
@@ -29,18 +29,22 @@ When user says "post next 5 blogs", these are next:
 | 4 | Walima Guest Outfit Guide — Elegant Options for Pakistani Women | `walima-guest-outfit-guide-pakistan` | ✅ Posted | 2026-05-22 |
 | 5 | Best Eid Outfits for Women in Pakistan (2026 Trend Guide) | `best-eid-outfits-women-pakistan-2026` | ✅ Posted | 2026-05-22 |
 
+### Batch 2 — Posted 2026-05-26
+| # | Title | Slug | Status | Date Posted |
+|---|-------|------|--------|-------------|
+| 6 | How to Dress for Eid Dawat — Styling Tips for Pakistani Women | `how-to-dress-eid-dawat-pakistan` | ✅ Posted | 2026-05-26 |
+| 7 | Pakistani Formal Wear Guide: Difference Between Party, Semi-Formal and Festive | `pakistani-formal-wear-guide-party-semi-formal-festive` | ✅ Posted | 2026-05-26 |
+| 8 | Unstitched vs Ready-to-Wear Suits — Which Is Better for You? | `unstitched-vs-ready-to-wear-suits-pakistan` | ✅ Posted | 2026-05-26 |
+| 9 | How to Pick the Right Size in Pakistani Ready-to-Wear (Sizing Guide) | `how-to-pick-size-pakistani-ready-to-wear` | ✅ Posted | 2026-05-26 |
+| 10 | 5 Things to Check Before Buying an Unstitched Suit Online in Pakistan | `5-things-check-buying-unstitched-suit-online-pakistan` | ✅ Posted | 2026-05-26 |
+
 ---
 
-## PENDING BLOGS (95)
+## PENDING BLOGS (90)
 
-### PILLAR 1: Ladies Fashion & Styling (25 remaining)
+### PILLAR 1: Ladies Fashion & Styling (20 remaining)
 | # | Title | Slug | Status |
 |---|-------|------|--------|
-| 6 | How to Dress for Eid Dawat | `how-to-dress-eid-dawat-pakistan` | ⏳ Pending |
-| 7 | Pakistani Formal Wear Guide | `pakistani-formal-wear-guide-party-semi-formal-festive` | ⏳ Pending |
-| 8 | Unstitched vs Ready-to-Wear | `unstitched-vs-ready-to-wear-suits-pakistan` | ⏳ Pending |
-| 9 | Sizing Guide | `how-to-pick-size-pakistani-ready-to-wear` | ⏳ Pending |
-| 10 | Buying Unstitched Online | `5-things-check-buying-unstitched-suit-online-pakistan` | ⏳ Pending |
 | 11 | Silk Suit Care | `how-to-care-for-silk-suits-at-home-pakistan` | ⏳ Pending |
 | 12 | Gold Brocade Fabric | `gold-brocade-fabric-what-it-is-how-to-style` | ⏳ Pending |
 | 13 | 7 Ways to Drape Dupatta | `7-ways-drape-dupatta-weddings-formal-events` | ⏳ Pending |
