@@ -8,7 +8,7 @@ import {
   ArrowLeft, Package, Truck, CheckCircle2, Clock, XCircle,
   RotateCcw, Phone, Mail, MapPin, CreditCard, FileText,
   MessageSquare, Printer, ExternalLink, Copy, Check,
-  ChevronRight, AlertTriangle, User,
+  ChevronRight, AlertTriangle, User, ClipboardList,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
