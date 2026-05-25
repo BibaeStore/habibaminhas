@@ -159,6 +159,41 @@ export default function AboutPage() {
           </p>
         </div>
       </section>
+
+      <section className="mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-8">
+        <div className="mx-auto max-w-3xl">
+          <div className="border border-border-soft bg-ivory p-8 text-center sm:p-12">
+            <div className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
+              Legally Registered Business
+            </div>
+            <h2 className="mt-4 font-display text-3xl italic leading-tight sm:text-4xl">
+              Transparency & Trust
+            </h2>
+            <p className="mt-6 text-[14px] leading-relaxed text-ink-soft">
+              Habiba Minhas operates as <strong>Habiba Minhas Clothing (SMC-Private) Limited</strong>,
+              a legally registered company in Pakistan. We believe in complete transparency
+              and building long-term trust with our customers.
+            </p>
+            <div className="mt-8 space-y-2 text-[13px] text-ink-soft">
+              <p>
+                <strong className="text-ink">Company Registration No:</strong> 0338396
+              </p>
+              <p>
+                <strong className="text-ink">Registered in:</strong> Pakistan
+              </p>
+              <p>
+                <strong className="text-ink">Business Type:</strong> Single Member Company (SMC-Private) Limited
+              </p>
+            </div>
+            <p className="mt-6 text-[13px] leading-relaxed text-ink-soft">
+              As a registered company, we adhere to all Pakistani business regulations,
+              maintain proper accounting standards, and ensure complete compliance with
+              local laws. When you shop with us, you're shopping with a legitimate,
+              accountable business.
+            </p>
+          </div>
+        </div>
+      </section>
     </>
   );
 }
