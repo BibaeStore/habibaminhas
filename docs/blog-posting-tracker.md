@@ -1,24 +1,24 @@
 # Blog Posting Tracker — Habiba Minhas
-## Progress: 10/100 Blogs Posted ✅
+## Progress: 20/100 Blogs Posted ✅
 
-**Last Updated:** 2026-05-26  
-**Session:** Batch 2 - Posts 6-10 completed  
-**Next Action:** Post next 5 blogs (Posts 11-15)
+**Last Updated:** 2026-06-04  
+**Session:** Batch 4 - Posts 16-20 completed  
+**Next Action:** Post next 5 blogs (Posts 21-25)
 
 ---
 
-## NEXT 5 BLOGS TO POST (Batch 3)
+## NEXT 5 BLOGS TO POST (Batch 5)
 When user says "post next 5 blogs", these are next:
 
-1. **Post 11** — `how-to-care-for-silk-suits-at-home-pakistan`
-2. **Post 12** — `gold-brocade-fabric-what-it-is-how-to-style`
-3. **Post 13** — `7-ways-drape-dupatta-weddings-formal-events`
-4. **Post 14** — `how-to-match-accessories-formal-pakistani-suit`
-5. **Post 15** — `hair-accessories-pakistani-women-styling-guide`
+1. **Post 21** — `best-eid-dresses-girls-pakistan-2026`
+2. **Post 22** — `kids-festive-wear-guide-pakistani-weddings`
+3. **Post 23** — `how-to-pick-right-festive-outfit-size-child-pakistan`
+4. **Post 24** — `embroidered-kids-suits-handcrafted-eid-pakistan`
+5. **Post 25** — `co-ord-sets-girls-festive-events-pakistan`
 
 ---
 
-## POSTED BLOGS (10)
+## POSTED BLOGS (20)
 
 ### Batch 1 — Posted 2026-05-22
 | # | Title | Slug | Status | Date Posted |
@@ -38,23 +38,29 @@ When user says "post next 5 blogs", these are next:
 | 9 | How to Pick the Right Size in Pakistani Ready-to-Wear (Sizing Guide) | `how-to-pick-size-pakistani-ready-to-wear` | ✅ Posted | 2026-05-26 |
 | 10 | 5 Things to Check Before Buying an Unstitched Suit Online in Pakistan | `5-things-check-buying-unstitched-suit-online-pakistan` | ✅ Posted | 2026-05-26 |
 
+### Batch 3 — Posted 2026-05-31 to 2026-06-04
+| # | Title | Slug | Status | Date Posted |
+|---|-------|------|--------|-------------|
+| 11 | How to Care for Silk Suits at Home — Pakistani Climate Tips | `how-to-care-for-silk-suits-at-home-pakistan` | ✅ Posted | 2026-05-31 |
+| 12 | Gold Brocade Fabric — What It Is and How to Style It | `gold-brocade-fabric-what-it-is-how-to-style` | ✅ Posted | 2026-06-01 |
+| 13 | 7 Ways to Drape a Dupatta for Pakistani Weddings and Formal Events | `7-ways-drape-dupatta-weddings-formal-events` | ✅ Posted | 2026-06-02 |
+| 14 | How to Match Accessories with a Formal Pakistani Suit | `how-to-match-accessories-formal-pakistani-suit` | ✅ Posted | 2026-06-03 |
+| 15 | Hair Accessories for Pakistani Women — Complete Styling Guide | `hair-accessories-pakistani-women-styling-guide` | ✅ Posted | 2026-06-04 |
+
+### Batch 4 — Posted 2026-06-04 (Staggered Times)
+| # | Title | Slug | Status | Date Posted |
+|---|-------|------|--------|-------------|
+| 16 | Pakistani Fashion Color Trends for 2026 — What to Wear This Year | `pakistani-fashion-colour-trends-2026` | ✅ Posted | 2026-06-04 07:00 |
+| 17 | Best Colors for Pakistani Skin Tones — A Complete Wardrobe Guide | `best-colours-for-pakistani-skin-tones` | ✅ Posted | 2026-06-04 10:00 |
+| 18 | Capsule Wardrobe for Pakistani Women — 10 Pieces for Every Occasion | `capsule-wardrobe-pakistani-women-10-pieces` | ✅ Posted | 2026-06-04 13:00 |
+| 19 | How to Style White Suits for Pakistani Occasions | `how-to-style-white-suits-pakistani-occasions` | ✅ Posted | 2026-06-04 16:00 |
+| 20 | Summer vs Winter Fabric Guide for Pakistani Women | `summer-vs-winter-fabric-guide-pakistani-women` | ✅ Posted | 2026-06-04 19:00 |
+
 ---
 
-## PENDING BLOGS (90)
+## PENDING BLOGS (80)
 
-### PILLAR 1: Ladies Fashion & Styling (20 remaining)
-| # | Title | Slug | Status |
-|---|-------|------|--------|
-| 11 | Silk Suit Care | `how-to-care-for-silk-suits-at-home-pakistan` | ⏳ Pending |
-| 12 | Gold Brocade Fabric | `gold-brocade-fabric-what-it-is-how-to-style` | ⏳ Pending |
-| 13 | 7 Ways to Drape Dupatta | `7-ways-drape-dupatta-weddings-formal-events` | ⏳ Pending |
-| 14 | Match Accessories | `how-to-match-accessories-formal-pakistani-suit` | ⏳ Pending |
-| 15 | Hair Accessories Guide | `hair-accessories-pakistani-women-styling-guide` | ⏳ Pending |
-| 16 | Color Trends 2026 | `pakistani-fashion-colour-trends-2026` | ⏳ Pending |
-| 17 | Best Colors for Skin Tones | `best-colours-for-pakistani-skin-tones` | ⏳ Pending |
-| 18 | Capsule Wardrobe | `capsule-wardrobe-pakistani-women-10-pieces` | ⏳ Pending |
-| 19 | Style White Suits | `how-to-style-white-suits-pakistani-occasions` | ⏳ Pending |
-| 20 | Summer vs Winter Fabrics | `summer-vs-winter-fabric-guide-pakistani-women` | ⏳ Pending |
+### PILLAR 1: Ladies Fashion & Styling (10 remaining)
 
 ### PILLAR 2: Kids Festive Wear (15 remaining)
 | # | Title | Slug | Status |
