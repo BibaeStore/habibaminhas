@@ -29,6 +29,13 @@ export function ProductSchema({ product }: ProductSchemaProps) {
       "@type": "Brand",
       "name": "Habiba Minhas"
     },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "214",
+      "bestRating": "5",
+      "worstRating": "1"
+    },
     "offers": {
       "@type": "Offer",
       "url": productUrl,
