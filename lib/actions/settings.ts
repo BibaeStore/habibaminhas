@@ -127,10 +127,10 @@ export async function getStorefrontSettings(): Promise<StorefrontSettings> {
         easypaisa: asBool(pay.easypaisa, DEFAULTS.payment.easypaisa),
       },
       seo: {
-        ga4_id:           asString(seo.ga4_id,           DEFAULTS.seo.ga4_id),
-        fb_pixel:         asString(seo.fb_pixel,         DEFAULTS.seo.fb_pixel),
-        site_title:       asString(seo.site_title,       DEFAULTS.seo.site_title),
-        meta_description: asString(seo.meta_description, DEFAULTS.seo.meta_description),
+        ga4_id:           asString(seo.ga4_id ?? seo.ga4,           DEFAULTS.seo.ga4_id),
+        fb_pixel:         asString(seo.fb_pixel ?? seo.fbPixel,         DEFAULTS.seo.fb_pixel),
+        site_title:       asString(seo.site_title ?? seo.siteTitle,       DEFAULTS.seo.site_title),
+        meta_description: asString(seo.meta_description ?? seo.metaDesc, DEFAULTS.seo.meta_description),
       },
     };
   } catch {
