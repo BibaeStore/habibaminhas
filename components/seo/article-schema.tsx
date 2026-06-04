@@ -33,9 +33,9 @@ export function ArticleSchema({
     "datePublished": publishedAt,
     "dateModified": updatedAt || publishedAt,
     "author": {
-      "@type": "Organization",
+      "@type": "Person",
       "name": author,
-      "url": baseUrl
+      "url": `${baseUrl}/about/`
     },
     "publisher": {
       "@type": "Organization",

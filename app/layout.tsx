@@ -7,6 +7,7 @@ import { getStorefrontSettings } from "@/lib/actions/settings";
 import { getNavMenu } from "@/lib/actions/categories";
 import { OrganizationSchema } from "@/components/seo/organization-schema";
 import { WebSiteSchema } from "@/components/seo/website-schema";
+import { PersonSchema } from "@/components/seo/person-schema";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -103,6 +104,7 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col bg-ivory text-ink">
         <OrganizationSchema />
         <WebSiteSchema />
+        <PersonSchema />
         <LayoutShell navMenus={navMenus}>{children}</LayoutShell>
         {/* TrustBox bootstrap script */}
         <Script

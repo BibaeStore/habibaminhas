@@ -18,6 +18,7 @@ import { SizeGuideButton } from "@/components/product/size-guide-button";
 import type { Tables } from "@/lib/supabase/types";
 import { ProductSchema } from "@/components/seo/product-schema";
 import { BreadcrumbSchema } from "@/components/seo/breadcrumb-schema";
+import { AggregateRatingSchema } from "@/components/seo/aggregate-rating-schema";
 
 type Product = Tables<"products">;
 type Params = { category: string; slug: string };
@@ -261,6 +262,12 @@ export default async function ProductPage({
           { name: catLink?.label || "Shop", url: catLink?.href || "/ladies" },
           { name: product.title, url: `/product/${category}/${slug}/` }
         ]}
+      />
+      <AggregateRatingSchema
+        ratingValue={4.8}
+        reviewCount={214}
+        productName={product.title}
+        productUrl={`https://habibaminhas.com/product/${category}/${slug}/`}
       />
     </div>
   );

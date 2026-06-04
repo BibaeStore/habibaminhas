@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LocalBusinessSchema } from "@/components/seo/local-business-schema";
 
 // SEO Focus Keyword: "contact Habiba Minhas Pakistan"
 // Target: Customers looking to reach customer support in Pakistan
@@ -16,5 +17,10 @@ export default function ContactLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <LocalBusinessSchema />
+      {children}
+    </>
+  );
 }
