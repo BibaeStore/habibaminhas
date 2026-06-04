@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "submit-urls": "tsx scripts/submit-urls.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
