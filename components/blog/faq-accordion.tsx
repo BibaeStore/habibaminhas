@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 interface FAQItem {
-  q: string;
-  a: string;
+  question: string;
+  answer: string;
 }
 
 interface FAQAccordionProps {
@@ -27,7 +27,7 @@ export function FAQAccordion({ questions }: FAQAccordionProps) {
             className="flex w-full items-start justify-between gap-4 p-5 text-left transition-colors"
           >
             <h3 className="text-[15px] font-semibold leading-relaxed text-ink">
-              {faq.q}
+              {faq.question}
             </h3>
             <ChevronDown
               className={`h-5 w-5 flex-shrink-0 text-gold-dark transition-transform ${
@@ -42,7 +42,7 @@ export function FAQAccordion({ questions }: FAQAccordionProps) {
           >
             <div className="border-t border-border-soft px-5 pb-5 pt-4">
               <p className="text-[14px] leading-relaxed text-ink-soft">
-                {faq.a}
+                {faq.answer}
               </p>
             </div>
           </div>

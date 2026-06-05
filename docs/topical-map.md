@@ -1,7 +1,7 @@
 # Habiba Minhas — Complete Topical Map
 ## 100 Blog Titles | SEO + NLP + GEO + Entity-Based Strategy
 
-**Brand:** Habiba Minhas | Pakistani Luxury Fashion & Baby Products  
+**Brand:** Habiba Minhas | Pakistani Luxury Fashion & Ladies Stitched and Unstitched  
 **Audience:** Pakistani women (18–45), mothers, gift buyers — searching in English (SEO) but thinking in Urdu/Pakistani context  
 **Goal:** Organic traffic via topical authority → fulfill user intent → convert to shop
 

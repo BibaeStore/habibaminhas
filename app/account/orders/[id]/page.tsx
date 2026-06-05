@@ -64,7 +64,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<Para
   const order = await getMyOrderByNumber(id);
   if (!order) notFound();
 
-  const items    = (order.order_items ?? []) as OrderItem[];
+  const items    = (order.order_items ?? []) as unknown as OrderItem[];
   const addr     = parseAddress(order.address);
   const s        = STATUS_STYLE[order.status] ?? STATUS_STYLE.processing;
   const timeline = buildTimeline(order.status, order.courier);

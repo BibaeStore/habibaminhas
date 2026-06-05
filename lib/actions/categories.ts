@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 import type { MegaMenu } from "@/lib/data";
 
 const TONES = ["rose", "gold", "sage", "ink"] as const;
@@ -127,7 +127,7 @@ export async function uploadCategoryImage(formData: FormData) {
   return { url: publicUrl, error: null };
 }
 
-export async function getFeaturedCategories() {
+export async function getFeaturedCategories(): Promise<Pick<Tables<"categories">, "id" | "name" | "slug" | "image" | "color" | "sort_order">[]> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("categories")
@@ -139,7 +139,7 @@ export async function getFeaturedCategories() {
   return data ?? [];
 }
 
-export async function getCategories() {
+export async function getCategories(): Promise<Tables<"categories">[]> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("categories")
@@ -149,7 +149,7 @@ export async function getCategories() {
   return data;
 }
 
-export async function getMainCategories() {
+export async function getMainCategories(): Promise<Pick<Tables<"categories">, "id" | "name" | "slug" | "sort_order">[]> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("categories")
@@ -162,7 +162,7 @@ export async function getMainCategories() {
   return data ?? [];
 }
 
-export async function getChildCategories(parentId: string) {
+export async function getChildCategories(parentId: string): Promise<Pick<Tables<"categories">, "id" | "name" | "slug" | "sort_order">[]> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("categories")
@@ -174,7 +174,7 @@ export async function getChildCategories(parentId: string) {
   return data ?? [];
 }
 
-export async function getCategoryBySlug(slug: string) {
+export async function getCategoryBySlug(slug: string): Promise<Tables<"categories">> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("categories")
@@ -185,7 +185,7 @@ export async function getCategoryBySlug(slug: string) {
   return data;
 }
 
-export async function getCategoryById(id: string) {
+export async function getCategoryById(id: string): Promise<Tables<"categories">> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("categories")

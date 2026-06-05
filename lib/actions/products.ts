@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 import { emitLowStockNotifications } from "@/lib/actions/inventory";
 import { LOW_STOCK_THRESHOLD } from "@/lib/inventory-constants";
 
@@ -32,7 +32,7 @@ export async function getProducts(filters?: {
   featured?: boolean;
   onSale?: boolean;
   search?: string;
-}) {
+}): Promise<Tables<"products">[]> {
   const sb = createAdminClient();
   let q = sb.from("products").select("*").order("created_at", { ascending: false });
 
@@ -49,7 +49,7 @@ export async function getProducts(filters?: {
   return data;
 }
 
-export async function getProductBySlug(slug: string) {
+export async function getProductBySlug(slug: string): Promise<Tables<"products">> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("products")
@@ -60,7 +60,7 @@ export async function getProductBySlug(slug: string) {
   return data;
 }
 
-export async function getProductsBySlugs(slugs: string[]) {
+export async function getProductsBySlugs(slugs: string[]): Promise<Tables<"products">[]> {
   if (slugs.length === 0) return [];
   const sb = createAdminClient();
   const { data, error } = await sb

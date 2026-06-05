@@ -2,9 +2,9 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { TablesUpdate } from "@/lib/supabase/types";
+import type { Tables, TablesUpdate } from "@/lib/supabase/types";
 
-export async function getSettings() {
+export async function getSettings(): Promise<Tables<"settings">> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("settings")

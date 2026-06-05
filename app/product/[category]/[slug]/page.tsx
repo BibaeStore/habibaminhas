@@ -216,8 +216,8 @@ export default async function ProductPage({
 
           {/* Details & Description Tabs */}
           <ProductDetailsTabs
+            details={product.short_description}
             description={product.description}
-            shortDescription={product.short_description}
             faqs={product.faqs as Array<{question: string; answer: string}> | null}
           />
 

@@ -8,53 +8,93 @@ interface FAQ {
   answer: string;
 }
 
+/** Splits plain-text content (stored with blank-line separators) into blocks. */
+function toBlocks(text: string): string[] {
+  return text
+    .split(/\n+/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+}
+
+/** Renders the structured spec text ("Stitching: ...", "Fabric: ...") as
+ *  labelled rows — the label before the first colon becomes a bold heading. */
+function SpecList({ text }: { text: string }) {
+  const blocks = toBlocks(text);
+  if (blocks.length === 0) return <p className="text-ink-soft text-[14px]">No details available.</p>;
+
+  return (
+    <div className="space-y-4">
+      {blocks.map((block, i) => {
+        const sep = block.indexOf(":");
+        if (sep === -1) {
+          return (
+            <p key={i} className="text-ink-soft text-[14px] leading-relaxed">
+              {block}
+            </p>
+          );
+        }
+        const label = block.slice(0, sep).trim();
+        const value = block.slice(sep + 1).trim();
+        return (
+          <div key={i}>
+            <h4 className="font-semibold text-ink text-[14px]">{label}</h4>
+            <p className="text-ink-soft text-[14px] leading-relaxed mt-1">{value}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Renders prose content as readable paragraphs. */
+function Prose({ text }: { text: string }) {
+  const paragraphs = toBlocks(text);
+  if (paragraphs.length === 0) return <p className="text-ink-soft text-[14px]">No description available.</p>;
+
+  return (
+    <div className="space-y-4">
+      {paragraphs.map((p, i) => (
+        <p key={i} className="text-ink-soft text-[14px] leading-relaxed">
+          {p}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function ProductDetailsTabs({
+  details,
   description,
-  shortDescription,
   faqs,
 }: {
+  /** Structured spec text (DB: short_description) — shown under "Details". */
+  details: string | null;
+  /** Long prose copy (DB: description) — shown under "Description". */
   description: string | null;
-  shortDescription: string | null;
   faqs?: FAQ[] | null;
 }) {
   const [activeTab, setActiveTab] = useState<"details" | "description" | "faqs">("details");
+
+  const tabClass = (tab: typeof activeTab) =>
+    cn(
+      "pb-3 text-[13px] uppercase tracking-[0.26em] transition-colors",
+      activeTab === tab
+        ? "border-b-2 border-ink text-ink"
+        : "text-ink-soft hover:text-ink"
+    );
 
   return (
     <div className="mt-10">
       {/* Tab Headers */}
       <div className="flex gap-8 border-b border-border-soft">
-        <button
-          onClick={() => setActiveTab("details")}
-          className={cn(
-            "pb-3 text-[13px] uppercase tracking-[0.26em] transition-colors",
-            activeTab === "details"
-              ? "border-b-2 border-ink text-ink"
-              : "text-ink-soft hover:text-ink"
-          )}
-        >
+        <button onClick={() => setActiveTab("details")} className={tabClass("details")}>
           Details
         </button>
-        <button
-          onClick={() => setActiveTab("description")}
-          className={cn(
-            "pb-3 text-[13px] uppercase tracking-[0.26em] transition-colors",
-            activeTab === "description"
-              ? "border-b-2 border-ink text-ink"
-              : "text-ink-soft hover:text-ink"
-          )}
-        >
+        <button onClick={() => setActiveTab("description")} className={tabClass("description")}>
           Description
         </button>
         {faqs && faqs.length > 0 && (
-          <button
-            onClick={() => setActiveTab("faqs")}
-            className={cn(
-              "pb-3 text-[13px] uppercase tracking-[0.26em] transition-colors",
-              activeTab === "faqs"
-                ? "border-b-2 border-ink text-ink"
-                : "text-ink-soft hover:text-ink"
-            )}
-          >
+          <button onClick={() => setActiveTab("faqs")} className={tabClass("faqs")}>
             FAQs
           </button>
         )}
@@ -62,36 +102,8 @@ export function ProductDetailsTabs({
 
       {/* Tab Content */}
       <div className="mt-6">
-        {activeTab === "details" && (
-          <div
-            className="prose prose-sm max-w-none text-ink-soft
-              prose-headings:font-display prose-headings:font-normal prose-headings:italic prose-headings:text-ink prose-headings:mt-6 prose-headings:mb-3
-              prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base
-              prose-p:leading-relaxed prose-p:mb-4
-              prose-strong:font-semibold prose-strong:text-ink
-              prose-ul:list-disc prose-ul:ml-5 prose-ul:mb-4 prose-ul:space-y-1
-              prose-ol:list-decimal prose-ol:ml-5 prose-ol:mb-4 prose-ol:space-y-1
-              prose-li:text-ink-soft prose-li:leading-relaxed
-              prose-a:text-gold-dark prose-a:underline hover:prose-a:text-gold-dark-dark
-              prose-code:bg-cream prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-              prose-pre:bg-cream prose-pre:p-4 prose-pre:rounded prose-pre:overflow-x-auto
-              prose-blockquote:border-l-4 prose-blockquote:border-gold-dark prose-blockquote:pl-4 prose-blockquote:italic
-              [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-            dangerouslySetInnerHTML={{ __html: description || "<p>No details available.</p>" }}
-          />
-        )}
-        {activeTab === "description" && (
-          <div
-            className="prose prose-sm max-w-none text-ink-soft
-              prose-p:leading-relaxed prose-p:mb-4
-              prose-strong:font-semibold prose-strong:text-ink
-              prose-a:text-gold-dark prose-a:underline hover:prose-a:text-gold-dark-dark
-              [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-            dangerouslySetInnerHTML={{
-              __html: shortDescription || "<p>No description available.</p>",
-            }}
-          />
-        )}
+        {activeTab === "details" && <SpecList text={details || ""} />}
+        {activeTab === "description" && <Prose text={description || ""} />}
         {activeTab === "faqs" && faqs && faqs.length > 0 && (
           <div className="space-y-6">
             {faqs.map((faq, index) => (

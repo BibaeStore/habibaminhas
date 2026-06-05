@@ -26,6 +26,8 @@ Disallow: /cart/
 Disallow: /checkout/
 Disallow: /wishlist/
 Disallow: /order/
+Disallow: /promo/
+Disallow: /promo-teaser/
 
 # Sitemap for search engines
 Sitemap: https://habibaminhas.com/sitemap.xml

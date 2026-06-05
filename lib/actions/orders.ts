@@ -2,7 +2,7 @@
 
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 import { decrementStock, emitLowStockNotifications } from "@/lib/actions/inventory";
 import { sendOrderEmails } from "@/lib/email";
 
@@ -53,7 +53,7 @@ const PAYMENT_METHOD_MAP: Record<string, string> = {
 export async function createOrder(
   order: Omit<TablesInsert<"orders">, "order_number">,
   items: Omit<TablesInsert<"order_items">, "order_id">[]
-) {
+): Promise<{ order: Tables<"orders"> | null; error: string | null }> {
   const sb = createAdminClient();
 
   const payment_method =
@@ -364,7 +364,7 @@ export async function getOrdersByEmail(email: string) {
 
 /** Returns orders for the currently authenticated customer. Uses the SSR
  *  (cookie) client so Supabase RLS gates rows to the caller's own orders. */
-export async function getMyOrders() {
+export async function getMyOrders(): Promise<(Tables<"orders"> & { order_items: Tables<"order_items">[] })[]> {
   const sb = await createClient();
   const { data: userData } = await sb.auth.getUser();
   if (!userData.user) return [];
@@ -373,14 +373,14 @@ export async function getMyOrders() {
     .select("*, order_items(*)")
     .order("created_at", { ascending: false });
   if (error) return [];
-  return data ?? [];
+  return (data ?? []) as any;
 }
 
 /** Returns a single order BY order_number, scoped to the authenticated user
  *  by RLS. Returns null if the order does not belong to the caller. */
-export async function getMyOrderByNumber(orderNumber: string) {
+export async function getMyOrderByNumber(orderNumber: string): Promise<Tables<"orders"> & { order_items: Tables<"order_items">[] } | null> {
   const sb = await createClient();
-  const { data: userData } = await sb.auth.getUser();
+  const { data: userData} = await sb.auth.getUser();
   if (!userData.user) return null;
   const { data, error } = await sb
     .from("orders")
@@ -388,7 +388,7 @@ export async function getMyOrderByNumber(orderNumber: string) {
     .eq("order_number", orderNumber)
     .maybeSingle();
   if (error || !data) return null;
-  return data;
+  return data as any;
 }
 
 export async function getOrderStats() {

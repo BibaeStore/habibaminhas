@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import type { Tables } from "@/lib/supabase/types";
 
 export const revalidate = 300; // cache 5 min
 
@@ -14,7 +15,7 @@ export async function GET() {
   if (error) return NextResponse.json({}, { status: 500 });
 
   const map: Record<string, string> = {};
-  for (const row of data ?? []) {
+  for (const row of (data ?? []) as Pick<Tables<"categories">, "slug" | "image">[]) {
     if (row.slug && row.image) map[row.slug] = row.image;
   }
 
