@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { SectionHeading } from "@/components/common/section-heading";
 import { FAQSchema } from "@/components/seo/faq-schema";
 
@@ -72,10 +73,10 @@ export default function AboutPage() {
               the country.
             </p>
             <p>
-              We specialise in handcrafted ladies formal suits — 3-piece silk
+              We specialise in <Link href="/ladies" className="text-gold-dark hover:underline">handcrafted ladies formal suits</Link> — 3-piece silk
               ensembles adorned with gold brocade, mirror-work, and artisan
-              embroidery — alongside festive kids formalwear, luxurious baby
-              nursery sets, and handcrafted silk accessories.
+              embroidery — alongside <Link href="/kids" className="text-gold-dark hover:underline">festive kids formalwear</Link>, <Link href="/baby" className="text-gold-dark hover:underline">luxurious baby
+              nursery sets</Link>, and <Link href="/accessories" className="text-gold-dark hover:underline">handcrafted silk accessories</Link>.
             </p>
             <p>
               Every product is made in Pakistan, shipped nationwide with flat
@@ -158,6 +159,36 @@ export default function AboutPage() {
           <p className="mt-6 text-[12px] uppercase tracking-[0.28em] text-ink-soft">
             Habiba Minhas — Karachi, Pakistan
           </p>
+        </div>
+      </section>
+
+      {/* Explore More Section */}
+      <section className="mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-8">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <Link href="/shop" className="group block border border-border-soft p-8 hover:border-gold-dark transition-colors">
+            <h3 className="font-display text-2xl italic group-hover:text-gold-dark">
+              Shop All Products
+            </h3>
+            <p className="mt-3 text-[13px] text-ink-soft">
+              Browse our complete collection of handcrafted fashion and baby products.
+            </p>
+          </Link>
+          <Link href="/journal" className="group block border border-border-soft p-8 hover:border-gold-dark transition-colors">
+            <h3 className="font-display text-2xl italic group-hover:text-gold-dark">
+              The Journal
+            </h3>
+            <p className="mt-3 text-[13px] text-ink-soft">
+              Style guides, fabric notes, and behind-the-scenes from our Karachi studio.
+            </p>
+          </Link>
+          <Link href="/contact" className="group block border border-border-soft p-8 hover:border-gold-dark transition-colors">
+            <h3 className="font-display text-2xl italic group-hover:text-gold-dark">
+              Get in Touch
+            </h3>
+            <p className="mt-3 text-[13px] text-ink-soft">
+              Questions? Reach out via WhatsApp, email, or phone — we're here to help.
+            </p>
+          </Link>
         </div>
       </section>
 

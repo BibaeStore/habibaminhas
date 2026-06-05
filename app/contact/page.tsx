@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react";
 import { submitContactMessage } from "@/lib/actions/notifications";
@@ -230,6 +231,49 @@ export default function ContactPage() {
               <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
                 Yes! For custom embroidery, special sizing, or bulk orders, please reach out via the contact form above with your requirements and we'll get back to you with details.
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Links Section */}
+        <div className="mt-20 border-t border-border-soft pt-12">
+          <h2 className="text-[11px] uppercase tracking-[0.3em] text-gold-dark mb-6">
+            Quick Links
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <h3 className="font-display text-lg italic mb-3">Shop</h3>
+              <ul className="space-y-2 text-[13px]">
+                <li><Link href="/ladies" className="text-ink-soft hover:text-gold-dark transition-colors">Ladies Suits</Link></li>
+                <li><Link href="/kids" className="text-ink-soft hover:text-gold-dark transition-colors">Kids Formal</Link></li>
+                <li><Link href="/baby" className="text-ink-soft hover:text-gold-dark transition-colors">Baby Products</Link></li>
+                <li><Link href="/accessories" className="text-ink-soft hover:text-gold-dark transition-colors">Accessories</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-display text-lg italic mb-3">Help</h3>
+              <ul className="space-y-2 text-[13px]">
+                <li><Link href="/help/shipping" className="text-ink-soft hover:text-gold-dark transition-colors">Shipping Info</Link></li>
+                <li><Link href="/help/returns" className="text-ink-soft hover:text-gold-dark transition-colors">Returns & Exchanges</Link></li>
+                <li><Link href="/help/payments" className="text-ink-soft hover:text-gold-dark transition-colors">Payment Methods</Link></li>
+                <li><Link href="/help/faq" className="text-ink-soft hover:text-gold-dark transition-colors">FAQ</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-display text-lg italic mb-3">About</h3>
+              <ul className="space-y-2 text-[13px]">
+                <li><Link href="/about" className="text-ink-soft hover:text-gold-dark transition-colors">Our Story</Link></li>
+                <li><Link href="/about/author" className="text-ink-soft hover:text-gold-dark transition-colors">Meet the Founder</Link></li>
+                <li><Link href="/journal" className="text-ink-soft hover:text-gold-dark transition-colors">The Journal</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-display text-lg italic mb-3">Popular</h3>
+              <ul className="space-y-2 text-[13px]">
+                <li><Link href="/new" className="text-ink-soft hover:text-gold-dark transition-colors">New Arrivals</Link></li>
+                <li><Link href="/offers" className="text-ink-soft hover:text-gold-dark transition-colors">Special Offers</Link></li>
+                <li><Link href="/wholesale" className="text-ink-soft hover:text-gold-dark transition-colors">Wholesale</Link></li>
+              </ul>
             </div>
           </div>
         </div>

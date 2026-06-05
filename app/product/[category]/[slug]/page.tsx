@@ -257,6 +257,95 @@ export default async function ProductPage({
         </section>
       )}
 
+      {/* Related Articles Section */}
+      <section className="mt-16 border-t border-border-soft pt-12 pb-16">
+        <h2 className="text-[11px] uppercase tracking-[0.3em] text-gold-dark mb-6">
+          Styling & Care Guides
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {product.category === 'ladies-suits' && (
+            <>
+              <Link href="/journal/how-to-care-for-silk-suits-at-home-pakistan" className="group block border border-border-soft p-6 hover:border-gold-dark transition-colors">
+                <h3 className="font-display text-xl italic group-hover:text-gold-dark">
+                  How to Care for Silk Suits
+                </h3>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  Expert tips for maintaining the beauty of silk fabric in Pakistan's climate.
+                </p>
+              </Link>
+              <Link href="/journal/how-to-style-silk-suit-pakistani-wedding" className="group block border border-border-soft p-6 hover:border-gold-dark transition-colors">
+                <h3 className="font-display text-xl italic group-hover:text-gold-dark">
+                  Style Guide: Silk Suits for Weddings
+                </h3>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  Complete guide to styling 3-piece suits for Pakistani wedding functions.
+                </p>
+              </Link>
+              <Link href="/journal/7-ways-drape-dupatta-weddings-formal-events" className="group block border border-border-soft p-6 hover:border-gold-dark transition-colors">
+                <h3 className="font-display text-xl italic group-hover:text-gold-dark">
+                  7 Ways to Drape a Dupatta
+                </h3>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  Master the art of dupatta draping for formal events and weddings.
+                </p>
+              </Link>
+            </>
+          )}
+          {product.category === 'kids-formal' && (
+            <>
+              <Link href="/journal/what-to-wear-mehndi-night-pakistan" className="group block border border-border-soft p-6 hover:border-gold-dark transition-colors">
+                <h3 className="font-display text-xl italic group-hover:text-gold-dark">
+                  Mehndi Night Outfit Guide
+                </h3>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  What to dress your kids for Pakistani mehndi celebrations.
+                </p>
+              </Link>
+              <Link href="/journal/best-eid-outfits-women-pakistan-2026" className="group block border border-border-soft p-6 hover:border-gold-dark transition-colors">
+                <h3 className="font-display text-xl italic group-hover:text-gold-dark">
+                  Best Eid Outfits Guide
+                </h3>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  Trending Eid outfit ideas for kids and family celebrations.
+                </p>
+              </Link>
+            </>
+          )}
+          {product.category === 'accessories' && (
+            <>
+              <Link href="/journal/hair-accessories-pakistani-women-styling-guide" className="group block border border-border-soft p-6 hover:border-gold-dark transition-colors">
+                <h3 className="font-display text-xl italic group-hover:text-gold-dark">
+                  Hair Accessories Styling Guide
+                </h3>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  How to style handcrafted silk accessories for formal occasions.
+                </p>
+              </Link>
+              <Link href="/journal/how-to-match-accessories-formal-pakistani-suit" className="group block border border-border-soft p-6 hover:border-gold-dark transition-colors">
+                <h3 className="font-display text-xl italic group-hover:text-gold-dark">
+                  Match Accessories with Your Suit
+                </h3>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  Complete guide to accessorizing Pakistani formal wear perfectly.
+                </p>
+              </Link>
+            </>
+          )}
+          {product.category === 'baby-products' && (
+            <>
+              <Link href="/journal" className="group block border border-border-soft p-6 hover:border-gold-dark transition-colors">
+                <h3 className="font-display text-xl italic group-hover:text-gold-dark">
+                  Baby Care & Nursery Tips
+                </h3>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  Expert guides for Pakistani parents on baby products and nursery setup.
+                </p>
+              </Link>
+            </>
+          )}
+        </div>
+      </section>
+
       {/* Schema Markup for SEO */}
       <ProductSchema product={product} />
       <BreadcrumbSchema
