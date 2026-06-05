@@ -218,6 +218,7 @@ export default async function ProductPage({
           <ProductDetailsTabs
             description={product.description}
             shortDescription={product.short_description}
+            faqs={product.faqs as Array<{question: string; answer: string}> | null}
           />
 
           {/* Feature Cards - moved below tabs */}

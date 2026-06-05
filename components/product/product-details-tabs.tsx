@@ -3,14 +3,21 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
+interface FAQ {
+  question: string;
+  answer: string;
+}
+
 export function ProductDetailsTabs({
   description,
   shortDescription,
+  faqs,
 }: {
   description: string | null;
   shortDescription: string | null;
+  faqs?: FAQ[] | null;
 }) {
-  const [activeTab, setActiveTab] = useState<"details" | "description">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "description" | "faqs">("details");
 
   return (
     <div className="mt-10">
@@ -38,6 +45,19 @@ export function ProductDetailsTabs({
         >
           Description
         </button>
+        {faqs && faqs.length > 0 && (
+          <button
+            onClick={() => setActiveTab("faqs")}
+            className={cn(
+              "pb-3 text-[13px] uppercase tracking-[0.26em] transition-colors",
+              activeTab === "faqs"
+                ? "border-b-2 border-ink text-ink"
+                : "text-ink-soft hover:text-ink"
+            )}
+          >
+            FAQs
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -71,6 +91,16 @@ export function ProductDetailsTabs({
               __html: shortDescription || "<p>No description available.</p>",
             }}
           />
+        )}
+        {activeTab === "faqs" && faqs && faqs.length > 0 && (
+          <div className="space-y-6">
+            {faqs.map((faq, index) => (
+              <div key={index} className="border-b border-border-soft pb-6 last:border-0 last:pb-0">
+                <h3 className="font-medium text-ink mb-2 text-[15px]">{faq.question}</h3>
+                <p className="text-ink-soft text-[14px] leading-relaxed">{faq.answer}</p>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
