@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          password_hash: string | null
+          role: string
+          updated_at: string
+        }
+      }
+      categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          image: string | null
+          name: string
+          nav_href: string | null
+          parent_id: string | null
+          product_count: number
+          seo_desc: string | null
+          seo_title: string | null
+          slug: string
+          sort_order: number
+          status: string
+          type: string
+          updated_at: string
+        }
+      }
       products: {
         Row: {
           badge: string | null
