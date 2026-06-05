@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/baby/",
   },
+  openGraph: {
+    url: "https://habibaminhas.com/baby/",
+  },
   keywords: "baby products Pakistan, baby bedding Pakistan, nursery products Pakistan, baby nest Pakistan, crib bedding Pakistan, baby essentials Pakistan, newborn products Karachi",
 };
 

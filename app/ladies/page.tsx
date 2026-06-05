@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/ladies/",
   },
+  openGraph: {
+    url: "https://habibaminhas.com/ladies/",
+  },
   keywords: "Pakistani ladies suits, ladies formal wear Pakistan, women suits Pakistan, Pakistani wedding outfits, Eid suits for women, silk suits Pakistan, 3 piece suits Pakistan",
 };
 

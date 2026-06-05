@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/accessories/",
   },
+  openGraph: {
+    url: "https://habibaminhas.com/accessories/",
+  },
   keywords: "Pakistani hair accessories, handcrafted accessories Pakistan, silk headbands Pakistan, hair clips Pakistan, Pakistani women accessories, girls hair accessories",
 };
 

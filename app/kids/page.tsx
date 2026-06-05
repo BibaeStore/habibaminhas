@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/kids/",
   },
+  openGraph: {
+    url: "https://habibaminhas.com/kids/",
+  },
   keywords: "kids festive wear Pakistan, Pakistani kids formal dress, girls Eid dress Pakistan, kids wedding outfits Pakistan, embroidered girls suits, children formal wear Pakistan",
 };
 

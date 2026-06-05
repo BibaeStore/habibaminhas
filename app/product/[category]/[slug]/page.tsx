@@ -44,6 +44,9 @@ export async function generateMetadata({
       alternates: {
         canonical: `/product/${category}/${slug}/`,
       },
+      openGraph: {
+        url: `https://habibaminhas.com/product/${category}/${slug}/`,
+      },
     };
   } catch {
     return { title: "Product" };
