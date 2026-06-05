@@ -189,6 +189,50 @@ export default function ContactPage() {
             </form>
           )}
         </div>
+
+        {/* FAQ Section */}
+        <div className="mt-20 border-t border-border-soft pt-16">
+          <h2 className="text-center font-display text-4xl italic sm:text-5xl mb-12">
+            Frequently Asked Questions
+          </h2>
+          <div className="mx-auto max-w-3xl space-y-8">
+            <div>
+              <h3 className="font-display text-2xl italic text-ink">
+                How quickly will I receive a response?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                We respond to all inquiries within 24 hours, Monday through Friday. For urgent matters, WhatsApp is the fastest way to reach us at +92 312 0295812.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-display text-2xl italic text-ink">
+                What are your customer service hours?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                Our customer service team is available Monday to Friday, 10:00 AM - 6:00 PM PKT. Weekend messages are answered on the following Monday.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-display text-2xl italic text-ink">
+                Can I visit your store in person?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                We operate as an online-first brand based in Karachi, Pakistan. For appointments or special requests, please contact us directly via WhatsApp or email.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-display text-2xl italic text-ink">
+                Do you accept custom order requests?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                Yes! For custom embroidery, special sizing, or bulk orders, please reach out via the contact form above with your requirements and we'll get back to you with details.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

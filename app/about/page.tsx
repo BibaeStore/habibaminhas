@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { SectionHeading } from "@/components/common/section-heading";
+import { FAQSchema } from "@/components/seo/faq-schema";
 
 // SEO Focus Keyword: "Pakistani fashion brand"
 // Target: Users researching Habiba Minhas brand story and authenticity
@@ -194,6 +195,76 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <section className="bg-cream py-20">
+        <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-8">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="text-center font-display text-4xl italic sm:text-5xl">
+              About Habiba Minhas — FAQ
+            </h2>
+            <div className="mt-12 space-y-8">
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  Who is Habiba Minhas?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  Habiba Minhas is the founder and creative director of Habiba Minhas, Pakistan's leading handcrafted fashion brand based in Karachi. She works directly with artisan embroiderers and skilled tailors to create premium ladies suits, kids festive wear, and baby products.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  Is Habiba Minhas a registered company?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  Yes! We operate as Habiba Minhas Clothing (SMC-Private) Limited, legally registered in Pakistan with company registration number 0338396. We adhere to all Pakistani business regulations.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  Where are your products made?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  All our products are either handcrafted in Pakistan or personally curated by Habiba to meet exacting quality standards. We work with local artisans in Karachi who have perfected their craft over generations.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  How many customers have you served?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  We have proudly served over 5,000 happy customers across Pakistan since our founding, delivering quality handcrafted fashion and baby products nationwide.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Schema */}
+      <FAQSchema
+        faqs={[
+          {
+            question: "Who is Habiba Minhas?",
+            answer: "Habiba Minhas is the founder and creative director of Habiba Minhas, Pakistan's leading handcrafted fashion brand based in Karachi. She works directly with artisan embroiderers and skilled tailors to create premium ladies suits, kids festive wear, and baby products."
+          },
+          {
+            question: "Is Habiba Minhas a registered company?",
+            answer: "Yes! We operate as Habiba Minhas Clothing (SMC-Private) Limited, legally registered in Pakistan with company registration number 0338396."
+          },
+          {
+            question: "Where are your products made?",
+            answer: "All our products are either handcrafted in Pakistan or personally curated by Habiba to meet exacting quality standards. We work with local artisans in Karachi."
+          },
+          {
+            question: "How many customers have you served?",
+            answer: "We have proudly served over 5,000 happy customers across Pakistan since our founding."
+          }
+        ]}
+      />
     </>
   );
 }

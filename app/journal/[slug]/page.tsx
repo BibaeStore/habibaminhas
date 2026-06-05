@@ -494,6 +494,37 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
             })}
           </div>
 
+          {/* Author Bio Section */}
+          <div className="mt-16 border-t border-b border-border-soft py-8">
+            <h2 className="text-[11px] uppercase tracking-[0.3em] text-gold-dark mb-6">
+              About the Author
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-24 h-24 rounded-full bg-cream border border-border-soft overflow-hidden flex items-center justify-center">
+                  <span className="font-display text-4xl text-gold-dark">HM</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-2xl italic mb-3">Habiba Minhas</h3>
+                <p className="text-[14px] leading-relaxed text-ink-soft mb-3">
+                  Founder and creative director of Habiba Minhas, Pakistan's leading handcrafted fashion brand based in Karachi. With a passion for preserving traditional Pakistani craftsmanship while embracing modern design, she has built a brand serving over 5,000 customers nationwide.
+                </p>
+                <p className="text-[14px] leading-relaxed text-ink-soft mb-4">
+                  Specializing in premium ladies suits, kids festive wear, and baby products, Habiba works directly with artisan embroiderers and skilled tailors to create pieces that honor Pakistani heritage.
+                </p>
+                <div className="flex items-center gap-3 text-[12px]">
+                  <span className="text-ink-soft">Connect:</span>
+                  <a href="https://www.instagram.com/habibaminhas.official/" target="_blank" rel="noopener noreferrer" className="text-gold-dark hover:text-ink transition-colors">Instagram</a>
+                  <span className="text-muted">·</span>
+                  <a href="https://www.facebook.com/profile.php?id=61573309750795" target="_blank" rel="noopener noreferrer" className="text-gold-dark hover:text-ink transition-colors">Facebook</a>
+                  <span className="text-muted">·</span>
+                  <a href="https://www.pinterest.com/habibaminhas_official/" target="_blank" rel="noopener noreferrer" className="text-gold-dark hover:text-ink transition-colors">Pinterest</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Related Articles */}
           {relatedArticles.length > 0 && (
             <div className="mt-14 border-t border-border-soft pt-8">

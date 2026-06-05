@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 import { HeroCarousel } from "@/components/home/hero-carousel";
 import { AnnouncementStrip } from "@/components/home/announcement-strip";
 import { CategoryTiles } from "@/components/home/category-tiles";
@@ -7,6 +9,7 @@ import { TrendTiles } from "@/components/home/trend-tiles";
 import { TrendingTabs, type TrendingProduct } from "@/components/home/trending-tabs";
 import { TestimonialRow } from "@/components/home/testimonial-row";
 import { JournalTeaser } from "@/components/home/journal-teaser";
+import { FAQSchema } from "@/components/seo/faq-schema";
 import { getProducts } from "@/lib/actions/products";
 
 // SEO Focus Keyword: "Pakistani fashion online"
@@ -102,8 +105,139 @@ export default async function HomePage() {
 
       <TrendTiles />
       <TrendingTabs products={trendingProducts} />
+
+      {/* Meet the Founder Section */}
+      <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <div className="relative aspect-[3/4] w-full overflow-hidden bg-cream border border-border-soft flex items-center justify-center">
+              {/* Placeholder until actual photo is added */}
+              <div className="text-center">
+                <div className="font-display text-8xl text-gold-dark">HM</div>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-muted mt-4">Founder</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-center lg:col-span-7">
+            <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
+              Meet the Founder
+            </span>
+            <h2 className="mt-3 font-display text-4xl italic leading-tight sm:text-5xl">
+              Crafted with passion, delivered with care.
+            </h2>
+            <p className="mt-6 text-[15px] leading-relaxed text-ink-soft">
+              Founded by Habiba Minhas, our brand brings together traditional Pakistani
+              craftsmanship and contemporary design. Every piece is thoughtfully created
+              in our Karachi studio, working directly with skilled artisans who have
+              perfected their craft over generations.
+            </p>
+            <p className="mt-4 text-[15px] leading-relaxed text-ink-soft">
+              From premium silk suits with gold brocade to luxurious baby bedding sets,
+              we're committed to quality, authenticity, and the timeless elegance of
+              handcrafted fashion.
+            </p>
+            <Link
+              href="/about/author"
+              className="mt-8 inline-flex h-12 w-fit items-center border border-ink px-8 text-[11px] uppercase tracking-[0.26em] hover:bg-ink hover:text-ivory transition-colors"
+            >
+              Read More About Habiba
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <TestimonialRow />
       <JournalTeaser />
+
+      {/* FAQ Section */}
+      <section className="bg-cream py-20">
+        <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-8">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="text-center font-display text-4xl italic sm:text-5xl">
+              Frequently Asked Questions
+            </h2>
+            <div className="mt-12 space-y-8">
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  Do you deliver nationwide in Pakistan?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  Yes! We deliver to all cities across Pakistan with flat Rs. 250 shipping.
+                  Most orders arrive within 3-5 business days. Karachi orders often arrive within 2 days.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  Are your products handcrafted or machine-made?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  All our ladies suits and kids formalwear feature handcrafted embroidery and
+                  artisan finishes. We work directly with skilled embroiderers in Karachi who
+                  have perfected traditional techniques. Baby products are professionally
+                  manufactured with premium materials.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  What is your return policy?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  We offer a 14-day return and exchange policy. Items must be unworn with
+                  original tags attached. We want you to love your purchase!
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  How do I contact customer support?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  Reach us on WhatsApp at +92 312 0295812, email info@habibaminhas.com, or
+                  use our contact form. We respond within 24 hours, Monday through Friday.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-display text-2xl italic text-ink">
+                  Do you offer international shipping?
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                  Currently we focus on serving customers within Pakistan. For international
+                  orders, please contact us directly and we'll do our best to accommodate.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Schema */}
+      <FAQSchema
+        faqs={[
+          {
+            question: "Do you deliver nationwide in Pakistan?",
+            answer: "Yes! We deliver to all cities across Pakistan with flat Rs. 250 shipping. Most orders arrive within 3-5 business days."
+          },
+          {
+            question: "Are your products handcrafted or machine-made?",
+            answer: "All our ladies suits and kids formalwear feature handcrafted embroidery and artisan finishes. We work directly with skilled embroiderers in Karachi."
+          },
+          {
+            question: "What is your return policy?",
+            answer: "We offer a 14-day return and exchange policy. Items must be unworn with original tags attached."
+          },
+          {
+            question: "How do I contact customer support?",
+            answer: "Reach us on WhatsApp at +92 312 0295812, email info@habibaminhas.com, or use our contact form. We respond within 24 hours."
+          },
+          {
+            question: "Do you offer international shipping?",
+            answer: "Currently we focus on serving customers within Pakistan. For international orders, please contact us directly."
+          }
+        ]}
+      />
     </>
   );
 }

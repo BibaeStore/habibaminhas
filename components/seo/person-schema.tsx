@@ -3,7 +3,7 @@ export function PersonSchema() {
     "@context": "https://schema.org",
     "@type": "Person",
     "name": "Habiba Minhas",
-    "url": "https://habibaminhas.com/about/",
+    "url": "https://habibaminhas.com/about/author/",
     "image": "https://habibaminhas.com/logo/logo.png", // TODO: Add actual founder photo when available
     "jobTitle": "Founder & Creative Director",
     "description": "Founder of Habiba Minhas, Pakistan's leading handcrafted fashion brand. Specializing in premium ladies suits, kids festive wear, and baby products made in Karachi.",
