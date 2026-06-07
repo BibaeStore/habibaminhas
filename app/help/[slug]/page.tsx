@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
+import { FAQSchema } from "@/components/seo/faq-schema";
 
 type Params = { slug: string };
 
@@ -124,32 +125,42 @@ export default async function HelpPage({
   const { slug } = await params;
   const page = helpPages[slug];
   if (!page) notFound();
+
+  // Convert FAQ format from { q, a } to { question, answer } for schema
+  const faqsForSchema = page.faqs.map(f => ({
+    question: f.q,
+    answer: f.a
+  }));
+
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 py-16 sm:px-8">
-      <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
-        {page.eyebrow}
-      </span>
-      <h1 className="mt-3 font-display text-5xl italic leading-tight sm:text-6xl">
-        {page.title}
-      </h1>
-      <p className="mt-4 max-w-2xl text-[14px] leading-relaxed text-ink-soft">
-        {page.intro}
-      </p>
-      <ul className="mt-12 flex flex-col border-y border-border-soft">
-        {page.faqs.map((f, i) => (
-          <li key={i} className="border-b border-border-soft last:border-0">
-            <details className="group">
-              <summary className="flex cursor-pointer items-center justify-between py-5 text-[14px] font-medium text-ink">
-                {f.q}
-                <Plus className="h-4 w-4 transition-transform group-open:rotate-45" />
-              </summary>
-              <p className="pb-5 pr-8 text-[14px] leading-relaxed text-ink-soft">
-                {f.a}
-              </p>
-            </details>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <>
+      <FAQSchema faqs={faqsForSchema} />
+      <div className="mx-auto w-full max-w-[1100px] px-4 py-16 sm:px-8">
+        <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
+          {page.eyebrow}
+        </span>
+        <h1 className="mt-3 font-display text-5xl italic leading-tight sm:text-6xl">
+          {page.title}
+        </h1>
+        <p className="mt-4 max-w-2xl text-[14px] leading-relaxed text-ink-soft">
+          {page.intro}
+        </p>
+        <ul className="mt-12 flex flex-col border-y border-border-soft">
+          {page.faqs.map((f, i) => (
+            <li key={i} className="border-b border-border-soft last:border-0">
+              <details className="group">
+                <summary className="flex cursor-pointer items-center justify-between py-5 text-[14px] font-medium text-ink">
+                  {f.q}
+                  <Plus className="h-4 w-4 transition-transform group-open:rotate-45" />
+                </summary>
+                <p className="pb-5 pr-8 text-[14px] leading-relaxed text-ink-soft">
+                  {f.a}
+                </p>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 }
