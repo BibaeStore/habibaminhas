@@ -53,7 +53,7 @@ export default async function KidsSubcategoryPage({ params }: { params: Promise<
       ]}
       eyebrow="Kids Collection"
       title={category.name}
-      description={category.seo_desc || `Shop ${category.name} from Habiba Minhas`}
+      description={category.description || category.seo_desc || `Shop ${category.name} from Habiba Minhas`}
       tone={["#f5e8c0", "#c8900c", "#5a3800"]}
       motif="ogee"
       image={category.image || "/HeroSection/kids-formal.webp"}

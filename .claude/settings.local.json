@@ -142,7 +142,9 @@
       "PowerShell(git add *)",
       "PowerShell(git push *)",
       "Bash(python *)",
-      "WebFetch(domain:search.google.com)"
+      "WebFetch(domain:search.google.com)",
+      "Bash(chmod +x /tmp/content_audit.sh)",
+      "Bash(/tmp/content_audit.sh)"
     ]
   },
   "enableAllProjectMcpServers": true,

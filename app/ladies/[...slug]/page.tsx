@@ -53,7 +53,7 @@ export default async function LadiesSubcategoryPage({ params }: { params: Promis
       ]}
       eyebrow="Ladies Collection"
       title={category.name}
-      description={category.seo_desc || `Shop ${category.name} from Habiba Minhas`}
+      description={category.description || category.seo_desc || `Shop ${category.name} from Habiba Minhas`}
       tone={["#f2e0d8", "#c97a86", "#5a2030"]}
       motif="floral"
       image={category.image || "/HeroSection/ladies-suits.webp"}
