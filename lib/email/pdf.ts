@@ -66,10 +66,20 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   // ── Header background ───────────────────────────────────────────
   page.drawRectangle({ x: 0, y: height - 110, width, height: 110, color: INK });
 
-  // Logo (if available) - bigger and more prominent
+  // Logo (if available) - bigger and more prominent with white background
   if (logoImage) {
     const logoHeight = 50; // Increased from 35 to 50
     const logoWidth = (logoImage.width / logoImage.height) * logoHeight;
+
+    // White background behind logo for visibility
+    page.drawRectangle({
+      x: L - 8,
+      y: height - 84,
+      width: logoWidth + 16,
+      height: logoHeight + 8,
+      color: WHITE,
+    });
+
     page.drawImage(logoImage, {
       x: L,
       y: height - 80,
@@ -192,9 +202,9 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   page.drawRectangle({ x: L, y: y - 22, width: R - L, height: 22, color: INK });
 
   page.drawText("ITEM DESCRIPTION", { x: L + 10, y: y - 15, size: 9, font: boldFont, color: WHITE });
-  page.drawText("QTY", { x: R - 160, y: y - 15, size: 9, font: boldFont, color: WHITE });
-  page.drawText("UNIT PRICE", { x: R - 115, y: y - 15, size: 9, font: boldFont, color: WHITE });
-  page.drawText("TOTAL", { x: R - 55, y: y - 15, size: 9, font: boldFont, color: WHITE });
+  page.drawText("QTY", { x: R - 210, y: y - 15, size: 9, font: boldFont, color: WHITE });
+  page.drawText("UNIT PRICE", { x: R - 150, y: y - 15, size: 9, font: boldFont, color: WHITE });
+  page.drawText("TOTAL", { x: R - 70, y: y - 15, size: 9, font: boldFont, color: WHITE });
 
   y -= 22;
 
@@ -216,17 +226,17 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     altRow = !altRow;
 
     const title = item.title.length > 45 ? item.title.substring(0, 42) + "..." : item.title;
-    page.drawText(title, { x: L + 10, y: y - 18, size: 9, font: boldFont, color: INK, maxWidth: R - L - 180 });
+    page.drawText(title, { x: L + 10, y: y - 18, size: 9, font: boldFont, color: INK, maxWidth: R - L - 230 });
 
     if (item.size || item.sku) {
       const meta = [item.size && `Size: ${item.size}`, item.sku && `SKU: ${item.sku}`]
         .filter(Boolean).join("  ·  ");
-      page.drawText(meta, { x: L + 10, y: y - 29, size: 7.5, font: regularFont, color: MUTED, maxWidth: R - L - 180 });
+      page.drawText(meta, { x: L + 10, y: y - 29, size: 7.5, font: regularFont, color: MUTED, maxWidth: R - L - 230 });
     }
 
-    page.drawText(String(item.quantity), { x: R - 155, y: y - 17, size: 9, font: regularFont, color: INK });
-    page.drawText(formatPKR(item.unitPrice), { x: R - 115, y: y - 17, size: 9, font: regularFont, color: INK });
-    page.drawText(formatPKR(item.totalPrice), { x: R - 90, y: y - 17, size: 9, font: boldFont, color: INK });
+    page.drawText(String(item.quantity), { x: R - 205, y: y - 17, size: 9, font: regularFont, color: INK });
+    page.drawText(formatPKR(item.unitPrice), { x: R - 150, y: y - 17, size: 9, font: regularFont, color: INK });
+    page.drawText(formatPKR(item.totalPrice), { x: R - 70, y: y - 17, size: 9, font: boldFont, color: INK });
 
     y -= rowH;
   }
