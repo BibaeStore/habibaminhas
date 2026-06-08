@@ -190,9 +190,10 @@ export default function ContactPage() {
             </form>
           )}
         </div>
+      </div>
 
-        {/* FAQ Section */}
-        <div className="mt-20 border-t border-border-soft pt-16">
+      {/* FAQ Section */}
+      <div className="mt-20 border-t border-border-soft pt-16">
           <h2 className="text-center font-display text-4xl italic sm:text-5xl mb-12">
             Frequently Asked Questions
           </h2>
@@ -235,8 +236,8 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Quick Links Section */}
-        <div className="mt-20 border-t border-border-soft pt-12">
+      {/* Quick Links Section */}
+      <div className="mt-20 border-t border-border-soft pt-12">
           <h2 className="text-[11px] uppercase tracking-[0.3em] text-gold-dark mb-6">
             Quick Links
           </h2>
@@ -277,7 +278,6 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }
