@@ -393,7 +393,7 @@ export function buildContactClientEmail(d: ContactFormData): string {
         </a>
       </div>
       <p style="margin:0;font-size:11px;color:${MUTED};line-height:1.7;">
-        <strong style="color:${INK};">Email:</strong> <a href="mailto:info@bibaestore.com" style="color:${GOLD};text-decoration:none;">info@bibaestore.com</a>
+        <strong style="color:${INK};">Email:</strong> <a href="mailto:info@habibaminhas.com" style="color:${GOLD};text-decoration:none;">info@habibaminhas.com</a>
         &nbsp;·&nbsp;
         <strong style="color:${INK};">WhatsApp:</strong> <a href="https://wa.me/923120295812" style="color:${GOLD};text-decoration:none;">+92 312 0295812</a>
         <br/>

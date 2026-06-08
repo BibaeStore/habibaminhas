@@ -81,11 +81,16 @@ export async function submitContactMessage(data: {
     const submittedAt = new Date().toISOString();
     const emailData = { ...data, submittedAt };
 
+    const from     = process.env.EMAIL_FROM     ?? "Habiba Minhas <no-reply@habibaminhas.com>";
+    const replyTo  = process.env.EMAIL_REPLY_TO ?? "Habiba Minhas <info@habibaminhas.com>";
+    const adminTo  = process.env.ADMIN_EMAIL    ?? "info@habibaminhas.com";
+
     const transporter = getTransporter();
 
     // Send to customer
     await transporter.sendMail({
-      from: '"Habiba Minhas" <team@bibaestore.com>',
+      from,
+      replyTo,
       to: data.email,
       subject: "We received your message — Habiba Minhas",
       html: buildContactClientEmail(emailData),
@@ -93,8 +98,8 @@ export async function submitContactMessage(data: {
 
     // Send to admin
     await transporter.sendMail({
-      from: '"Habiba Minhas Contact Form" <team@bibaestore.com>',
-      to: "team@bibaestore.com",
+      from,
+      to: adminTo,
       replyTo: data.email,
       subject: `New Contact Form: ${data.subject} — ${data.name}`,
       html: buildContactAdminEmail(emailData),
