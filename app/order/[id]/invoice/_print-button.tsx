@@ -12,21 +12,34 @@ export function PrintButton() {
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const response = await fetch(`/api/invoice/${orderNumber}`);
-      if (!response.ok) throw new Error("Failed to download invoice");
+      const url = `/api/invoice/${orderNumber}`;
+      console.log("[Download] Fetching PDF from:", url);
 
+      const response = await fetch(url);
+      console.log("[Download] Response status:", response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[Download] Error response:", errorText);
+        throw new Error(`Failed to download invoice: ${response.status} ${response.statusText}`);
+      }
+
+      console.log("[Download] Converting to blob...");
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      console.log("[Download] Blob created, size:", blob.size, "type:", blob.type);
+      console.log("[Download] Creating download link...");
+      const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = downloadUrl;
       a.download = `HabibaMinhas-Invoice-${orderNumber}.pdf`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(downloadUrl);
       document.body.removeChild(a);
+      console.log("[Download] ✅ Download complete!");
     } catch (error) {
-      console.error("Download failed:", error);
-      alert("Failed to download invoice. Please try again.");
+      console.error("[Download] ❌ Error:", error);
+      alert(`Failed to download invoice. Please try again.\n\nError: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setDownloading(false);
     }
