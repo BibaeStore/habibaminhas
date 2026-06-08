@@ -55,13 +55,54 @@ export async function deleteNotification(id: string) {
 export async function submitContactMessage(data: {
   name: string;
   email: string;
-  phone?: string;
-  subject?: string;
+  phone: string;
+  subject: string;
   message: string;
 }) {
   const sb = createAdminClient();
-  const { error } = await sb.from("contact_messages").insert(data);
+
+  // Save to database
+  const { error } = await sb.from("contact_submissions").insert({
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    subject: data.subject,
+    message: data.message,
+    status: "pending",
+  });
+
   if (error) throw new Error(error.message);
+
+  // Send emails
+  try {
+    const { getTransporter } = await import("@/lib/email/mailer");
+    const { buildContactClientEmail, buildContactAdminEmail } = await import("@/lib/email/templates");
+
+    const submittedAt = new Date().toISOString();
+    const emailData = { ...data, submittedAt };
+
+    const transporter = getTransporter();
+
+    // Send to customer
+    await transporter.sendMail({
+      from: '"Habiba Minhas" <team@bibaestore.com>',
+      to: data.email,
+      subject: "We received your message — Habiba Minhas",
+      html: buildContactClientEmail(emailData),
+    });
+
+    // Send to admin
+    await transporter.sendMail({
+      from: '"Habiba Minhas Contact Form" <team@bibaestore.com>',
+      to: "team@bibaestore.com",
+      replyTo: data.email,
+      subject: `New Contact Form: ${data.subject} — ${data.name}`,
+      html: buildContactAdminEmail(emailData),
+    });
+  } catch (emailError) {
+    console.error("Email send error:", emailError);
+    // Don't throw - submission was saved to database
+  }
 }
 
 /* ── Social-proof purchase notifications ──────────────────────────────── */

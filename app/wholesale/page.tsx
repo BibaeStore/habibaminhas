@@ -27,7 +27,7 @@ export default function WholesalePage() {
       await submitContactMessage({
         name: form.name,
         email: form.email,
-        phone: form.phone || undefined,
+        phone: form.phone || "",
         subject: `Wholesale Inquiry - ${form.orderType}`,
         message: `Company: ${form.company}\nCity: ${form.city}\nOrder Type: ${form.orderType}\n\nMessage:\n${form.message}`,
       });

@@ -20,7 +20,7 @@ export default function ContactPage() {
       await submitContactMessage({
         name: form.name,
         email: form.email,
-        phone: form.phone || undefined,
+        phone: form.phone || "",
         subject: form.subject,
         message: form.message,
       });
