@@ -29,6 +29,19 @@ export function CollectionTemplate({
   products: CardProduct[];
   filters?: { colour?: Filter[]; size?: Filter[]; piece?: Filter[]; price?: Filter[] };
 }) {
+  // Split description into intro (first 2 sentences) and full content
+  const getIntroAndFull = (text?: string) => {
+    if (!text) return { intro: "", full: "" };
+
+    // Find first 2 sentences (split by ". " and take first 2)
+    const sentences = text.split('. ');
+    const intro = sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
+    const full = text;
+
+    return { intro, full };
+  };
+
+  const { intro, full } = getIntroAndFull(description);
   return (
     <>
       <section className="relative">
@@ -71,9 +84,9 @@ export function CollectionTemplate({
             <h1 className="mt-3 font-display text-5xl font-light italic leading-[0.98] sm:text-6xl md:text-7xl">
               {title}
             </h1>
-            {description ? (
+            {intro ? (
               <p className="mt-4 max-w-xl text-[14px] leading-relaxed text-ivory/90">
-                {description}
+                {intro}
               </p>
             ) : null}
           </div>
@@ -125,6 +138,20 @@ export function CollectionTemplate({
         ) : (
           <PaginatedProducts products={products} />
         )}
+
+        {/* Full Description Section - After Products */}
+        {full && full.length > intro.length ? (
+          <div className="mx-auto mt-16 max-w-4xl border-t border-border-soft pt-12">
+            <h2 className="text-[11px] uppercase tracking-[0.3em] text-gold-dark mb-6">
+              About This Collection
+            </h2>
+            <div className="prose prose-sm max-w-none text-[14px] leading-relaxed text-ink-soft">
+              {full.split('\n\n').map((paragraph, i) => (
+                <p key={i} className="mb-4">{paragraph}</p>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
     </>
   );
