@@ -27,6 +27,7 @@ export interface CardProduct {
   subtype?: string | null;
   palette: string[];
   badge?: string | null;
+  stock?: number;
 }
 
 export function ProductCard({
@@ -58,6 +59,7 @@ export function ProductCard({
   const collection = product.collection ?? product.subcategory ?? product.subtype ?? null;
   const hasSale   = compareAt && compareAt > product.price;
   const aspect    = compact ? "4/5" : "3/4";
+  const isOutOfStock = (product.stock ?? 0) <= 0;
 
   function handleWishlist(e: React.MouseEvent) {
     e.preventDefault();
@@ -93,6 +95,17 @@ export function ProductCard({
 
   const imageContent = (
     <>
+      {/* Out of Stock Overlay */}
+      {isOutOfStock && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100/80 backdrop-blur-[2px]">
+          <div className="flex flex-col items-center gap-2">
+            <span className="rounded bg-ink/90 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.24em] text-ivory">
+              Out of Stock
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Top row: badges + wishlist heart */}
       <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
         <div className="flex flex-col items-start gap-1.5">
@@ -120,26 +133,28 @@ export function ProductCard({
       </div>
 
       {/* Bottom row: Quick View + Add to Bag */}
-      <div className="absolute inset-x-3 bottom-3 flex translate-y-2 items-center justify-between gap-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-        <button
-          type="button"
-          onClick={handleQuickView}
-          className="flex items-center gap-1.5 rounded-full bg-ivory/90 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-ink backdrop-blur-sm transition-colors hover:bg-ink hover:text-ivory"
-        >
-          <Eye className="h-3 w-3" />
-          Quick View
-        </button>
-        <button
-          type="button"
-          aria-label="Add to bag"
-          onClick={handleAddToBag}
-          className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-            addedToBag ? "bg-sage text-ivory" : "bg-ink text-ivory hover:bg-gold-dark"
-          }`}
-        >
-          {addedToBag ? <ShoppingBag className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-        </button>
-      </div>
+      {!isOutOfStock && (
+        <div className="absolute inset-x-3 bottom-3 flex translate-y-2 items-center justify-between gap-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={handleQuickView}
+            className="flex items-center gap-1.5 rounded-full bg-ivory/90 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-ink backdrop-blur-sm transition-colors hover:bg-ink hover:text-ivory"
+          >
+            <Eye className="h-3 w-3" />
+            Quick View
+          </button>
+          <button
+            type="button"
+            aria-label="Add to bag"
+            onClick={handleAddToBag}
+            className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+              addedToBag ? "bg-sage text-ivory" : "bg-ink text-ivory hover:bg-gold-dark"
+            }`}
+          >
+            {addedToBag ? <ShoppingBag className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          </button>
+        </div>
+      )}
     </>
   );
 
@@ -281,18 +296,24 @@ export function ProductCard({
 
               {/* Actions */}
               <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={handleAddToBag}
-                  className={`flex h-12 items-center justify-center gap-2 text-[12px] uppercase tracking-[0.28em] transition-colors ${
-                    addedToBag
-                      ? "bg-sage text-ivory"
-                      : "bg-ink text-ivory hover:bg-gold-dark"
-                  }`}
-                >
-                  <ShoppingBag className="h-4 w-4" />
-                  {addedToBag ? "Added to bag!" : "Add to Bag"}
-                </button>
+                {isOutOfStock ? (
+                  <div className="flex h-12 items-center justify-center gap-2 bg-gray-100 text-[12px] uppercase tracking-[0.28em] text-muted">
+                    Out of Stock
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleAddToBag}
+                    className={`flex h-12 items-center justify-center gap-2 text-[12px] uppercase tracking-[0.28em] transition-colors ${
+                      addedToBag
+                        ? "bg-sage text-ivory"
+                        : "bg-ink text-ivory hover:bg-gold-dark"
+                    }`}
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    {addedToBag ? "Added to bag!" : "Add to Bag"}
+                  </button>
+                )}
 
                 <Link
                   href={`/product/${product.category}/${product.slug}`}
