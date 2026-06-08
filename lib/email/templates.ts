@@ -1,5 +1,6 @@
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://habibaminhas.com";
 const GOLD   = "#9a7b38";
+const GOLD_LIGHT = "#e5cb94"; // Light gold for admin headers/buttons
 const INK    = "#1a1612";
 const MUTED  = "#8a8179";
 const BG     = "#f5f2ed";
@@ -245,72 +246,172 @@ export function buildAdminEmail(d: OrderEmailData): string {
     .filter(Boolean).join(", ");
 
   const content = `
-  <!-- Alert header -->
+  <!-- Sleek Alert Header with Light Gold -->
   <tr>
-    <td style="background:${GOLD};padding:20px 32px;">
-      <p style="margin:0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:${INK};font-weight:bold;">🛍 New Order Received</p>
-    </td>
-  </tr>
-
-  <!-- Order meta -->
-  <tr>
-    <td style="background:${CARD};padding:24px 32px;">
+    <td style="background:${GOLD_LIGHT};padding:24px 32px;">
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
-          <td style="padding-bottom:12px;">
-            <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Order Number</span><br/>
-            <span style="font-size:20px;font-weight:bold;color:${INK};">${d.orderNumber}</span>
+          <td>
+            <p style="margin:0;font-size:12px;letter-spacing:0.24em;text-transform:uppercase;color:${INK};font-weight:bold;">🛍 New Order Received</p>
           </td>
-          <td align="right" style="padding-bottom:12px;">
+          <td align="right">
             <a href="${SITE}/admin/orders"
-               style="display:inline-block;background:${GOLD};color:#ffffff;text-decoration:none;padding:10px 20px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:bold;border-radius:3px;">
+               style="display:inline-block;background:${INK};color:#ffffff;text-decoration:none;padding:12px 24px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:bold;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
               View in Admin →
             </a>
           </td>
         </tr>
       </table>
+    </td>
+  </tr>
 
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:${GOLD_BG};border:1px solid ${BORDER};border-radius:6px;margin-bottom:24px;">
-        ${[
-          ["Date",           d.orderDate],
-          ["Customer",       d.customerName],
-          ["Email",          d.customerEmail],
-          ["Phone",          d.customerPhone],
-          ["Address",        addrStr],
-          ["Payment",        d.paymentMethod],
-          ["Total",          pkr(d.total)],
-        ].map(([lbl, val], i) => `
-        <tr style="${i > 0 ? `border-top:1px solid ${BORDER};` : ""}">
-          <td style="padding:10px 16px;font-size:12px;font-weight:bold;color:${MUTED};text-transform:uppercase;letter-spacing:0.1em;width:120px;">${lbl}</td>
-          <td style="padding:10px 16px;font-size:13px;color:${INK};font-weight:${lbl === "Total" ? "bold" : "normal"};">${val}</td>
-        </tr>`).join("")}
-      </table>
-
-      <h2 style="margin:0 0 16px;font-size:13px;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};">Order Items</h2>
-      ${itemsTable(d.items)}
-
-      <!-- Totals summary -->
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+  <!-- Order Number Banner -->
+  <tr>
+    <td style="background:${CARD};padding:28px 32px 20px;border-bottom:3px solid ${GOLD_LIGHT};">
+      <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
-          <td></td>
-          <td width="260">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:${GOLD_BG};border:1px solid ${BORDER};border-radius:6px;">
-              <tr>
-                <td style="padding:8px 14px;font-size:12px;color:${MUTED};">Subtotal</td>
-                <td style="padding:8px 14px;font-size:12px;text-align:right;">${pkr(d.subtotal)}</td>
-              </tr>
-              <tr style="border-top:1px solid ${BORDER};">
-                <td style="padding:8px 14px;font-size:12px;color:${MUTED};">Shipping</td>
-                <td style="padding:8px 14px;font-size:12px;text-align:right;">${d.shipping === 0 ? "Free" : pkr(d.shipping)}</td>
-              </tr>
-              <tr style="border-top:2px solid ${GOLD};background:${INK};">
-                <td style="padding:10px 14px;font-size:13px;font-weight:bold;color:${GOLD};border-radius:0 0 0 5px;">Total</td>
-                <td style="padding:10px 14px;font-size:14px;font-weight:bold;text-align:right;color:#fff;border-radius:0 0 5px 0;">${pkr(d.total)}</td>
-              </tr>
-            </table>
+          <td>
+            <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Order Number</p>
+            <h1 style="margin:0;font-size:28px;font-weight:bold;color:${INK};font-family:Georgia,serif;">${d.orderNumber}</h1>
+          </td>
+          <td align="right">
+            <div style="text-align:right;">
+              <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Total Amount</p>
+              <p style="margin:0;font-size:24px;font-weight:bold;color:${GOLD};">${pkr(d.total)}</p>
+            </div>
           </td>
         </tr>
       </table>
+    </td>
+  </tr>
+
+  <!-- Customer Details Card -->
+  <tr>
+    <td style="background:${BG};padding:24px 32px;">
+      <div style="background:${CARD};border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+        <!-- Customer Name -->
+        <div style="padding:18px 24px;border-bottom:1px solid ${BORDER};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Customer</span>
+              </td>
+              <td>
+                <span style="font-size:16px;color:${INK};font-weight:bold;">${d.customerName}</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Email -->
+        <div style="padding:18px 24px;border-bottom:1px solid ${BORDER};background:${GOLD_BG};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Email</span>
+              </td>
+              <td>
+                <a href="mailto:${d.customerEmail}" style="font-size:14px;color:${GOLD};text-decoration:none;font-weight:bold;">${d.customerEmail}</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Phone with WhatsApp -->
+        <div style="padding:18px 24px;border-bottom:1px solid ${BORDER};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Phone</span>
+              </td>
+              <td>
+                <span style="font-size:14px;color:${INK};font-weight:bold;">${d.customerPhone}</span>
+              </td>
+              <td align="right">
+                <a href="https://wa.me/${d.customerPhone.replace(/\D/g, "")}"
+                   style="display:inline-block;background:#25D366;color:#ffffff;text-decoration:none;padding:8px 16px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:bold;border-radius:4px;">
+                  📱 WhatsApp
+                </a>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Address -->
+        <div style="padding:18px 24px;border-bottom:1px solid ${BORDER};background:${GOLD_BG};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140" style="vertical-align:top;">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Address</span>
+              </td>
+              <td>
+                <span style="font-size:13px;color:${INK};line-height:1.6;">${addrStr}</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Payment & Date -->
+        <div style="padding:18px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Payment</span>
+              </td>
+              <td>
+                <span style="font-size:14px;color:${INK};font-weight:bold;">${d.paymentMethod}</span>
+              </td>
+              <td align="right" width="200">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Date: </span>
+                <span style="font-size:13px;color:${INK};">${d.orderDate}</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </td>
+  </tr>
+
+  <!-- Order Items Section -->
+  <tr>
+    <td style="background:${BG};padding:0 32px 24px;">
+      <h2 style="margin:0 0 16px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:${GOLD};font-weight:bold;">📦 Order Items</h2>
+      ${itemsTable(d.items)}
+
+      <!-- Totals Summary -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+        <tr>
+          <td></td>
+          <td width="300">
+            <div style="background:${CARD};border-radius:6px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr style="background:${GOLD_BG};">
+                  <td style="padding:12px 18px;font-size:13px;color:${MUTED};">Subtotal</td>
+                  <td style="padding:12px 18px;font-size:14px;text-align:right;font-weight:bold;color:${INK};">${pkr(d.subtotal)}</td>
+                </tr>
+                <tr style="border-top:1px solid ${BORDER};background:${GOLD_BG};">
+                  <td style="padding:12px 18px;font-size:13px;color:${MUTED};">Shipping</td>
+                  <td style="padding:12px 18px;font-size:14px;text-align:right;font-weight:bold;color:${INK};">${d.shipping === 0 ? "Free" : pkr(d.shipping)}</td>
+                </tr>
+                <tr style="border-top:3px solid ${GOLD_LIGHT};background:${INK};">
+                  <td style="padding:16px 18px;font-size:14px;font-weight:bold;color:${GOLD_LIGHT};text-transform:uppercase;letter-spacing:0.12em;">Total</td>
+                  <td style="padding:16px 18px;font-size:20px;font-weight:bold;text-align:right;color:#ffffff;">${pkr(d.total)}</td>
+                </tr>
+              </table>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Action Banner -->
+  <tr>
+    <td style="background:${GOLD_LIGHT};padding:20px 32px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:13px;color:${INK};font-weight:bold;">📋 Process This Order</p>
+      <p style="margin:0;font-size:12px;color:${MUTED};">
+        Verify payment • Prepare items • Arrange TCS pickup • Update order status
+      </p>
     </td>
   </tr>`;
 
@@ -416,79 +517,124 @@ export function buildContactAdminEmail(d: ContactFormData): string {
   });
 
   const content = `
-  <!-- Alert header -->
+  <!-- Sleek Alert Header with Light Gold -->
   <tr>
-    <td style="background:${GOLD};padding:20px 32px;">
-      <p style="margin:0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:${INK};font-weight:bold;">💬 New Contact Form Submission</p>
-    </td>
-  </tr>
-
-  <!-- Submission meta -->
-  <tr>
-    <td style="background:${CARD};padding:24px 32px;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+    <td style="background:${GOLD_LIGHT};padding:24px 32px;text-align:center;">
+      <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td>
-            <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Subject</span><br/>
-            <span style="font-size:20px;font-weight:bold;color:${INK};">${d.subject}</span>
+            <p style="margin:0;font-size:12px;letter-spacing:0.24em;text-transform:uppercase;color:${INK};font-weight:bold;">💬 New Contact Form Submission</p>
           </td>
           <td align="right">
             <a href="mailto:${d.email}"
-               style="display:inline-block;background:${GOLD};color:#ffffff;text-decoration:none;padding:10px 20px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:bold;border-radius:3px;">
+               style="display:inline-block;background:${INK};color:#ffffff;text-decoration:none;padding:12px 24px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:bold;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
               Reply to Customer →
             </a>
           </td>
         </tr>
       </table>
+    </td>
+  </tr>
 
-      <!-- Customer details table -->
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:${GOLD_BG};border:1px solid ${BORDER};border-radius:6px;margin-bottom:24px;">
-        <tr>
-          <td style="padding:10px 16px;font-size:12px;font-weight:bold;color:${MUTED};text-transform:uppercase;letter-spacing:0.1em;width:140px;">Customer Name</td>
-          <td style="padding:10px 16px;font-size:14px;color:${INK};font-weight:bold;">${d.name}</td>
-        </tr>
-        <tr style="border-top:1px solid ${BORDER};">
-          <td style="padding:10px 16px;font-size:12px;font-weight:bold;color:${MUTED};text-transform:uppercase;letter-spacing:0.1em;">Email Address</td>
-          <td style="padding:10px 16px;font-size:13px;color:${INK};">
-            <a href="mailto:${d.email}" style="color:${GOLD};text-decoration:none;font-weight:bold;">${d.email}</a>
-          </td>
-        </tr>
-        <tr style="border-top:1px solid ${BORDER};">
-          <td style="padding:10px 16px;font-size:12px;font-weight:bold;color:${MUTED};text-transform:uppercase;letter-spacing:0.1em;">Phone Number</td>
-          <td style="padding:10px 16px;font-size:13px;color:${INK};">
-            <a href="https://wa.me/${d.phone.replace(/\D/g, "")}" style="color:${GOLD};text-decoration:none;font-weight:bold;">${d.phone}</a>
-            <a href="https://wa.me/${d.phone.replace(/\D/g, "")}" style="display:inline-block;background:${GOLD};color:#ffffff;text-decoration:none;padding:4px 10px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:bold;border-radius:3px;margin-left:10px;">WhatsApp</a>
-          </td>
-        </tr>
-        <tr style="border-top:1px solid ${BORDER};">
-          <td style="padding:10px 16px;font-size:12px;font-weight:bold;color:${MUTED};text-transform:uppercase;letter-spacing:0.1em;">Subject</td>
-          <td style="padding:10px 16px;font-size:13px;color:${INK};font-weight:bold;">${d.subject}</td>
-        </tr>
-        <tr style="border-top:1px solid ${BORDER};">
-          <td style="padding:10px 16px;font-size:12px;font-weight:bold;color:${MUTED};text-transform:uppercase;letter-spacing:0.1em;">Date & Time</td>
-          <td style="padding:10px 16px;font-size:13px;color:${INK};">${dateStr}</td>
-        </tr>
-      </table>
+  <!-- Subject Banner -->
+  <tr>
+    <td style="background:${CARD};padding:28px 32px 20px;border-bottom:3px solid ${GOLD_LIGHT};">
+      <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Subject</p>
+      <h1 style="margin:0;font-size:24px;font-weight:bold;color:${INK};font-family:Georgia,serif;line-height:1.3;">${d.subject}</h1>
+    </td>
+  </tr>
 
-      <!-- Message content -->
-      <div style="background:${CARD};border:2px solid ${GOLD};border-radius:6px;padding:20px 24px;">
-        <h2 style="margin:0 0 12px;font-size:13px;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};">
+  <!-- Customer Details Card -->
+  <tr>
+    <td style="background:${BG};padding:24px 32px;">
+      <div style="background:${CARD};border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+        <!-- Customer Name Row -->
+        <div style="padding:18px 24px;border-bottom:1px solid ${BORDER};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Customer</span>
+              </td>
+              <td>
+                <span style="font-size:16px;color:${INK};font-weight:bold;">${d.name}</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Email Row -->
+        <div style="padding:18px 24px;border-bottom:1px solid ${BORDER};background:${GOLD_BG};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Email</span>
+              </td>
+              <td>
+                <a href="mailto:${d.email}" style="font-size:14px;color:${GOLD};text-decoration:none;font-weight:bold;">${d.email}</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Phone Row with WhatsApp Button -->
+        <div style="padding:18px 24px;border-bottom:1px solid ${BORDER};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Phone</span>
+              </td>
+              <td>
+                <span style="font-size:14px;color:${INK};font-weight:bold;">${d.phone}</span>
+              </td>
+              <td align="right">
+                <a href="https://wa.me/${d.phone.replace(/\D/g, "")}"
+                   style="display:inline-block;background:#25D366;color:#ffffff;text-decoration:none;padding:8px 16px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:bold;border-radius:4px;">
+                  📱 WhatsApp
+                </a>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Date/Time Row -->
+        <div style="padding:18px 24px;background:${GOLD_BG};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="140">
+                <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:bold;">Submitted</span>
+              </td>
+              <td>
+                <span style="font-size:13px;color:${INK};">${dateStr}</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </td>
+  </tr>
+
+  <!-- Message Content -->
+  <tr>
+    <td style="background:${BG};padding:0 32px 24px;">
+      <div style="background:${CARD};border-radius:8px;padding:28px;border-left:4px solid ${GOLD_LIGHT};box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+        <h2 style="margin:0 0 16px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:${GOLD};font-weight:bold;">
           📝 Customer Message
         </h2>
-        <div style="font-size:14px;color:${INK};line-height:1.8;white-space:pre-wrap;font-family:Arial,sans-serif;">
+        <div style="font-size:15px;color:${INK};line-height:1.8;white-space:pre-wrap;font-family:Georgia,serif;">
 ${d.message}
         </div>
       </div>
+    </td>
+  </tr>
 
-      <!-- Action reminder -->
-      <div style="background:${GOLD_BG};border-left:4px solid ${GOLD};padding:16px 20px;margin-top:20px;border-radius:4px;">
-        <p style="margin:0;font-size:13px;color:${INK};font-weight:bold;">
-          ⏱️ Action Required
-        </p>
-        <p style="margin:8px 0 0;font-size:12px;color:${MUTED};line-height:1.6;">
-          Customer expects response within 24 hours. Respond to <a href="mailto:${d.email}" style="color:${GOLD};text-decoration:none;font-weight:bold;">${d.email}</a> or contact via WhatsApp.
-        </p>
-      </div>
+  <!-- Action Reminder Banner -->
+  <tr>
+    <td style="background:${GOLD_LIGHT};padding:20px 32px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:13px;color:${INK};font-weight:bold;">⏱️ Response Expected Within 24 Hours</p>
+      <p style="margin:0;font-size:12px;color:${MUTED};">
+        Reply via <a href="mailto:${d.email}" style="color:${INK};text-decoration:underline;font-weight:bold;">${d.email}</a>
+        or <a href="https://wa.me/${d.phone.replace(/\D/g, "")}" style="color:${INK};text-decoration:underline;font-weight:bold;">WhatsApp</a>
+      </p>
     </td>
   </tr>`;
 
