@@ -4,6 +4,7 @@ import { generateInvoicePDF, type InvoiceData } from "@/lib/email/pdf";
 import type { Json } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type Params = { orderNumber: string };
 
@@ -26,13 +27,18 @@ export async function GET(
   context: { params: Promise<Params> }
 ) {
   try {
+    console.log("[Invoice API] Starting PDF generation...");
     const { orderNumber } = await context.params;
+    console.log("[Invoice API] Order number:", orderNumber);
 
     // Fetch order data
+    console.log("[Invoice API] Fetching order from database...");
     const order = await getOrderByNumber(orderNumber);
     if (!order) {
+      console.error("[Invoice API] Order not found:", orderNumber);
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
+    console.log("[Invoice API] Order fetched successfully");
 
     const addr = parseAddress(order.address);
     const items = (order.order_items ?? []).map((item: any) => ({
@@ -67,7 +73,9 @@ export async function GET(
     };
 
     // Generate PDF
+    console.log("[Invoice API] Generating PDF...");
     const pdfBuffer = await generateInvoicePDF(invoiceData);
+    console.log("[Invoice API] PDF generated, size:", pdfBuffer.length, "bytes");
 
     // Return PDF as downloadable file
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
