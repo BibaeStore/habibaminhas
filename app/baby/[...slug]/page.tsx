@@ -53,7 +53,7 @@ export default async function BabySubcategoryPage({ params }: { params: Promise<
       ]}
       eyebrow="Baby & Nursery"
       title={category.name}
-      description={category.seo_desc || `Shop ${category.name} from Habiba Minhas`}
+      description={category.description || category.seo_desc || `Shop ${category.name} from Habiba Minhas`}
       tone={["#f0e0f0", "#c090c0", "#401840"]}
       motif="stripes"
       image={category.image || "/HeroSection/baby-bedding.webp"}

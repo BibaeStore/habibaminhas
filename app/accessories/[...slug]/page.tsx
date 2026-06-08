@@ -53,7 +53,7 @@ export default async function AccessoriesSubcategoryPage({ params }: { params: P
       ]}
       eyebrow="Handcrafted Accessories"
       title={category.name}
-      description={category.seo_desc || `Shop ${category.name} from Habiba Minhas`}
+      description={category.description || category.seo_desc || `Shop ${category.name} from Habiba Minhas`}
       tone={["#eedbc4", "#b08040", "#3a2010"]}
       motif="lattice"
       image={category.image || "/HeroSection/accessories.webp"}
