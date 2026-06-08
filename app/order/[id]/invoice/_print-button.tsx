@@ -12,7 +12,8 @@ export function PrintButton() {
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const url = `/api/invoice/${orderNumber}`;
+      // Use absolute URL to avoid redirect issues
+      const url = `${window.location.origin}/api/invoice/${orderNumber}`;
       console.log("[Download] Fetching PDF from:", url);
 
       const response = await fetch(url);
