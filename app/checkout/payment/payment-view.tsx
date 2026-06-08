@@ -129,7 +129,29 @@ export function PaymentView({
   const shipAddr = [shipping.city, shipping.province].filter(Boolean).join(", ");
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-4 py-10 sm:px-8 lg:py-16">
+    <>
+      {/* Full-screen order processing loader */}
+      {placing && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-ivory/95 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-6">
+            <Image
+              src="/logo/habiba-minhas-icon-t.png"
+              alt="Processing"
+              width={100}
+              height={100}
+              className="h-24 w-24 animate-spin"
+              style={{ animationDuration: "3s" }}
+              priority
+            />
+            <div className="flex flex-col items-center gap-2">
+              <p className="font-display text-2xl italic text-ink">Processing your order...</p>
+              <p className="text-[13px] text-muted">Please wait while we confirm your purchase</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-10 sm:px-8 lg:py-16">
 
       <nav className="mb-12 flex items-center gap-0">
         {[
@@ -411,5 +433,6 @@ export function PaymentView({
 
       </div>
     </div>
+    </>
   );
 }

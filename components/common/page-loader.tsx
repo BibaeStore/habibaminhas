@@ -11,9 +11,9 @@ export function PageLoader() {
     // In Next.js App Router the layout does NOT remount on client-side
     // navigation, so this naturally never fires between page clicks.
 
-    const t1 = setTimeout(() => setPhase("hold"), 1600); // content finishes animating in
-    const t2 = setTimeout(() => setPhase("out"),  4000); // hold for ~2.4 s then start exit
-    const t3 = setTimeout(() => setPhase("gone"), 4900); // curtains fully open, unmount
+    const t1 = setTimeout(() => setPhase("hold"), 800);  // content finishes animating in (was 1600)
+    const t2 = setTimeout(() => setPhase("out"),  1800); // hold for ~1s then start exit (was 4000)
+    const t3 = setTimeout(() => setPhase("gone"), 2500); // curtains fully open, unmount (was 4900)
 
     return () => {
       clearTimeout(t1);
