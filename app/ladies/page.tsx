@@ -45,7 +45,17 @@ export default async function LadiesPage() {
         crumbs={[{ label: "Home", href: "/" }, { label: "Ladies" }]}
         eyebrow="Ladies Collection"
         title="Ladies Formal Suits"
-        description="Handcrafted 3-piece silk suits adorned with gold brocade, mirror-work, and artisan embroidery — made for the modern Pakistani woman."
+        description="Handcrafted 3-piece silk suits adorned with gold brocade, mirror-work, and artisan embroidery — made for the modern Pakistani woman. Each piece in our ladies collection represents the finest traditions of Pakistani formal wear, reimagined for contemporary life. We design suits that honor cultural heritage while embracing modern silhouettes and wearability.
+
+Our ladies suits are handcrafted in our Karachi studio by skilled artisans who bring decades of experience in traditional Pakistani embroidery techniques. Every kameez, shalwar, and dupatta is constructed with attention to detail that mass production cannot replicate — from the precision of mirror-work placement to the hand-finishing of seams and hems.
+
+We source premium fabrics specifically for the Pakistani climate and occasion culture. Summer collections feature breathable lawn and silk georgette that remain comfortable through Karachi heat and formal events. Winter offerings include rich velvets, karandi, and heavier silks appropriate for cooler months and evening celebrations. Each fabric is selected not just for beauty but for how it drapes, moves, and photographs — because we know our customers need to look stunning in person and in wedding photos.
+
+The embroidery work sets our suits apart. We employ artisans skilled in traditional techniques: intricate threadwork, delicate mirror embellishments (shisha), gold and silver brocade appliqué, and hand-beading. These techniques have been passed down through generations of craftspeople in Karachi and Lahore. When you purchase a Habiba Minhas suit, you're supporting these artisans and helping preserve Pakistan's textile heritage.
+
+Our collection includes ready-to-wear stitched suits as well as unstitched fabric sets for those who prefer custom tailoring. Stitched suits follow standard Pakistani sizing with detailed measurements provided for each style. We also offer limited custom stitching services for bulk orders or special occasions — perfect for bridal parties, Eid gifts for extended family, or coordinated outfits for wedding events.
+
+Occasions covered in our ladies collection span the full spectrum of Pakistani formal life: wedding guest attire, Eid celebrations, Shab-e-Barat, engagement ceremonies, mendhi outfits, formal dinners, and festive gatherings. We design with versatility in mind — many pieces transition beautifully from daytime events to evening celebrations with a simple jewelry change."
         tone={["#f2e0d8", "#c97a86", "#5a2030"]}
         motif="floral"
         image="/HeroSection/ladies-suits.webp"

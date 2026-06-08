@@ -45,7 +45,19 @@ export default async function AccessoriesPage() {
         crumbs={[{ label: "Home", href: "/" }, { label: "Accessories" }]}
         eyebrow="Handcrafted Accessories"
         title="Silk Hair Accessories"
-        description="3-piece handcrafted silk headband & floral clip sets — made by hand, finished with care, gifted with love."
+        description="3-piece handcrafted silk headband & floral clip sets — made by hand, finished with care, gifted with love. Our accessories collection showcases traditional Pakistani artisan techniques applied to beautiful, functional pieces for babies and young girls.
+
+Every accessory is handcrafted in our Karachi studio by skilled artisans who bring years of experience in traditional embellishment techniques. What makes these pieces truly special is the time and attention invested in each one. Silk flowers are shaped petal by petal, bows are hand-tied and stitched with precision, and each piece is inspected to ensure embellishments are secure and safe for children. This level of handwork creates accessories that are not only beautiful but also durable enough to withstand active wear.
+
+We design accessories specifically for babies and young children, which requires different considerations than adult pieces. The clips use gentle grips lined with ribbon or fabric to protect fine baby hair from catching and pulling. Elastic bands are calibrated for just enough tension to stay in place without creating pressure points or leaving marks on sensitive scalps. All embellishments are securely stitched — never glued — so they won't detach if pulled by curious hands. We avoid small beads or decorative elements that could come loose and become choking hazards.
+
+The materials reflect our commitment to safety and quality. We use soft silk for formal pieces and breathable cotton for everyday wear, both with baby-safe, colorfast dyes that won't bleed or transfer. The elastic maintains its stretch through multiple washes, and fabric components hold their shape and color through regular use. Everything is designed to survive the reality of children's wear — being dropped in toy boxes, tossed in laundry, and handled by small hands.
+
+Our accessories coordinate beautifully with our kids formal wear collections, allowing parents to create complete outfits for special occasions. Many designs are created to match specific dress collections, perfect for Eid celebrations, wedding events, birthday parties, and family photos. We also offer everyday accessories in neutral colors and simpler designs that work with any outfit for school, playdates, or casual family outings.
+
+The collection includes options for different ages and stages. Tiny newborn accessories feature ultra-gentle clips and soft bands suitable for the finest baby hair. Toddler and young girl pieces have slightly more structure to stay secure during active play. Sets include coordinating pieces — multiple items in complementary designs — allowing you to create different looks or share among sisters.
+
+These handcrafted accessories make thoughtful gifts for new mothers, Eid gifts for nieces, birthday presents, or party favors for celebrations. We offer beautiful gift packaging options for special occasions. Supporting our handcrafted collection means supporting Pakistani artisans — many are women working from home, earning income while caring for their own families and helping preserve traditional craft skills."
         tone={["#eedbc4", "#b08040", "#3a2010"]}
         motif="lattice"
         image="/HeroSection/accessories.webp"
