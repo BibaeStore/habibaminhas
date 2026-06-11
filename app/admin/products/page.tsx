@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
   Plus, Search, Eye, Pencil, Trash2, X, Upload,
-  ChevronLeft, ChevronRight, Check, AlertTriangle, Star, Package,
+  ChevronLeft, ChevronRight, Check, AlertTriangle, Star, Package, Sparkles,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
@@ -43,6 +43,7 @@ export default function AdminProductsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [stockFilter,  setStockFilter]  = useState("all");
   const [priceFilter,  setPriceFilter]  = useState("all");
+  const [tryonFilter,  setTryonFilter]  = useState("all");
   const [page,         setPage]         = useState(1);
   const [showModal,    setShowModal]    = useState(false);
   const [viewProduct,  setViewProduct]  = useState<Product | null>(null);
@@ -92,9 +93,11 @@ export default function AdminProductsPage() {
       if (priceFilter === "under-3000"   && p.price >= 3000) return false;
       if (priceFilter === "3000-6000"    && (p.price < 3000 || p.price > 6000)) return false;
       if (priceFilter === "over-6000"    && p.price <= 6000) return false;
+      if (tryonFilter === "enabled"  && !p.tryon_enabled) return false;
+      if (tryonFilter === "disabled" &&  p.tryon_enabled) return false;
       return true;
     });
-  }, [products, search, catFilter, subCatFilter, statusFilter, stockFilter, priceFilter]);
+  }, [products, search, catFilter, subCatFilter, statusFilter, stockFilter, priceFilter, tryonFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage   = Math.min(page, totalPages);
@@ -151,7 +154,7 @@ export default function AdminProductsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
             <div className="relative lg:col-span-2">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--admin-text-muted)]" />
               <input
@@ -165,7 +168,7 @@ export default function AdminProductsPage() {
             <select
               value={catFilter}
               onChange={(e) => handleFilter(setCatFilter)(e.target.value)}
-              className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+              className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[14px] outline-none focus:border-[var(--admin-primary)]"
             >
               <option value="all">All Categories</option>
               {mainCategories.map((cat) => (
@@ -210,12 +213,27 @@ export default function AdminProductsPage() {
             <select
               value={priceFilter}
               onChange={(e) => handleFilter(setPriceFilter)(e.target.value)}
-              className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+              className="h-11 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[14px] outline-none focus:border-[var(--admin-primary)]"
             >
               <option value="all">All Prices</option>
               <option value="under-3000">Under Rs. 3,000</option>
               <option value="3000-6000">Rs. 3,000 – 6,000</option>
               <option value="over-6000">Over Rs. 6,000</option>
+            </select>
+            <select
+              value={tryonFilter}
+              onChange={(e) => handleFilter(setTryonFilter)(e.target.value)}
+              className={`h-11 rounded-[var(--admin-radius)] border px-3 text-[14px] outline-none focus:border-[var(--admin-primary)] ${
+                tryonFilter === "enabled"
+                  ? "border-[var(--admin-primary)] bg-[var(--admin-primary-soft)] font-medium text-[var(--admin-primary)]"
+                  : tryonFilter === "disabled"
+                  ? "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-muted)]"
+                  : "border-[var(--admin-border)] bg-[var(--admin-surface)]"
+              }`}
+            >
+              <option value="all">✦ All Try-On</option>
+              <option value="enabled">✦ Try-On Enabled</option>
+              <option value="disabled">Try-On Disabled</option>
             </select>
           </div>
         </AdminCard>
@@ -315,9 +333,17 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-5 py-5 max-w-[240px]">
                       <div className="line-clamp-2 text-[15px] font-medium leading-snug text-[var(--admin-text)]">{p.title}</div>
-                      {p.featured && (
-                        <div className="mt-0.5 text-xs font-bold text-[var(--admin-primary)]">Featured</div>
-                      )}
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {p.featured && (
+                          <span className="text-xs font-bold text-[var(--admin-primary)]">Featured</span>
+                        )}
+                        {p.tryon_enabled && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                            <Sparkles className="h-2.5 w-2.5" />
+                            Try-On
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-5">
                       <span className="font-mono text-sm text-[var(--admin-text-soft)]">{p.sku ?? "—"}</span>
