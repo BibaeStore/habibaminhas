@@ -1,24 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 
-// GET — returns VTR settings + today's usage count + recent 20 entries
-export async function GET() {
+const PAGE_SIZE = 15;
+
+// GET — returns VTR settings + today's usage count + paginated recent entries
+export async function GET(req: NextRequest) {
   const admin = createAdminClient();
+
+  const page = Math.max(1, parseInt(new URL(req.url).searchParams.get("page") ?? "1"));
+  const from = (page - 1) * PAGE_SIZE;
+  const to   = from + PAGE_SIZE - 1;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [settingsRes, countRes, recentRes] = await Promise.all([
+  const [settingsRes, countRes, recentRes, totalRes] = await Promise.all([
     admin.from("settings").select("virtual_try_on_settings").eq("id", 1).single(),
+
     (admin as ReturnType<typeof createAdminClient>)
       .from("try_on_usage" as never)
       .select("id", { count: "exact", head: true })
       .gte("created_at", today.toISOString()),
+
     (admin as ReturnType<typeof createAdminClient>)
       .from("try_on_usage" as never)
       .select("id, user_email, product_slug, category, created_at")
       .order("created_at", { ascending: false })
-      .limit(20),
+      .range(from, to),
+
+    (admin as ReturnType<typeof createAdminClient>)
+      .from("try_on_usage" as never)
+      .select("id", { count: "exact", head: true }),
   ]);
 
   if (settingsRes.error) {
@@ -26,6 +38,8 @@ export async function GET() {
   }
 
   const vtr = (settingsRes.data?.virtual_try_on_settings as Record<string, unknown>) ?? {};
+  const total      = totalRes.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return NextResponse.json({
     config: {
@@ -33,10 +47,13 @@ export async function GET() {
       per_user_limit:     typeof vtr.per_user_limit === "number" ? vtr.per_user_limit : 3,
       global_daily_limit: typeof vtr.global_daily_limit === "number" ? vtr.global_daily_limit : 20,
     },
-    today:  countRes.count  ?? 0,
-    recent: (recentRes.data  ?? []) as {
+    today:      countRes.count ?? 0,
+    recent:     (recentRes.data ?? []) as {
       id: string; user_email: string; product_slug: string; category: string; created_at: string;
     }[],
+    page,
+    totalPages,
+    total,
   });
 }
 

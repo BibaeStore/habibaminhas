@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Save, Users, Activity, ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
+import { Save, Users, Activity, ToggleLeft, ToggleRight, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { PageHeader } from "@/components/admin/ui/page-header";
 import { AdminCard } from "@/components/admin/ui/card";
@@ -22,18 +22,21 @@ export default function VirtualTryOnAdminPage() {
     per_user_limit: 3,
     global_daily_limit: 20,
   });
-  const [todayCount, setTodayCount] = useState<number | null>(null);
-  const [recent,     setRecent]     = useState<RecentEntry[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [saving,     setSaving]     = useState(false);
-  const [saved,      setSaved]      = useState(false);
-  const [error,      setError]      = useState("");
+  const [todayCount,  setTodayCount]  = useState<number | null>(null);
+  const [recent,      setRecent]      = useState<RecentEntry[]>([]);
+  const [page,        setPage]        = useState(1);
+  const [totalPages,  setTotalPages]  = useState(1);
+  const [total,       setTotal]       = useState(0);
+  const [loading,     setLoading]     = useState(true);
+  const [saving,      setSaving]      = useState(false);
+  const [saved,       setSaved]       = useState(false);
+  const [error,       setError]       = useState("");
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (p: number = 1) => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/virtual-try-on-settings/");
+      const res = await fetch(`/api/admin/virtual-try-on-settings/?page=${p}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setError(body.error ?? `Server error ${res.status}`);
@@ -44,13 +47,21 @@ export default function VirtualTryOnAdminPage() {
       setConfig(data.config);
       setTodayCount(data.today ?? 0);
       setRecent(data.recent ?? []);
+      setPage(data.page ?? 1);
+      setTotalPages(data.totalPages ?? 1);
+      setTotal(data.total ?? 0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load settings.");
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(1); }, [loadData]);
+
+  function goToPage(p: number) {
+    if (p < 1 || p > totalPages || p === page) return;
+    loadData(p);
+  }
 
   const handleSave = async () => {
     setSaving(true); setError(""); setSaved(false);
@@ -72,6 +83,19 @@ export default function VirtualTryOnAdminPage() {
     }
     setSaving(false);
   };
+
+  // Build page numbers to show: always show first, last, current ±1, with … gaps
+  function pageNumbers(): (number | "…")[] {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const set = new Set([1, totalPages, page, page - 1, page + 1].filter((n) => n >= 1 && n <= totalPages));
+    const sorted = Array.from(set).sort((a, b) => a - b);
+    const result: (number | "…")[] = [];
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push("…");
+      result.push(sorted[i]);
+    }
+    return result;
+  }
 
   return (
     <AdminShell>
@@ -160,7 +184,7 @@ export default function VirtualTryOnAdminPage() {
             leadingIcon={<Save className="h-4 w-4" />}>
             {saved ? "Saved!" : saving ? "Saving…" : "Save Settings"}
           </AdminButton>
-          <AdminButton variant="outline" onClick={loadData}
+          <AdminButton variant="outline" onClick={() => loadData(page)}
             leadingIcon={<RefreshCw className="h-4 w-4" />}>
             Refresh
           </AdminButton>
@@ -197,9 +221,16 @@ export default function VirtualTryOnAdminPage() {
         {/* ── Recent activity ── */}
         <AdminCard>
           <div className="p-5">
-            <div className="mb-4 flex items-center gap-2 text-[16px] font-semibold text-[var(--admin-text)]">
-              <Users className="h-4 w-4" />
-              Recent Try-Ons
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[16px] font-semibold text-[var(--admin-text)]">
+                <Users className="h-4 w-4" />
+                Recent Try-Ons
+              </div>
+              {!loading && total > 0 && (
+                <span className="text-[12px] text-[var(--admin-text-muted)]">
+                  {total} total
+                </span>
+              )}
             </div>
 
             {loading ? (
@@ -207,33 +238,76 @@ export default function VirtualTryOnAdminPage() {
             ) : recent.length === 0 ? (
               <p className="text-[13px] text-[var(--admin-text-muted)]">No try-ons recorded yet.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-[13px]">
-                  <thead>
-                    <tr className="border-b border-[var(--admin-border)] text-left text-[11px] uppercase tracking-wider text-[var(--admin-text-muted)]">
-                      <th className="pb-2 pr-4">User</th>
-                      <th className="pb-2 pr-4">Product</th>
-                      <th className="pb-2 pr-4">Category</th>
-                      <th className="pb-2">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recent.map((r) => (
-                      <tr key={r.id} className="border-b border-[var(--admin-border)] last:border-0">
-                        <td className="py-2.5 pr-4 text-[var(--admin-text)]">{r.user_email}</td>
-                        <td className="py-2.5 pr-4 font-medium text-[var(--admin-primary)]">{r.product_slug}</td>
-                        <td className="py-2.5 pr-4 text-[var(--admin-text-muted)]">{r.category}</td>
-                        <td className="py-2.5 text-[var(--admin-text-muted)] whitespace-nowrap">
-                          {new Date(r.created_at).toLocaleString("en-PK", {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}
-                        </td>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="border-b border-[var(--admin-border)] text-left text-[11px] uppercase tracking-wider text-[var(--admin-text-muted)]">
+                        <th className="pb-2 pr-4">User</th>
+                        <th className="pb-2 pr-4">Product</th>
+                        <th className="pb-2 pr-4">Category</th>
+                        <th className="pb-2">Time</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {recent.map((r) => (
+                        <tr key={r.id} className="border-b border-[var(--admin-border)] last:border-0">
+                          <td className="py-2.5 pr-4 text-[var(--admin-text)]">{r.user_email}</td>
+                          <td className="py-2.5 pr-4 font-medium text-[var(--admin-primary)]">{r.product_slug}</td>
+                          <td className="py-2.5 pr-4 text-[var(--admin-text-muted)]">{r.category}</td>
+                          <td className="py-2.5 text-[var(--admin-text-muted)] whitespace-nowrap">
+                            {new Date(r.created_at).toLocaleString("en-PK", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* ── Pagination ── */}
+                {totalPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between border-t border-[var(--admin-border)] pt-4">
+                    <button
+                      onClick={() => goToPage(page - 1)}
+                      disabled={page === 1}
+                      className="flex items-center gap-1 rounded px-2 py-1.5 text-[13px] text-[var(--admin-text-muted)] transition-colors hover:bg-[var(--admin-border)] hover:text-[var(--admin-text)] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-4 w-4" /> Prev
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {pageNumbers().map((n, i) =>
+                        n === "…" ? (
+                          <span key={`gap-${i}`} className="px-1 text-[13px] text-[var(--admin-text-muted)]">…</span>
+                        ) : (
+                          <button
+                            key={n}
+                            onClick={() => goToPage(n)}
+                            className={`flex h-8 w-8 items-center justify-center rounded text-[13px] font-medium transition-colors ${
+                              n === page
+                                ? "bg-[var(--admin-primary)] text-white"
+                                : "text-[var(--admin-text-muted)] hover:bg-[var(--admin-border)] hover:text-[var(--admin-text)]"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        )
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => goToPage(page + 1)}
+                      disabled={page === totalPages}
+                      className="flex items-center gap-1 rounded px-2 py-1.5 text-[13px] text-[var(--admin-text-muted)] transition-colors hover:bg-[var(--admin-border)] hover:text-[var(--admin-text)] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </AdminCard>

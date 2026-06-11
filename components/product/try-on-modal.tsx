@@ -210,8 +210,8 @@ export function TryOnModal({
       setFileError("Please upload a JPG, PNG, or WebP photo.");
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setFileError("Photo must be under 10 MB. Please use a smaller image.");
+    if (file.size > 4 * 1024 * 1024) {
+      setFileError("Your photo is too large (over 4 MB). Please use a WhatsApp photo or screenshot — they are automatically smaller and work perfectly.");
       return;
     }
     setUserFile(file);
@@ -314,6 +314,17 @@ export function TryOnModal({
         body: fd,
       });
 
+      // ── Statuses where the body is NOT JSON (Vercel-level rejections) ──────
+      // These must be checked BEFORE res.json() — Vercel returns HTML for 413,
+      // so calling res.json() would throw and hide the real error message.
+      if (res.status === 413) {
+        throw new Error(
+          "Your photo is too large for our server. Please use a WhatsApp photo or a screenshot — they are automatically smaller and work perfectly."
+        );
+      }
+      if (res.status === 401) { setModalState("needsLogin"); return; }
+
+      // ── Parse JSON (safe now that Vercel-level errors are handled above) ────
       let data: {
         image?: string;
         mimeType?: string;
@@ -324,16 +335,22 @@ export function TryOnModal({
       try {
         data = await res.json();
       } catch {
-        throw new Error(`Server error ${res.status}. Please try again.`);
+        throw new Error("Unexpected response from server. Please try again.");
       }
 
-      if (res.status === 401) { setModalState("needsLogin"); return; }
+      // ── Application-level status codes ────────────────────────────────────
       if (res.status === 429) {
         setModalState(data.code === "global_busy" ? "globalBusy" : "limitReached");
         return;
       }
+      if (res.status === 503) {
+        throw new Error(data.error ?? "The Virtual Try Room is currently unavailable. Please try again in a few minutes.");
+      }
+      if (res.status >= 500) {
+        throw new Error(data.error ?? "Something went wrong on our side. Please try again in a moment.");
+      }
       if (!res.ok || !data.image) {
-        throw new Error(data.error ?? `Server error ${res.status}. Please try again.`);
+        throw new Error(data.error ?? "Could not generate your try-on. Please try a clearer, well-lit photo.");
       }
 
       setProgress(100);
@@ -563,7 +580,7 @@ export function TryOnModal({
                     <p className="text-[13px] font-medium text-ink">{config.uploadLabel}</p>
                     <p className="text-[11px] text-muted">Drag & drop or tap to browse</p>
                     <p className="mt-1 text-[10px] text-muted">
-                      JPG · PNG · WebP &nbsp;·&nbsp; Max 10 MB
+                      JPG · PNG · WebP &nbsp;·&nbsp; Max 4 MB
                     </p>
                   </div>
                 )}
