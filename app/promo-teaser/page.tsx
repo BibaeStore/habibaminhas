@@ -13,7 +13,7 @@ export default function TeaserPromoPage() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8 font-sans">
       <div className="text-center mb-8 absolute top-8 left-8">
         <p className="text-sm text-gray-500 mb-2">Here is a pre-launch teaser poster!</p>
-        <p className="text-sm text-gray-500 mb-2">Visit http://localhost:3000/promo-teaser to view and screenshot.</p>
+        <p className="text-sm text-gray-500 mb-2">Visit https://habibaminhas.com/promo-teaser to view and screenshot.</p>
       </div>
 
       {/* INSTAGRAM PORTRAIT POSTER (1080x1350 ratio) */}

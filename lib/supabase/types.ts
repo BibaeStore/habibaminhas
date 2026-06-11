@@ -496,6 +496,8 @@ export type Database = {
           subcategory: string[] | null
           subtype: string | null
           title: string
+          tryon_enabled: boolean
+          tryon_image: string | null
           updated_at: string
         }
         Insert: {
@@ -523,6 +525,8 @@ export type Database = {
           subcategory?: string[] | null
           subtype?: string | null
           title: string
+          tryon_enabled?: boolean
+          tryon_image?: string | null
           updated_at?: string
         }
         Update: {
@@ -550,6 +554,8 @@ export type Database = {
           subcategory?: string[] | null
           subtype?: string | null
           title?: string
+          tryon_enabled?: boolean
+          tryon_image?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -570,6 +576,7 @@ export type Database = {
           store_phone: string
           timezone: string
           updated_at: string
+          virtual_try_on_settings: Json
         }
         Insert: {
           currency?: string
@@ -586,6 +593,7 @@ export type Database = {
           store_phone?: string
           timezone?: string
           updated_at?: string
+          virtual_try_on_settings?: Json
         }
         Update: {
           currency?: string
@@ -602,6 +610,7 @@ export type Database = {
           store_phone?: string
           timezone?: string
           updated_at?: string
+          virtual_try_on_settings?: Json
         }
         Relationships: []
       }

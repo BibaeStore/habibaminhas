@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Minus, Plus, Heart, Share2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { Minus, Plus, Heart, Share2, Sparkles, Lock } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useWishlistStore } from "@/lib/wishlist-store";
 import Image from "next/image";
+
+const TryOnModal = dynamic(
+  () => import("@/components/product/try-on-modal").then((m) => m.TryOnModal),
+  { ssr: false }
+);
 
 const SIZES = ["XS", "S", "M", "L", "XL"];
 
@@ -20,21 +26,44 @@ interface Props {
   sku: string | null;
   hasSizes: boolean;
   sizesStock?: Record<string, number> | null;
+  tryonEnabled?: boolean;
 }
 
 export function AddToCartSection({
-  id, slug, category, title, image, palette, price, compare_at, sku, hasSizes, sizesStock,
+  id, slug, category, title, image, palette, price, compare_at, sku, hasSizes, sizesStock, tryonEnabled = false,
 }: Props) {
   const [selectedSize, setSelectedSize] = useState<string | null>(hasSizes ? null : "onesize");
   const [mobileQty, setMobileQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [isTryOnOpen, setIsTryOnOpen] = useState(false);
+
+  const showTryOn = image !== null && tryonEnabled;
 
   const addItem    = useCartStore((s) => s.addItem);
   const openDrawer = useCartStore((s) => s.openDrawer);
   const toggle     = useWishlistStore((s) => s.toggle);
   const isWished   = useWishlistStore((s) => s.has(slug));
 
+  // Auto-reopen modal after returning from Google OAuth (?tryon=1)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tryon") === "1" && showTryOn) {
+      setIsTryOnOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tryon");
+      window.history.replaceState({}, "", url.toString());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const canAdd = !hasSizes || !!selectedSize;
+
+  function handleTryOnClick() {
+    // Silently add product to bag (badge updates), then open modal
+    // Drawer opens AFTER the modal closes so the overlay covers the full screen
+    addItem({ id, slug, category, title, image, palette, price, compare_at, size: hasSizes ? selectedSize : null, sku });
+    setIsTryOnOpen(true);
+  }
 
   function handleAdd() {
     if (!canAdd) return;
@@ -98,6 +127,24 @@ export function AddToCartSection({
         </div>
       )}
 
+      {/* ── Virtual Try Room — mobile only (visible in scrollable content) ── */}
+      {showTryOn && (
+        <div className="mt-6 lg:hidden">
+          <button
+            type="button"
+            onClick={handleTryOnClick}
+            className="flex h-11 w-full items-center justify-center gap-2 border border-ink/30 text-[11px] uppercase tracking-[0.28em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-ivory"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            ✦ Virtual Try Room
+          </button>
+          <p className="mt-1.5 flex items-center justify-center gap-1 text-[10px] text-muted">
+            <Lock className="h-2.5 w-2.5" />
+            Your photo is never stored
+          </p>
+        </div>
+      )}
+
       {/* ── Desktop Add-to-bag (hidden on mobile) ──────────────── */}
       <div className="mt-8 hidden flex-col gap-3 lg:flex">
         <button
@@ -137,6 +184,24 @@ export function AddToCartSection({
           <Image src="/icons/whatsapp.svg" alt="" width={16} height={16} className="h-4 w-4" />
           Inquire on WhatsApp
         </button>
+
+        {/* Virtual Try Room — desktop */}
+        {showTryOn && (
+          <div>
+            <button
+              type="button"
+              onClick={handleTryOnClick}
+              className="flex h-12 w-full items-center justify-center gap-2 border border-ink/25 text-[12px] uppercase tracking-[0.28em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-ivory"
+            >
+              <Sparkles className="h-4 w-4" />
+              ✦ Virtual Try Room
+            </button>
+            <p className="mt-1.5 flex items-center justify-center gap-1 text-[10px] text-muted">
+              <Lock className="h-2.5 w-2.5" />
+              Your photo is never stored &mdash; gone when you close
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Mobile sticky bottom bar ────────────────────────────── */}
@@ -195,6 +260,22 @@ export function AddToCartSection({
           </button>
         </div>
       </div>
+
+      {/* Virtual Try Room modal */}
+      {isTryOnOpen && showTryOn && (
+        <TryOnModal
+          productImage={image!}
+          productTitle={title}
+          productSlug={slug}
+          category={category}
+          onClose={() => {
+            setIsTryOnOpen(false);
+            // Slide in the cart drawer once the modal is gone —
+            // the product was already added when Try On was clicked
+            openDrawer();
+          }}
+        />
+      )}
     </>
   );
 }

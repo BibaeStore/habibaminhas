@@ -52,6 +52,12 @@ export type SeoConfig = {
   meta_description: string;
 };
 
+export type VirtualTryOnConfig = {
+  enabled: boolean;
+  per_user_limit: number;
+  global_daily_limit: number;
+};
+
 export type StorefrontSettings = {
   storeName: string;
   storeEmail: string;
@@ -60,6 +66,7 @@ export type StorefrontSettings = {
   shipping: ShippingConfig;
   payment: PaymentMethodsConfig;
   seo: SeoConfig;
+  virtual_try_on: VirtualTryOnConfig;
 };
 
 const DEFAULTS: StorefrontSettings = {
@@ -78,6 +85,7 @@ const DEFAULTS: StorefrontSettings = {
   },
   payment: { cod: true, bank: false, jazzcash: false, easypaisa: false },
   seo: { ga4_id: "", fb_pixel: "", site_title: "Habiba Minhas", meta_description: "" },
+  virtual_try_on: { enabled: true, per_user_limit: 3, global_daily_limit: 20 },
 };
 
 function asObject(v: unknown): Record<string, unknown> {
@@ -132,6 +140,14 @@ export async function getStorefrontSettings(): Promise<StorefrontSettings> {
         site_title:       asString(seo.site_title ?? seo.siteTitle,       DEFAULTS.seo.site_title),
         meta_description: asString(seo.meta_description ?? seo.metaDesc, DEFAULTS.seo.meta_description),
       },
+      virtual_try_on: (() => {
+        const vtr = asObject(raw.virtual_try_on_settings);
+        return {
+          enabled:            asBool  (vtr.enabled,            DEFAULTS.virtual_try_on.enabled),
+          per_user_limit:     asNumber(vtr.per_user_limit,     DEFAULTS.virtual_try_on.per_user_limit),
+          global_daily_limit: asNumber(vtr.global_daily_limit, DEFAULTS.virtual_try_on.global_daily_limit),
+        };
+      })(),
     };
   } catch {
     return DEFAULTS;

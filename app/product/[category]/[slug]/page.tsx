@@ -202,6 +202,7 @@ export default async function ProductPage({
               sku={product.sku}
               hasSizes={hasSizes}
               sizesStock={product.sizes_stock as Record<string, number> | null}
+              tryonEnabled={product.tryon_enabled ?? false}
             />
           )}
 

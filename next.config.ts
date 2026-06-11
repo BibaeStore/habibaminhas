@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "ftrwdknlckzcwbibdicu.supabase.co" },
       { protocol: "https", hostname: "goykebkdqjrgbofmusjv.supabase.co" },
       { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "http", hostname: "localhost" },
     ],
   },
 
@@ -50,11 +51,11 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' widget.trustpilot.com *.supabase.co *.googletagmanager.com *.google-analytics.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' widget.trustpilot.com *.supabase.co *.googletagmanager.com *.google-analytics.com js.puter.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' *.supabase.co wss://*.supabase.co *.google-analytics.com *.analytics.google.com *.googletagmanager.com",
+              "connect-src 'self' *.supabase.co wss://*.supabase.co *.google-analytics.com *.analytics.google.com *.googletagmanager.com *.puter.com *.openai.com",
               "frame-src 'self' widget.trustpilot.com",
               "object-src 'none'",
               "base-uri 'self'",

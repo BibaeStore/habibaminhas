@@ -475,6 +475,9 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [sizeGuideImage, setSizeGuideImage] = useState<string | null>(null);
   const [uploadingSizeGuide, setUploadingSizeGuide] = useState(false);
   const [featured, setFeatured] = useState(false);
+  const [tryonEnabled, setTryonEnabled] = useState(false);
+  const [tryonImage,   setTryonImage]   = useState<string | null>(null);
+  const [uploadingTryonImage, setUploadingTryonImage] = useState(false);
   const [name,     setName]     = useState("");
   const [sku,      setSku]      = useState("");
   const [category, setCategory] = useState("");
@@ -590,6 +593,8 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
       short_description: shortDescription.trim() || null,
       images,
       palette,
+      tryon_enabled: tryonEnabled,
+      tryon_image: tryonImage,
     });
 
     setSaving(false);
@@ -979,6 +984,75 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
               </div>
             </label>
           </div>
+
+          {/* ── Virtual Try Room ──────────────────────────────────── */}
+          <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4 space-y-4">
+            <label className="flex cursor-pointer items-start gap-3">
+              <button
+                onClick={() => setTryonEnabled(!tryonEnabled)}
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border transition-colors ${
+                  tryonEnabled
+                    ? "border-[var(--admin-primary)] bg-[var(--admin-primary)]"
+                    : "border-[var(--admin-border)]"
+                }`}
+              >
+                {tryonEnabled && <Check className="h-4 w-4 text-white" />}
+              </button>
+              <div>
+                <div className="text-[18px] font-semibold text-[var(--admin-text)]">Enable Virtual Try Room</div>
+                <div className="mt-0.5 text-sm text-[var(--admin-text-muted)]">
+                  Shows the &ldquo;Virtual Try Room&rdquo; button on this product page.
+                </div>
+              </div>
+            </label>
+
+            {tryonEnabled && (
+              <div>
+                <div className="mb-1 text-[14px] font-semibold text-[var(--admin-text)]">
+                  High-Quality Try-On Image
+                </div>
+                <div className="mb-2 text-[13px] text-[var(--admin-text-muted)]">
+                  Upload a clear, high-resolution photo (min 500 KB). This image is sent to the AI — not shown to customers.
+                </div>
+                {tryonImage ? (
+                  <div className="group relative h-40 overflow-hidden rounded-[var(--admin-radius)] bg-[var(--admin-surface)]">
+                    <Image src={tryonImage} alt="Try-on image" fill sizes="400px" className="object-contain" />
+                    <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                      <label className="flex cursor-pointer items-center gap-1.5 rounded-[var(--admin-radius)] bg-[var(--admin-surface)] px-3 py-1.5 text-sm font-medium text-[var(--admin-text)] transition-colors hover:bg-[var(--admin-surface-alt)]">
+                        <Upload className="h-4 w-4" /> Replace
+                        <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
+                          if (!e.target.files?.[0]) return;
+                          setUploadingTryonImage(true);
+                          const fd = new FormData(); fd.append("file", e.target.files[0]);
+                          const r = await uploadProductImage(fd);
+                          if (r.url) setTryonImage(r.url); else setError(`Try-on image upload failed: ${r.error}`);
+                          setUploadingTryonImage(false);
+                        }} />
+                      </label>
+                      <button type="button" onClick={() => setTryonImage(null)}
+                        className="flex items-center gap-1.5 rounded-[var(--admin-radius)] bg-[var(--admin-danger)] px-3 py-1.5 text-sm font-medium text-white">
+                        <X className="h-4 w-4" /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 transition-colors hover:border-[var(--admin-primary)] ${uploadingTryonImage ? "pointer-events-none opacity-60" : ""}`}>
+                    <Upload className={`h-6 w-6 ${uploadingTryonImage ? "animate-bounce text-[var(--admin-primary)]" : "text-[var(--admin-text-muted)]"}`} />
+                    <span className="text-[15px] text-[var(--admin-text-soft)]">{uploadingTryonImage ? "Uploading…" : "Click to upload try-on image"}</span>
+                    <span className="text-[13px] text-[var(--admin-text-muted)]">PNG, JPG, WebP · Use original camera photo, min 500 KB</span>
+                    <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
+                      if (!e.target.files?.[0]) return;
+                      setUploadingTryonImage(true);
+                      const fd = new FormData(); fd.append("file", e.target.files[0]);
+                      const r = await uploadProductImage(fd);
+                      if (r.url) setTryonImage(r.url); else setError(`Try-on image upload failed: ${r.error}`);
+                      setUploadingTryonImage(false);
+                    }} />
+                  </label>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t border-[var(--admin-border)] px-6 py-4">
@@ -1168,6 +1242,9 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
       ? (product.palette as Palette)
       : ["#f2e0d8", "#c97a86", "#5a2030"]) as Palette,
   );
+  const [tryonEnabledVal, setTryonEnabledVal] = useState(product.tryon_enabled ?? false);
+  const [tryonImageVal,   setTryonImageVal]   = useState<string | null>(product.tryon_image ?? null);
+  const [uploadingTryonImageEdit, setUploadingTryonImageEdit] = useState(false);
   const [uploading,   setUploading]   = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);
@@ -1282,6 +1359,8 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
       sizes_stock: sizesStock as any,
       images,
       palette,
+      tryon_enabled: tryonEnabledVal,
+      tryon_image:   tryonImageVal,
     });
     setSaving(false);
     if (result.error) { setError(result.error); return; }
@@ -1665,6 +1744,73 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
             </button>
             <span className="text-[15px] text-[var(--admin-text)]">Mark as <strong>Featured</strong> product</span>
           </label>
+
+          {/* ── Virtual Try Room ──────────────────────────────────── */}
+          <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4 space-y-4">
+            <label className="flex cursor-pointer items-start gap-3">
+              <button
+                onClick={() => setTryonEnabledVal(!tryonEnabledVal)}
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border transition-colors ${
+                  tryonEnabledVal
+                    ? "border-[var(--admin-primary)] bg-[var(--admin-primary)]"
+                    : "border-[var(--admin-border)]"
+                }`}
+              >
+                {tryonEnabledVal && <Check className="h-4 w-4 text-white" />}
+              </button>
+              <div>
+                <div className="text-[15px] font-semibold text-[var(--admin-text)]">Enable Virtual Try Room</div>
+                <div className="mt-0.5 text-[13px] text-[var(--admin-text-muted)]">
+                  Shows the &ldquo;Virtual Try Room&rdquo; button on this product page.
+                </div>
+              </div>
+            </label>
+
+            {tryonEnabledVal && (
+              <div>
+                <div className="mb-1 text-[13px] font-semibold text-[var(--admin-text)]">High-Quality Try-On Image</div>
+                <div className="mb-2 text-[12px] text-[var(--admin-text-muted)]">
+                  Not shown to customers — only sent to the AI. Use original camera photo, min 500 KB.
+                </div>
+                {tryonImageVal ? (
+                  <div className="group relative h-36 overflow-hidden rounded-[var(--admin-radius)] bg-[var(--admin-surface)]">
+                    <Image src={tryonImageVal} alt="Try-on" fill sizes="300px" className="object-contain" />
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                      <label className="flex cursor-pointer items-center gap-1 rounded-[var(--admin-radius)] bg-[var(--admin-surface)] px-2.5 py-1.5 text-sm font-medium text-[var(--admin-text)] hover:bg-[var(--admin-surface-alt)]">
+                        <Upload className="h-3.5 w-3.5" /> Replace
+                        <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
+                          if (!e.target.files?.[0]) return;
+                          setUploadingTryonImageEdit(true);
+                          const fd = new FormData(); fd.append("file", e.target.files[0]);
+                          const r = await uploadProductImage(fd);
+                          if (r.url) setTryonImageVal(r.url); else setError(`Upload failed: ${r.error}`);
+                          setUploadingTryonImageEdit(false);
+                        }} />
+                      </label>
+                      <button type="button" onClick={() => setTryonImageVal(null)}
+                        className="flex items-center gap-1 rounded-[var(--admin-radius)] bg-[var(--admin-danger)] px-2.5 py-1.5 text-sm font-medium text-white">
+                        <X className="h-3.5 w-3.5" /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--admin-border)] bg-[var(--admin-surface)] p-4 hover:border-[var(--admin-primary)] ${uploadingTryonImageEdit ? "pointer-events-none opacity-60" : ""}`}>
+                    <Upload className={`h-5 w-5 ${uploadingTryonImageEdit ? "animate-bounce text-[var(--admin-primary)]" : "text-[var(--admin-text-muted)]"}`} />
+                    <span className="text-[13px] text-[var(--admin-text-soft)]">{uploadingTryonImageEdit ? "Uploading…" : "Click to upload try-on image"}</span>
+                    <span className="text-[12px] text-[var(--admin-text-muted)]">PNG, JPG, WebP · Original camera photo recommended</span>
+                    <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
+                      if (!e.target.files?.[0]) return;
+                      setUploadingTryonImageEdit(true);
+                      const fd = new FormData(); fd.append("file", e.target.files[0]);
+                      const r = await uploadProductImage(fd);
+                      if (r.url) setTryonImageVal(r.url); else setError(`Upload failed: ${r.error}`);
+                      setUploadingTryonImageEdit(false);
+                    }} />
+                  </label>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t border-[var(--admin-border)] pt-5 mt-5">
