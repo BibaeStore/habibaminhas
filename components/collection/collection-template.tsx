@@ -152,6 +152,33 @@ export function CollectionTemplate({
             </div>
           </div>
         ) : null}
+
+        {/* Server-rendered product index — all products as crawlable links.
+            PaginatedProducts only emits the first 9 in SSR; this ensures every
+            product in this collection has a crawlable <a href> in the page HTML
+            regardless of total count, so no product page becomes an orphan. */}
+        {products.length > 0 && (
+          <nav
+            aria-label="All products in this collection"
+            className="mx-auto mt-12 max-w-4xl border-t border-border-soft pt-8"
+          >
+            <h2 className="mb-4 text-[11px] uppercase tracking-[0.3em] text-gold-dark">
+              All {products.length} Products
+            </h2>
+            <ul className="flex flex-wrap gap-x-6 gap-y-2">
+              {products.map((p) => (
+                <li key={p.id}>
+                  <Link
+                    href={`/product/${p.category}/${p.slug}`}
+                    className="text-[13px] text-ink-soft transition-colors hover:text-ink"
+                  >
+                    {p.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
       </section>
     </>
   );
