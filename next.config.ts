@@ -117,7 +117,6 @@ const nextConfig: NextConfig = {
       { source: "/women/:slug*",       destination: "/ladies/",    permanent: true  },
       { source: "/men",                destination: "/ladies/",    permanent: true  },
       { source: "/men/:slug*",         destination: "/ladies/",    permanent: true  },
-      { source: "/stores",             destination: "/contact/",   permanent: false },
       { source: "/edit",               destination: "/new/",       permanent: false },
       { source: "/fragrances",         destination: "/accessories/", permanent: true },
       { source: "/fragrances/:slug*",  destination: "/accessories/", permanent: true },
