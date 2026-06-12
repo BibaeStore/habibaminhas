@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
+import { SubcategoryLinks } from "@/components/collection/subcategory-links";
 import { FAQSchema } from "@/components/seo/faq-schema";
 
 // SEO Focus Keyword: "baby products Pakistan" / "baby bedding Pakistan"
@@ -63,6 +64,7 @@ Our baby collection covers all the nursery essentials: complete bedding sets for
         image="/HeroSection/baby-bedding.webp"
         products={items}
       />
+      <SubcategoryLinks parentSlug="baby-products" basePath="/baby/" />
       <FAQSchema faqs={faqs} />
     </>
   );

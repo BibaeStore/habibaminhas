@@ -72,6 +72,7 @@ export const legacyProductRedirects = [
 
   // Journal entries that don't exist
   { source: "/journal/modest-dressing/:path*", destination: "/journal/", permanent: true },
+  { source: "/journal/eid-dressing/:path*", destination: "/journal/how-to-dress-eid-dawat-pakistan/", permanent: true },
 
   // Misc invalid URLs
   { source: "/unstitched%20Suit/:path*", destination: "/ladies/", permanent: true },

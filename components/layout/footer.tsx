@@ -27,6 +27,9 @@ const linkCols = [
       { label: "Terms of Service", href: "/legal/terms" },
       { label: "Wholesale Enquiries", href: "/contact" },
       { label: "Journal", href: "/journal" },
+      { label: "Size Guide", href: "/content/size-guide" },
+      { label: "Fabric Guide", href: "/content/fabric-glossary" },
+      { label: "Denim Fit Guide", href: "/content/denim-fit-guide" },
     ],
   },
   {
@@ -38,6 +41,7 @@ const linkCols = [
       { label: "Accessories", href: "/accessories" },
       { label: "New Arrivals", href: "/new" },
       { label: "Sale & Offers", href: "/offers" },
+      { label: "Search Products", href: "/search" },
       { label: "About Us", href: "/about" },
     ],
   },

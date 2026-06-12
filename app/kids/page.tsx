@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
+import { SubcategoryLinks } from "@/components/collection/subcategory-links";
 import { FAQSchema } from "@/components/seo/faq-schema";
 
 // SEO Focus Keyword: "kids festive wear Pakistan" / "Pakistani kids formal dress"
@@ -63,6 +64,7 @@ Quality matters especially in kids clothing because children are hard on garment
         image="/HeroSection/kids-formal.webp"
         products={items}
       />
+      <SubcategoryLinks parentSlug="kids-formal" basePath="/kids/" />
       <FAQSchema faqs={faqs} />
     </>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
+import { SubcategoryLinks } from "@/components/collection/subcategory-links";
 import { FAQSchema } from "@/components/seo/faq-schema";
 
 // SEO Focus Keyword: "Pakistani hair accessories" / "handcrafted accessories Pakistan"
@@ -63,6 +64,7 @@ These handcrafted accessories make thoughtful gifts for new mothers, Eid gifts f
         image="/HeroSection/accessories.webp"
         products={items}
       />
+      <SubcategoryLinks parentSlug="accessories" basePath="/accessories/" />
       <FAQSchema faqs={faqs} />
     </>
   );

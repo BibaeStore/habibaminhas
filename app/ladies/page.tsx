@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { CollectionTemplate } from "@/components/collection/collection-template";
+import { SubcategoryLinks } from "@/components/collection/subcategory-links";
 import { FAQSchema } from "@/components/seo/faq-schema";
 
 // SEO Focus Keyword: "Pakistani ladies suits" / "ladies formal wear Pakistan"
@@ -61,6 +62,7 @@ Occasions covered in our ladies collection span the full spectrum of Pakistani f
         image="/HeroSection/ladies-suits.webp"
         products={items}
       />
+      <SubcategoryLinks parentSlug="ladies-suits" basePath="/ladies/" />
       <FAQSchema faqs={faqs} />
     </>
   );
