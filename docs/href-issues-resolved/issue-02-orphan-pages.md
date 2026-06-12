@@ -99,8 +99,17 @@ The live nav is built **from the DB** (`getNavMenu()` in `lib/actions/categories
 
 **Verification done:** `npx tsc --noEmit` → no type errors in any changed file.
 
-## Follow-up (optional, not yet done)
-- `components/collection/paginated-products.tsx` — render all product `<a>` anchors in SSR and only *visually* cap, so no product is ever orphaned regardless of count. Not required for the current 17 (Fix A already makes the 2 products reachable via their subcategory listing), but good future-proofing.
+## Round 2 — 2 product orphans persisted after first crawl (2026-06-13)
+
+**Why Fix B didn't immediately work:** `getProducts` orders by `created_at DESC`. With 22 baby products, `bb-sku-nur-bed-but-034` and `bb-sku-nur-bed-hrt-035` (older slugs) fall past position 9. `PaginatedProducts` is `"use client"` with `useState(9)` — only the first 9 products are in the SSR HTML of `/baby/`. Similarly, the `/baby/baby-bedding-set/` subcategory page may have 10+ products in `baby-bedding-set`, pushing these 2 below position 9 there too. Chain: /baby/ → /baby/baby-bedding-set/ → products was also depth-limited.
+
+**Root cause confirmed:** `PaginatedProducts` (client component, initial state = 9) is the systematic cause. Any product beyond position 9 has no SSR-visible link from any collection page.
+
+**Fix applied (2026-06-13):** Added a server-rendered `<nav>` to `CollectionTemplate` (which is a server component — no "use client") that emits `<Link>` elements for ALL products passed to it. This runs outside the `PaginatedProducts` client component tree, so every product appears in raw SSR HTML for crawlers. Styled visibly as "All N Products" section — not hidden, no SEO penalty.
+
+**Effect:** Every product on every collection/subcategory page now has a crawlable SSR inlink, regardless of position in the sorted list. Permanent fix — future products will never be orphaned by pagination depth.
+
+**Files changed (round 2):** `components/collection/collection-template.tsx` (+27 lines)
 
 ## Rollback
 Each change is isolated and additive — revert the specific file(s). No data/schema changes.

@@ -1,5 +1,5 @@
 # Analytics Build Tracker
-**Last updated: 2026-06-11 · Read PLAN.md first**
+**Last updated: 2026-06-12 (Phases 0–7 complete) · Read PLAN.md first**
 
 Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
@@ -10,12 +10,12 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 0.1 | `npm install recharts` | ⬜ | |
-| 0.2 | Delete all mock constants from `app/admin/analytics/page.tsx` (KPI_DATA, REVENUE_7D, REVENUE_30D, CAT_BREAKDOWN, TOP_PRODUCTS, PAYMENT_SPLIT, ORDERS_SPARKLINE*) | ⬜ | This is the root cause of the flash bug |
-| 0.3 | Rebuild `page.tsx` as a layout shell — holds only `dateRange` state and renders component slots | ⬜ | No data fetching in page.tsx itself |
-| 0.4 | Create `components/admin/analytics/skeleton.tsx` — reusable skeleton shimmer for cards, chart areas, table rows | ⬜ | |
-| 0.5 | Create `components/admin/analytics/date-range-bar.tsx` — preset buttons + custom date picker | ⬜ | Presets: Today, Yesterday, Last 7 days, This month, Last month, This year, All time, Custom |
-| 0.6 | Default date range on page load = **Last 7 days** | ⬜ | |
+| 0.1 | `npm install recharts` | ✅ | Added 38 packages |
+| 0.2 | Delete all mock constants from `app/admin/analytics/page.tsx` (KPI_DATA, REVENUE_7D, REVENUE_30D, CAT_BREAKDOWN, TOP_PRODUCTS, PAYMENT_SPLIT, ORDERS_SPARKLINE*) | ✅ | Flash bug eliminated |
+| 0.3 | Rebuild `page.tsx` as a layout shell — holds only `dateRange` state and renders component slots | ✅ | No data fetching in page.tsx at all |
+| 0.4 | Create `components/admin/analytics/skeleton.tsx` — reusable skeleton shimmer for cards, chart areas, table rows | ✅ | 6 exports: SkeletonKPICard, SkeletonChartCard, SkeletonBarListCard, SkeletonTableCard, SkeletonFeedCard, SkeletonInsightsCard |
+| 0.5 | Create `components/admin/analytics/date-range-bar.tsx` — preset buttons + custom date picker | ✅ | Exports DateRange type + getPresetRange utility |
+| 0.6 | Default date range on page load = **Last 7 days** | ✅ | `defaultRange()` initializer in page.tsx |
 
 ---
 
@@ -24,11 +24,11 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 1.1 | Create `app/api/admin/analytics/kpis/route.ts` | ⬜ | Returns: confirmed_revenue (delivered), pending_revenue (non-cancelled non-delivered), order_count, aov. Accepts `?from=&to=` |
-| 1.2 | Create `components/admin/analytics/kpi-card.tsx` — single card, accepts value + label + subtext + loading prop | ⬜ | Shows skeleton when loading=true |
-| 1.3 | Create `components/admin/analytics/kpi-row.tsx` — fetches from /api/admin/analytics/kpis/, renders 4 KPICards | ⬜ | Re-fetches when dateRange changes |
-| 1.4 | Remove the `realStats` useEffect from page.tsx (replaced by kpi-row) | ⬜ | |
-| 1.5 | Verify: no fake percentage change values shown (no previous-period comparison yet — add in Phase 2+) | ⬜ | |
+| 1.1 | Create `app/api/admin/analytics/kpis/route.ts` | ✅ | Returns confirmed_revenue, pending_revenue, order_count, aov, delivered_count, pending_count |
+| 1.2 | Create `components/admin/analytics/kpi-card.tsx` | ✅ | Shows inline skeleton when loading=true |
+| 1.3 | Create `components/admin/analytics/kpi-row.tsx` | ✅ | Re-fetches on dateRange change via `.getTime()` deps |
+| 1.4 | Remove the `realStats` useEffect from page.tsx | ✅ | Was removed in Phase 0 rebuild |
+| 1.5 | No fake percentage change values | ✅ | KPI cards show honest subtexts only |
 
 ---
 
@@ -37,12 +37,12 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 2.1 | Create `app/api/admin/analytics/revenue-chart/route.ts` | ⬜ | Daily buckets: `{ date, confirmed_revenue, pending_revenue }[]`. Group orders by date. Confirmed = delivered, Pending = rest non-cancelled |
-| 2.2 | Create `app/api/admin/analytics/order-volume/route.ts` | ⬜ | `{ date, count }[]` daily order count |
-| 2.3 | Create `components/admin/analytics/revenue-chart.tsx` | ⬜ | Recharts AreaChart — two areas: confirmed (solid) + pending (lighter). Tooltip shows both. |
-| 2.4 | Create `components/admin/analytics/order-volume-chart.tsx` | ⬜ | Recharts BarChart — daily bars, hover tooltip |
-| 2.5 | Both charts show "No orders in this period" empty state | ⬜ | |
-| 2.6 | Revenue chart shows total confirmed + total pending in its header (not in chart, just text) | ⬜ | |
+| 2.1 | Create `app/api/admin/analytics/revenue-chart/route.ts` | ✅ | PKT date bucketing via toLocaleDateString("en-CA", {timeZone:"Asia/Karachi"}) |
+| 2.2 | Create `app/api/admin/analytics/order-volume/route.ts` | ✅ | Same PKT bucketing pattern |
+| 2.3 | Create `components/admin/analytics/revenue-chart.tsx` | ✅ | Recharts AreaChart — two areas (confirmed #2563eb, pending #93c5fd). SSR-guarded with mounted state. |
+| 2.4 | Create `components/admin/analytics/order-volume-chart.tsx` | ✅ | Recharts BarChart — peak bar highlighted darker |
+| 2.5 | Both charts show "No orders in this period" empty state | ✅ | |
+| 2.6 | Revenue chart shows total confirmed + pending in header | ✅ | |
 
 ---
 
@@ -51,12 +51,12 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 3.1 | Create `app/api/admin/analytics/category-breakdown/route.ts` | ⬜ | Join order_items → orders, group by product category (from products table via product_id). Returns revenue + count + pct per category |
-| 3.2 | Create `app/api/admin/analytics/payment-split/route.ts` | ⬜ | Group orders by payment_method. Returns count + revenue + pct |
-| 3.3 | Create `app/api/admin/analytics/order-funnel/route.ts` | ⬜ | Count by status: pending / processing / dispatched / delivered / cancelled. Returns count + pct |
-| 3.4 | Create `components/admin/analytics/category-breakdown.tsx` | ⬜ | Horizontal bars with label + revenue + pct. 4 categories: Ladies, Kids, Baby, Accessories |
-| 3.5 | Create `components/admin/analytics/payment-split.tsx` | ⬜ | Recharts PieChart (donut). Segments: COD / JazzCash / Easypaisa / Bank Transfer |
-| 3.6 | Create `components/admin/analytics/order-funnel.tsx` | ⬜ | Simple funnel bars or horizontal progress bars showing drop-off at each stage |
+| 3.1 | Create `app/api/admin/analytics/category-breakdown/route.ts` | ✅ | 3-query join: orders→order_items→products. Groups by products.category. |
+| 3.2 | Create `app/api/admin/analytics/payment-split/route.ts` | ✅ | Groups orders by payment_method. Returns count + revenue + pct. |
+| 3.3 | Create `app/api/admin/analytics/order-funnel/route.ts` | ✅ | All 5 statuses counted (incl. cancelled for drop-off view) |
+| 3.4 | Create `components/admin/analytics/category-breakdown.tsx` | ✅ | Horizontal bars; color palette with known-category overrides |
+| 3.5 | Create `components/admin/analytics/payment-split.tsx` | ✅ | Recharts PieChart donut (fixed 110×110px avoids SSR ResizeObserver) + legend |
+| 3.6 | Create `components/admin/analytics/order-funnel.tsx` | ✅ | Horizontal bars; funnel stages taper off non-cancelled max; cancelled shown separately |
 
 ---
 
@@ -65,10 +65,10 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 4.1 | Create `app/api/admin/analytics/top-products/route.ts` | ⬜ | Aggregate order_items by product_title (group by product_id OR product_title). Returns: units_sold, revenue, order_count. Sorted by units_sold desc. Limit 10 |
-| 4.2 | Create `app/api/admin/analytics/inventory/route.ts` | ⬜ | From products table: low_stock (1-5 units), out_of_stock (0 units), dead_stock (products with product_id never in order_items), total stock value (price × stock for all active products) |
-| 4.3 | Create `components/admin/analytics/top-products-table.tsx` | ⬜ | Table: rank, product name, units sold, revenue. Sortable by column. Link to /admin/products |
-| 4.4 | Create `components/admin/analytics/inventory-panel.tsx` | ⬜ | 3 mini lists: Low Stock / Out of Stock / Never Sold. Each links to product edit |
+| 4.1 | Create `app/api/admin/analytics/top-products/route.ts` | ✅ | Groups by product_title (survives deleted products). Accepts ?limit= |
+| 4.2 | Create `app/api/admin/analytics/inventory/route.ts` | ✅ | No date filter (snapshot). Parallel query: all products + all-time sold IDs. Returns out_of_stock, low_stock (≤5), dead_count, stock_value |
+| 4.3 | Create `components/admin/analytics/top-products-table.tsx` | ✅ | Client-side sort by any column (units_sold default). Sort chevron icons. View all → /admin/products |
+| 4.4 | Create `components/admin/analytics/inventory-panel.tsx` | ✅ | 3 stat badges + compact lists (max 6 per section). All-clear green state. Stock value + dead stock footnote |
 
 ---
 
@@ -77,9 +77,9 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.1 | Create `app/api/admin/analytics/customers/route.ts` | ⬜ | From orders + customers: new customers in period (first_order in range), returning (had orders before range), top 5 customers by spend in period, city breakdown |
-| 5.2 | Create `components/admin/analytics/customer-summary.tsx` | ⬜ | Cards: New customers, Returning customers, Repeat purchase rate, VIP count |
-| 5.3 | Create `components/admin/analytics/top-customers-table.tsx` | ⬜ | Table: name, email, orders in period, spent in period, lifetime spent, tier badge |
+| 5.1 | Create `app/api/admin/analytics/customers/route.ts` | ✅ | new_count, returning_count, top_customers. Classifies new/returning via "before range" email set. |
+| 5.2 | Create `components/admin/analytics/customer-summary.tsx` | ✅ | 3 stat cards: New, Returning, Total buyers + repeat rate % |
+| 5.3 | Create `components/admin/analytics/top-customers-table.tsx` | ✅ | Table: Customer (name+email+city), Orders, Spent, Tier badge |
 
 ---
 
@@ -91,10 +91,10 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 6.1 | Enable Realtime on `orders` table in Supabase dashboard (manual step) | ⬜ | One-time setup |
-| 6.2 | Create `components/admin/analytics/live-order-feed.tsx` | ⬜ | Shows last 10 orders in a table. Subscribes to orders INSERT via `supabase.channel('orders-live').on('postgres_changes', ...)`. New order slides in at top with a brief highlight |
-| 6.3 | When new order arrives: re-fetch KPI row (emit refresh signal or use a shared context counter) | ⬜ | KPIs should update within ~1s of new order without full page reload |
-| 6.4 | Show a subtle pulse / "1 new order" badge on the KPI cards when live update arrives | ⬜ | |
+| 6.1 | Enable Realtime on `orders` table in Supabase dashboard (manual step) | ⬜ | One-time setup — do when ready to enable websocket push |
+| 6.2 | Create `components/admin/analytics/live-order-feed.tsx` | ✅ | Static for now: last 10 orders, auto-refreshes every 60s. Realtime websocket upgrade pending 6.1 |
+| 6.3 | KPI re-fetch on new order | ⬜ | Pending Realtime setup |
+| 6.4 | Pulse badge on KPI cards | ⬜ | Pending Realtime setup |
 
 ---
 
@@ -103,10 +103,10 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 7.1 | Create `app/api/admin/analytics/ai-insights/route.ts` | ⬜ | POST. Builds a data summary from DB, calls Claude API (`claude-sonnet-4-6`), streams or returns recommendations. Gate: if total orders < 20, return "not enough data" without calling Claude API |
-| 7.2 | Create `components/admin/analytics/ai-insights-panel.tsx` | ⬜ | Card with "Get AI Recommendations" button. Shows loading spinner while Claude thinks. Renders markdown-style bullet recommendations. Shows last-generated timestamp |
-| 7.3 | AI prompt is specific to Habiba Minhas — mentions COD market, Pakistani clothing, Eid/wedding season context | ⬜ | See PLAN.md for prompt template |
-| 7.4 | Recommendations are cached for 1 hour (don't re-call Claude on every page visit) | ⬜ | Simple in-memory or localStorage cache |
+| 7.1 | Create `app/api/admin/analytics/ai-insights/route.ts` | ✅ | Guards: no key → 503 "not_configured"; < 20 orders → "not_enough_data" with progress bar. Calls claude-sonnet-4-6 via fetch when ready. |
+| 7.2 | Create `components/admin/analytics/ai-insights-panel.tsx` | ✅ | 5 states: idle, loading, not_configured (shows .env instructions), not_enough_data (with progress bar), ok (bullet list), error |
+| 7.3 | Prompt specific to Habiba Minhas | ✅ | COD market, Pakistani clothing context included |
+| 7.4 | Caching | ⬜ | Add localStorage cache after first successful API call |
 
 ---
 
@@ -114,7 +114,7 @@ Status legend: ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 | Item | Status | Notes |
 |---|---|---|
-| Recharts not installed | ⬜ | `npm install recharts` — Phase 0 |
+| Recharts not installed | ✅ | Done in Phase 0 |
 | Supabase Realtime not enabled on orders table | ⬜ | Manual step in Supabase dashboard — before Phase 6 |
 | CLAUDE API key already in .env.local as `GEMINI_API_KEY` (wrong name) | ⬜ | Check: should be `ANTHROPIC_API_KEY` or use existing key. Verify before Phase 7 |
 

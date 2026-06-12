@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Store, Truck, CreditCard, Bell, Shield, Globe,
   Check, Eye, EyeOff, Upload, Save,
@@ -97,9 +98,23 @@ export default function AdminSettingsPage() {
     currency: "PKR", timezone: "Asia/Karachi",
   });
 
-  // ── Load from Supabase on mount ──
+  // ── Load from cache (instant on revisit), hydrate form when data arrives ──
+  const queryClient = useQueryClient();
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => getSettings(),
+  });
+
+  // Saving must invalidate the cache so a revisit hydrates the saved values
+  const saveSettings: typeof updateSettings = async (patch) => {
+    const result = await updateSettings(patch);
+    queryClient.invalidateQueries({ queryKey: ["settings"] });
+    return result;
+  };
+
   useEffect(() => {
-    getSettings().then((s) => {
+    if (!settingsData) return;
+    Promise.resolve(settingsData).then((s) => {
       setStore({
         name: s.store_name,
         email: s.store_email,
@@ -165,7 +180,7 @@ export default function AdminSettingsPage() {
       }
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [settingsData]);
 
   // ── Shipping state ──
   const [shipping, setShipping] = useState({
@@ -274,7 +289,7 @@ export default function AdminSettingsPage() {
                       </Field>
                     </div>
                   </div>
-                  <SectionSaveButton onSave={() => updateSettings({ store_name: store.name, store_email: store.email, store_phone: store.phone, store_city: store.city, description: store.desc, currency: store.currency, timezone: store.timezone }).catch(() => {})} />
+                  <SectionSaveButton onSave={() => saveSettings({ store_name: store.name, store_email: store.email, store_phone: store.phone, store_city: store.city, description: store.desc, currency: store.currency, timezone: store.timezone }).catch(() => {})} />
                 </AdminCard>
 
                 <AdminCard>
@@ -341,7 +356,7 @@ export default function AdminSettingsPage() {
                     sub="Allow customers to pay when their order arrives"
                   />
                 </div>
-                <SectionSaveButton label="Update rates" onSave={() => updateSettings({ shipping_rates: { standard: Number(shipping.standard), express: Number(shipping.express), freeThreshold: Number(shipping.freeThreshold), carrier: shipping.carrier, estimatedStd: shipping.estimatedStd, estimatedExp: shipping.estimatedExp, codEnabled: shipping.codEnabled } }).catch(() => {})} />
+                <SectionSaveButton label="Update rates" onSave={() => saveSettings({ shipping_rates: { standard: Number(shipping.standard), express: Number(shipping.express), freeThreshold: Number(shipping.freeThreshold), carrier: shipping.carrier, estimatedStd: shipping.estimatedStd, estimatedExp: shipping.estimatedExp, codEnabled: shipping.codEnabled } }).catch(() => {})} />
               </AdminCard>
             )}
 
@@ -385,7 +400,7 @@ export default function AdminSettingsPage() {
                   <Toggle checked={notif.dailySummary}  onChange={(v) => setNotif({ ...notif, dailySummary: v })}  label="Daily sales summary"  sub="Receive a daily digest email each morning" />
                   <Toggle checked={notif.weeklySummary} onChange={(v) => setNotif({ ...notif, weeklySummary: v })} label="Weekly performance"   sub="Receive a weekly analytics summary on Mondays" />
                 </div>
-                <SectionSaveButton label="Save preferences" onSave={() => updateSettings({ notification_settings: { newOrder: notif.newOrder, orderShipped: notif.orderShipped, orderDelivered: notif.orderDelivered, lowStock: notif.lowStock, newCustomer: notif.newCustomer, payment: notif.payment, dailySummary: notif.dailySummary, weeklySummary: notif.weeklySummary } }).catch(() => {})} />
+                <SectionSaveButton label="Save preferences" onSave={() => saveSettings({ notification_settings: { newOrder: notif.newOrder, orderShipped: notif.orderShipped, orderDelivered: notif.orderDelivered, lowStock: notif.lowStock, newCustomer: notif.newCustomer, payment: notif.payment, dailySummary: notif.dailySummary, weeklySummary: notif.weeklySummary } }).catch(() => {})} />
               </AdminCard>
             )}
 
@@ -483,7 +498,7 @@ export default function AdminSettingsPage() {
                       </Field>
                     </div>
                   </div>
-                  <SectionSaveButton onSave={() => updateSettings({ seo_settings: { siteTitle: seo.siteTitle, metaDesc: seo.metaDesc, ogTitle: seo.ogTitle, ogDesc: seo.ogDesc, ga4: seo.ga4, fbPixel: seo.fbPixel, robotsTxt: seo.robotsTxt, sitemap: seo.sitemap, structuredData: seo.structuredData } }).catch(() => {})} />
+                  <SectionSaveButton onSave={() => saveSettings({ seo_settings: { siteTitle: seo.siteTitle, metaDesc: seo.metaDesc, ogTitle: seo.ogTitle, ogDesc: seo.ogDesc, ga4: seo.ga4, fbPixel: seo.fbPixel, robotsTxt: seo.robotsTxt, sitemap: seo.sitemap, structuredData: seo.structuredData } }).catch(() => {})} />
                 </AdminCard>
 
                 <AdminCard>
@@ -493,7 +508,7 @@ export default function AdminSettingsPage() {
                     <Toggle checked={seo.sitemap}        onChange={(v) => setSeo({ ...seo, sitemap: v })}        label="XML Sitemap"       sub="Auto-generate and submit sitemap to Google" />
                     <Toggle checked={seo.structuredData} onChange={(v) => setSeo({ ...seo, structuredData: v })} label="Structured Data"   sub="Enable JSON-LD schema for products and breadcrumbs" />
                   </div>
-                  <SectionSaveButton label="Save SEO settings" onSave={() => updateSettings({ seo_settings: { siteTitle: seo.siteTitle, metaDesc: seo.metaDesc, ogTitle: seo.ogTitle, ogDesc: seo.ogDesc, ga4: seo.ga4, fbPixel: seo.fbPixel, robotsTxt: seo.robotsTxt, sitemap: seo.sitemap, structuredData: seo.structuredData } }).catch(() => {})} />
+                  <SectionSaveButton label="Save SEO settings" onSave={() => saveSettings({ seo_settings: { siteTitle: seo.siteTitle, metaDesc: seo.metaDesc, ogTitle: seo.ogTitle, ogDesc: seo.ogDesc, ga4: seo.ga4, fbPixel: seo.fbPixel, robotsTxt: seo.robotsTxt, sitemap: seo.sitemap, structuredData: seo.structuredData } }).catch(() => {})} />
                 </AdminCard>
               </>
             )}

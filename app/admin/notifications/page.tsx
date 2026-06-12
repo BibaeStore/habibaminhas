@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, ShoppingBag, RefreshCw, MessageSquare, CheckCheck, Trash2, Package } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
@@ -40,20 +41,19 @@ const IMPORTANT_TYPES = ["new_order", "low_stock", "contact_form"];
 type FilterType = "all" | "new_order" | "low_stock" | "contact_form" | "unread";
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const queryClient = useQueryClient();
+  // Cached across admin navigation — revisits render instantly from cache
+  const { data: notificationsData, isPending: loading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => getNotifications(100),
+  });
+  const notifications = notificationsData ?? [];
   const [filter, setFilter] = useState<FilterType>("all");
-  const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
-  const load = () => {
-    setLoading(true);
-    getNotifications(100)
-      .then(setNotifications)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, []);
+  // Surgical cache write — updates rows in place, no refetch, no remount
+  const patchCache = (updater: (prev: Notification[]) => Notification[]) =>
+    queryClient.setQueryData<Notification[]>(["notifications"], (prev) => updater(prev ?? []));
 
   /* Always hide order_updated — only surface important notification types */
   const important = notifications.filter((n) => IMPORTANT_TYPES.includes(n.type));
@@ -69,21 +69,21 @@ export default function NotificationsPage() {
   function handleRead(id: string) {
     startTransition(async () => {
       await markNotificationRead(id);
-      setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+      patchCache((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     });
   }
 
   function handleDelete(id: string) {
     startTransition(async () => {
       await deleteNotification(id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      patchCache((prev) => prev.filter((n) => n.id !== id));
     });
   }
 
   function handleMarkAll() {
     startTransition(async () => {
       await markAllNotificationsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      patchCache((prev) => prev.map((n) => ({ ...n, read: true })));
     });
   }
 
@@ -107,7 +107,7 @@ export default function NotificationsPage() {
               <AdminButton
                 variant="outline"
                 leadingIcon={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}
-                onClick={load}
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["notifications"] })}
                 disabled={loading}
               >
                 Refresh

@@ -17,6 +17,34 @@ If a slug matches **neither** source, the page calls `notFound()` → **404**. S
 
 ---
 
+## Issue #5 — 3XX redirect in sitemap ✅ RESOLVED (2026-06-13)
+
+### What Ahrefs reported
+- **URL in sitemap:** `https://habibaminhas.com/stores/` → HTTP **307 Temporary Redirect** → `https://habibaminhas.com/contact/`
+- Sitemap lists `/stores/` expecting a 200 — got a 307 instead.
+
+### Root cause
+`next.config.ts` had `{ source: "/stores", destination: "/contact/", permanent: false }`. With `trailingSlash: true`, Next.js applies this pattern to `/stores/` (with trailing slash), intercepting requests **before** the real page can serve. But `app/stores/page.tsx` is a **full, real page** (studio address, delivery info, returns policy) — the redirect was a leftover temporary measure that was never cleaned up once the page was built.
+
+### The fix
+Removed the one redirect line from `next.config.ts`. No page deleted, no sitemap change. Now:
+- `/stores/` → served by `app/stores/page.tsx` → **200 OK**
+- Sitemap entry `/stores/` resolves to a real page ✓
+- Build confirms: `/stores` listed as `○ (Static)` prerendered page
+
+**Also checked:** `lib/legacy-product-redirects.ts` and `lib/product-redirects.ts` — no other redirect references `/stores`. Zero risk.
+
+### Why NOT just change 307 → 301?
+A 301 would still redirect users away from a real, complete page. The correct fix is removing the dead redirect so the page serves.
+
+### Files changed
+- `next.config.ts` (removed 1 redirect line)
+
+### Rollback
+Add back: `{ source: "/stores", destination: "/contact/", permanent: false }` to the `redirects()` array in `next.config.ts`.
+
+---
+
 ## Status overview
 
 | # | Issue (Ahrefs) | Count | Status | Date |
@@ -25,8 +53,8 @@ If a slug matches **neither** source, the page calls `notFound()` → **404**. S
 | 1 | 4XX page (same URL as #1) | 1 | ✅ Fixed | 2026-06-13 |
 | 2 | Orphan page (no incoming internal links) | 17 | ✅ Fixed in code → [details](issue-02-orphan-pages.md) | 2026-06-13 |
 | 3 | Page has links to broken page | 1 | ✅ Fixed (same link as #1) | 2026-06-13 |
-| 4 | Image file size too large | 1 | ⏳ Pending | — |
-| 5 | 3XX redirect in sitemap | 1 | ⏳ Pending | — |
+| 4 | Image file size too large | 1 | ✅ Fixed → [details](issue-04-image-size.md) | 2026-06-13 |
+| 5 | 3XX redirect in sitemap | 1 | ✅ Fixed | 2026-06-13 |
 
 > Note: **404 page** and **4XX page** are the *same* finding. 4XX is the umbrella (any 4xx status); 404 is the specific subset. The audit flagged one URL under both, so fixing it once clears both rows.
 

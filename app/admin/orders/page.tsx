@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Search, Download, X, Truck, CreditCard, Package,
@@ -89,8 +90,14 @@ function exportOrdersCSV(orders: Order[]) {
 }
 
 export default function AdminOrdersPage() {
-  const [orders,    setOrders]    = useState<Order[]>([]);
-  const [loading,   setLoading]   = useState(true);
+  const queryClient = useQueryClient();
+  // Cached across admin navigation — revisits render instantly from cache;
+  // loadOrders() invalidates and silently refetches in the background
+  const { data: ordersData, isPending: loading } = useQuery({
+    queryKey: ["orders"],
+    queryFn: async () => (await getOrders()) as Order[],
+  });
+  const orders = ordersData ?? [];
   const [activeTab, setActiveTab] = useState("All");
   const [search,    setSearch]    = useState("");
   const [selected,  setSelected]  = useState<Order | null>(null);
@@ -147,13 +154,10 @@ export default function AdminOrdersPage() {
 
   const PAGE_SIZE = 10;
 
-  const loadOrders = () => {
-    setLoading(true);
-    getOrders().then((data) => { setOrders(data as Order[]); setLoading(false); }).catch(() => setLoading(false));
-  };
+  const loadOrders = () =>
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
 
   useEffect(() => {
-    loadOrders();
     // ✅ PHASE 3: Fetch admin email for activity logging
     createClient().auth.getUser().then(({ data }) => {
       if (data.user?.email) setAdminEmail(data.user.email);

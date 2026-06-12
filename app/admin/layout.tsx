@@ -1,4 +1,6 @@
 import { Inter } from "next/font/google";
+import { AdminQueryProvider } from "@/components/admin/query-provider";
+import { RealtimeSync } from "@/components/admin/realtime-sync";
 import "./admin.css";
 
 const inter = Inter({
@@ -15,7 +17,10 @@ export default function AdminLayout({
 }) {
   return (
     <div className={`admin-root ${inter.className} min-h-screen`}>
-      {children}
+      <AdminQueryProvider>
+        <RealtimeSync />
+        {children}
+      </AdminQueryProvider>
     </div>
   );
 }

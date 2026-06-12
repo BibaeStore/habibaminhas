@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Eye, X, Check, Upload,
@@ -37,8 +38,13 @@ const BLANK: FormState = {
 };
 
 export default function AdminCategoriesPage() {
-  const [cats,         setCats]         = useState<Category[]>([]);
-  const [loading,      setLoading]      = useState(true);
+  const queryClient = useQueryClient();
+  // Cached across admin navigation — revisits render instantly from cache
+  const { data: catsData, isPending: loading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => getCategories(),
+  });
+  const cats = useMemo(() => catsData ?? [], [catsData]);
   const [search,       setSearch]       = useState("");
   const [typeFilter,   setTypeFilter]   = useState<"all" | "main" | "sub" | "featured">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -53,12 +59,8 @@ export default function AdminCategoriesPage() {
   const [selectedIds,  setSelectedIds]  = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  const loadCats = () => {
-    setLoading(true);
-    getCategories().then((data) => { setCats(data); setLoading(false); }).catch(() => setLoading(false));
-  };
-
-  useEffect(() => { loadCats(); }, []);
+  const loadCats = () =>
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
 
   const filtered = useMemo(() => cats.filter((c) => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.slug.includes(search.toLowerCase())) return false;
@@ -136,7 +138,10 @@ export default function AdminCategoriesPage() {
   const toggleStatus = async (c: Category) => {
     const newStatus = c.status === "active" ? "inactive" : "active";
     await updateCategory(c.id, { status: newStatus });
-    setCats((prev) => prev.map((x) => x.id === c.id ? { ...x, status: newStatus } : x));
+    // Surgical cache write — toggles the row in place, no refetch
+    queryClient.setQueryData<Category[]>(["categories"], (prev) =>
+      (prev ?? []).map((x) => x.id === c.id ? { ...x, status: newStatus } : x),
+    );
   };
 
   const parentName = (parentId: string | null) => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -86,9 +87,7 @@ export default function OrderDetailPage() {
   const { id }   = useParams<{ id: string }>();
   const router   = useRouter();
 
-  const [order,         setOrder]         = useState<Order | null>(null);
-  const [loading,       setLoading]       = useState(true);
-  const [notFound,      setNotFound]      = useState(false);
+  const queryClient = useQueryClient();
   const [saving,        setSaving]        = useState(false);
   const [note,          setNote]          = useState("");
   const [trackingNum,   setTrackingNum]   = useState("");
@@ -98,33 +97,41 @@ export default function OrderDetailPage() {
 
   // ✅ PHASE 3: Activity logging state
   const [adminEmail,    setAdminEmail]    = useState("");
-  const [activityLog,   setActivityLog]   = useState<any[]>([]);
 
-  const load = useCallback(async () => {
-    try {
+  // Cached per order id — revisits render instantly
+  const { data: orderData, isPending: loading, isError: notFound } = useQuery({
+    queryKey: ["order", id],
+    queryFn: async () => {
       const data = await getOrderById(id) as Order;
-      setOrder(data);
-      setNote(data.admin_note ?? "");
-      setTrackingNum(data.tracking_number ?? "");
-      setCourierName(data.courier ?? "");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const logs = (await getOrderActivityLog(data.id)) as any[];
+      return { order: data, logs };
+    },
+    retry: false,
+  });
+  const order       = orderData?.order ?? null;
+  const activityLog = orderData?.logs  ?? [];
 
-      // ✅ PHASE 3: Load activity log
-      const logs = await getOrderActivityLog(data.id);
-      setActivityLog(logs);
-    } catch {
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+  // Hydrate editable fields when fresh order data arrives
+  useEffect(() => {
+    if (!orderData) return;
+    setNote(orderData.order.admin_note ?? "");
+    setTrackingNum(orderData.order.tracking_number ?? "");
+    setCourierName(orderData.order.courier ?? "");
+  }, [orderData]);
+
+  const load = async () => {
+    // Refresh this order + the orders list cache (status edits affect both)
+    await queryClient.invalidateQueries({ queryKey: ["order", id] });
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+  };
 
   useEffect(() => {
-    load();
     // ✅ PHASE 3: Fetch admin email
     createClient().auth.getUser().then(({ data }) => {
       if (data.user?.email) setAdminEmail(data.user.email);
     });
-  }, [load]);
+  }, []);
 
   const handleStatusAdvance = async () => {
     if (!order) return;

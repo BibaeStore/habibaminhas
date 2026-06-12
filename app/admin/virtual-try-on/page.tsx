@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { Save, Users, Activity, ToggleLeft, ToggleRight, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { PageHeader } from "@/components/admin/ui/page-header";
@@ -16,51 +17,58 @@ type RecentEntry = {
   created_at: string;
 };
 
+type VTRResponse = {
+  config: VirtualTryOnConfig;
+  today: number;
+  recent: RecentEntry[];
+  page: number;
+  totalPages: number;
+  total: number;
+};
+
 export default function VirtualTryOnAdminPage() {
+  const queryClient = useQueryClient();
+  const [page,   setPage]   = useState(1);
   const [config, setConfig] = useState<VirtualTryOnConfig>({
     enabled: true,
     per_user_limit: 3,
     global_daily_limit: 20,
   });
-  const [todayCount,  setTodayCount]  = useState<number | null>(null);
-  const [recent,      setRecent]      = useState<RecentEntry[]>([]);
-  const [page,        setPage]        = useState(1);
-  const [totalPages,  setTotalPages]  = useState(1);
-  const [total,       setTotal]       = useState(0);
-  const [loading,     setLoading]     = useState(true);
-  const [saving,      setSaving]      = useState(false);
-  const [saved,       setSaved]       = useState(false);
-  const [error,       setError]       = useState("");
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [error,   setError]   = useState("");
 
-  const loadData = useCallback(async (p: number = 1) => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/admin/virtual-try-on-settings/?page=${p}`);
+  // Each page cached separately — revisits and page flips render instantly
+  const { data, isPending: loading, error: queryError } = useQuery({
+    queryKey: ["tryon-log", page],
+    queryFn: async (): Promise<VTRResponse> => {
+      const res = await fetch(`/api/admin/virtual-try-on-settings/?page=${page}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setError(body.error ?? `Server error ${res.status}`);
-        setLoading(false);
-        return;
+        throw new Error(body.error ?? `Server error ${res.status}`);
       }
-      const data = await res.json();
-      setConfig(data.config);
-      setTodayCount(data.today ?? 0);
-      setRecent(data.recent ?? []);
-      setPage(data.page ?? 1);
-      setTotalPages(data.totalPages ?? 1);
-      setTotal(data.total ?? 0);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load settings.");
-    }
-    setLoading(false);
-  }, []);
+      return res.json();
+    },
+    placeholderData: keepPreviousData,
+  });
 
-  useEffect(() => { loadData(1); }, [loadData]);
+  const todayCount = data?.today ?? null;
+  const recent     = data?.recent ?? [];
+  const totalPages = data?.totalPages ?? 1;
+  const total      = data?.total ?? 0;
+  const loadError  = error || (queryError instanceof Error ? queryError.message : "");
+
+  // Hydrate the editable config form when fresh data arrives
+  useEffect(() => {
+    if (data?.config) setConfig(data.config);
+  }, [data?.config]);
+
+  const loadData = () =>
+    queryClient.invalidateQueries({ queryKey: ["tryon-log"] });
 
   function goToPage(p: number) {
     if (p < 1 || p > totalPages || p === page) return;
-    loadData(p);
+    setPage(p);
   }
 
   const handleSave = async () => {
@@ -76,6 +84,7 @@ export default function VirtualTryOnAdminPage() {
         setError(body.error ?? `Save failed (${res.status})`);
       } else {
         setSaved(true);
+        queryClient.invalidateQueries({ queryKey: ["tryon-log"] });
         setTimeout(() => setSaved(false), 2500);
       }
     } catch (e) {
@@ -105,9 +114,9 @@ export default function VirtualTryOnAdminPage() {
           subtitle="Control the AI fitting room — master switch, usage limits, and activity log."
         />
 
-        {error && (
+        {loadError && (
           <div className="rounded border border-[var(--admin-danger)] bg-[var(--admin-danger-soft)] px-4 py-3 text-[14px] text-[var(--admin-danger)]">
-            {error}
+            {loadError}
           </div>
         )}
 
@@ -184,7 +193,7 @@ export default function VirtualTryOnAdminPage() {
             leadingIcon={<Save className="h-4 w-4" />}>
             {saved ? "Saved!" : saving ? "Saving…" : "Save Settings"}
           </AdminButton>
-          <AdminButton variant="outline" onClick={() => loadData(page)}
+          <AdminButton variant="outline" onClick={() => loadData()}
             leadingIcon={<RefreshCw className="h-4 w-4" />}>
             Refresh
           </AdminButton>

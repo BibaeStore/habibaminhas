@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import {
   Plus, Search, Eye, Pencil, Trash2, X, Upload,
@@ -35,8 +36,13 @@ const PAGE_SIZE   = 15;
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AdminProductsPage() {
-  const [products,     setProducts]     = useState<Product[]>([]);
-  const [loading,      setLoading]      = useState(true);
+  const queryClient = useQueryClient();
+  // Cached across admin navigation — revisits render instantly from cache
+  const { data: productsData, isPending: loading } = useQuery({
+    queryKey: ["products"],
+    queryFn: () => getProducts(),
+  });
+  const products = useMemo(() => productsData ?? [], [productsData]);
   const [search,       setSearch]       = useState("");
   const [catFilter,    setCatFilter]    = useState("all");
   const [subCatFilter, setSubCatFilter] = useState("all");
@@ -56,13 +62,10 @@ export default function AdminProductsPage() {
   const [mainCategories, setMainCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<{ id: string; name: string; slug: string }[]>([]);
 
-  const loadProducts = () => {
-    setLoading(true);
-    getProducts().then((data) => { setProducts(data); setLoading(false); }).catch(() => setLoading(false));
-  };
+  const loadProducts = () =>
+    queryClient.invalidateQueries({ queryKey: ["products"] });
 
   useEffect(() => {
-    loadProducts();
     getMainCategories().then(setMainCategories);
   }, []);
 

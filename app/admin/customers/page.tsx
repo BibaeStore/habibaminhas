@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Download, Mail, Phone, Pencil, Trash2, X, AlertTriangle } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
@@ -27,9 +28,18 @@ function initials(name: string) {
 }
 
 export default function AdminCustomersPage() {
-  const [customers,    setCustomers]    = useState<Customer[]>([]);
-  const [stats,        setStats]        = useState<Stats | null>(null);
-  const [loading,      setLoading]      = useState(true);
+  const queryClient = useQueryClient();
+  // Cached across admin navigation — revisits render instantly from cache
+  const { data: customersData, isPending: loading } = useQuery({
+    queryKey: ["customers"],
+    queryFn: () => getCustomers(),
+  });
+  const { data: statsData } = useQuery({
+    queryKey: ["customer-stats"],
+    queryFn: () => getCustomerStats(),
+  });
+  const customers = useMemo(() => customersData ?? [], [customersData]);
+  const stats: Stats | null = statsData ?? null;
   const [search,       setSearch]       = useState("");
   const [editTarget,   setEditTarget]   = useState<Customer | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
@@ -41,13 +51,9 @@ export default function AdminCustomersPage() {
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const loadData = () => {
-    setLoading(true);
-    Promise.all([getCustomers(), getCustomerStats()])
-      .then(([custs, s]) => { setCustomers(custs); setStats(s); setLoading(false); })
-      .catch(() => setLoading(false));
+    queryClient.invalidateQueries({ queryKey: ["customers"] });
+    queryClient.invalidateQueries({ queryKey: ["customer-stats"] });
   };
-
-  useEffect(() => { loadData(); }, []);
 
   const filtered = useMemo(() =>
     customers.filter((c) => {
