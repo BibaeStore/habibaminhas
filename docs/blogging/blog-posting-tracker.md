@@ -1,11 +1,11 @@
 # Blog Posting Tracker — Habiba Minhas
-## Progress: 30/105 Blogs Posted ✅
+## Progress: 31/106 Blogs Posted ✅
 
-**Last Updated:** 2026-06-12
-**Session:** Batch 5 (Posts 21-25, Kids) + Batch 6 (Posts 26-30, NEW Virtual Try-On pillar) completed
-**Next Action:** Post next 5 blogs (Posts 31-35)
+**Last Updated:** 2026-06-14
+**Session:** Batch 7a — Pillar 7 addition: "Pakistani Brands With Virtual Try-On" comparison post published (fills the `Pakistani brands with virtual try-on` query gap; supports the new `/virtual-try-room/` cornerstone page)
+**Next Action:** Post next 5 blogs (Posts 31-35, Kids)
 
-> **Note on total count:** The plan was 100 posts. A new **Pillar 7 — Virtual Try-On / Fashion Tech** (Posts 26-30) was inserted after Post 25, so the existing Kids/Baby/Fabric/Culture/Brand posts were renumbered +5. **Total plan is now 105 posts.**
+> **Note on total count:** The plan was 100 posts. A new **Pillar 7 — Virtual Try-On / Fashion Tech** (Posts 26-30) was inserted after Post 25, so the existing Kids/Baby/Fabric/Culture/Brand posts were renumbered +5 (→ 105). On **2026-06-14** a 6th Pillar 7 post (the "Pakistani brands with virtual try-on" comparison) was added, bringing the **total plan to 106 posts.** The Kids "Next 5" plan numbers (31-35) are unchanged.
 
 > **⚠️ ARCHITECTURE NOTE (READ BEFORE POSTING):** Blogs are **NOT** `.tsx` files. Each post is a **row in the Supabase `journal_posts` table**, rendered by the single dynamic route `app/journal/[slug]/page.tsx`. "Publishing" = INSERT a row. The `blog-template-structure.md` doc describes the OLD file-based approach and is obsolete for content structure — see "How Posts Are Stored" below.
 
@@ -91,6 +91,12 @@ When user says "post next 5 blogs", these are next:
 | 28 | Online Shopping Without the Guesswork — How AI Try-On Answers "Will It Suit Me?" | `ai-try-on-online-shopping-will-it-suit-me-pakistan` | ✅ Posted | 2026-06-11 |
 | 29 | The Future of Online Fashion Shopping in Pakistan — AI, Try-On & What's Next | `future-online-fashion-shopping-pakistan-ai-try-on` | ✅ Posted | 2026-06-12 |
 | 30 | Try Before You Buy — See Yourself in Habiba Minhas Dresses with Virtual Try Room | `try-before-you-buy-virtual-try-room-habiba-minhas` | ✅ Posted | 2026-06-12 |
+
+### Batch 7a — Posted 2026-06-14 (Pillar 7 addition — comparison post)
+**Why added:** fills the high-intent `Pakistani brands with virtual try-on` query and feeds the new `/virtual-try-room/` cornerstone page. Category-level (no competitor names), honest first-mover claim.
+| # | Title | Slug | Status | Date Posted |
+|---|-------|------|--------|-------------|
+| 31 | Pakistani Brands With Virtual Try-On (and What Makes Ours Different) | `pakistani-brands-with-virtual-try-on` | ✅ Posted | 2026-06-14 |
 
 ---
 
@@ -210,6 +216,9 @@ These 10 hero images are referenced by the posts just published. Filenames must 
 - `ai-try-on-online-shopping-will-it-suit-me-pakistan.webp`
 - `future-online-fashion-shopping-pakistan-ai-try-on.webp`
 - `try-before-you-buy-virtual-try-room-habiba-minhas.webp`
+
+**Batch 7a (Virtual Try-On comparison):**
+- `pakistani-brands-with-virtual-try-on.webp` ✅ added 2026-06-14 (owner-supplied before/after try-on image)
 
 > Until an image is added, the post falls back to a default editorial image, so posts are not broken — just add the matching `.webp` when ready.
 

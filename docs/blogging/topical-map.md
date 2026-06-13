@@ -1311,3 +1311,8 @@ TOPICAL CLUSTERS (7 Pillars)
 **Post 30** — Try Before You Buy — See Yourself in Habiba Minhas Dresses with Virtual Try Room
 - Slug: `try-before-you-buy-virtual-try-room-habiba-minhas` | Intent: Transactional (★ promo)
 - Keywords: Habiba Minhas virtual try room, try before you buy Pakistan, free virtual try on
+
+**Post 30b** (added 2026-06-14) — Pakistani Brands With Virtual Try-On (and What Makes Ours Different)
+- Slug: `pakistani-brands-with-virtual-try-on` | Intent: Commercial comparison (★ targets the "recommend Pakistani brands" query)
+- Keywords: Pakistani brands with virtual try-on, first Pakistani brand virtual try-on, AI try on clothes Pakistan, virtual fitting room Pakistan
+- Note: Category-level (no competitor names); honest "first to let you upload your own photo" claim. Internal-links to the `/virtual-try-room/` cornerstone via the blog sidebar card; auto-relates to Posts 26–30 via `category_tag = "Virtual Try-On"`.

@@ -577,6 +577,20 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
 
         <aside className="lg:col-span-4">
           <div className="sticky top-[116px] flex flex-col gap-8">
+            {/* Virtual Try Room — internal link to the cornerstone page from every blog post */}
+            <div className="border border-gold-dark/40 bg-ink p-5 text-ivory">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-gold-light">✦ Virtual Try Room</div>
+              <p className="mt-3 text-[13px] leading-relaxed text-ivory/75">
+                See yourself in the outfit before you buy. Upload your photo and our AI shows you wearing it — free, private, and instant.
+              </p>
+              <Link
+                href="/virtual-try-room/"
+                className="mt-4 inline-flex items-center justify-center h-11 w-full bg-ivory text-[11px] uppercase tracking-[0.26em] text-ink hover:bg-gold-dark hover:text-ivory transition-colors"
+              >
+                Try It Now
+              </Link>
+            </div>
+
             <div className="border border-border-soft bg-cream p-5">
               <div className="text-[11px] uppercase tracking-[0.28em] text-gold-dark">Shop the Collection</div>
               <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">

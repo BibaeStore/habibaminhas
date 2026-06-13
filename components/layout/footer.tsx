@@ -40,6 +40,7 @@ const linkCols = [
       { label: "Baby Products", href: "/baby" },
       { label: "Accessories", href: "/accessories" },
       { label: "New Arrivals", href: "/new" },
+      { label: "Virtual Try Room", href: "/virtual-try-room" },
       { label: "Sale & Offers", href: "/offers" },
       { label: "Search Products", href: "/search" },
       { label: "About Us", href: "/about" },

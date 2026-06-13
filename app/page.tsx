@@ -9,6 +9,8 @@ import { TrendTiles } from "@/components/home/trend-tiles";
 import { TrendingTabs, type TrendingProduct } from "@/components/home/trending-tabs";
 import { TestimonialRow } from "@/components/home/testimonial-row";
 import { JournalTeaser } from "@/components/home/journal-teaser";
+import { TryRoomBand } from "@/components/home/try-room-band";
+import { TryRoomPopup } from "@/components/home/try-room-popup";
 import { FAQSchema } from "@/components/seo/faq-schema";
 import { getProducts } from "@/lib/actions/products";
 
@@ -102,6 +104,8 @@ export default async function HomePage() {
           { label: "Hair Bands", href: "/accessories/hair-bands" },
         ]}
       />
+
+      <TryRoomBand />
 
       <TrendTiles />
       <TrendingTabs products={trendingProducts} />
@@ -238,6 +242,10 @@ export default async function HomePage() {
           }
         ]}
       />
+
+      {/* Homepage-only Virtual Try Room announcement — scroll/delay triggered,
+          once per visitor, dismissible (see §4.7 of the SEO strategy doc) */}
+      <TryRoomPopup />
     </>
   );
 }

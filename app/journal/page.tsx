@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { getProducts } from "@/lib/actions/products";
 import { createClient } from "@/lib/supabase/server";
+import { JournalList } from "@/components/journal/journal-list";
 
 // SEO Focus Keyword: "Pakistani fashion blog"
 // Target: Fashion-conscious Pakistanis seeking style guides and cultural insights
@@ -112,40 +113,8 @@ export default async function JournalPage() {
       </div>
 
       <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-[1fr_380px]">
-        {/* Left Column: All Blog Posts */}
-        <div className="flex flex-col gap-16">
-          {allPosts.map((post, index) => (
-            <Link
-              key={post.slug}
-              href={`/journal/${post.slug}`}
-              className="group block"
-            >
-              <div className="relative aspect-[16/9] w-full overflow-hidden">
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  fill
-                  priority={index === 0}
-                  sizes="(max-width: 1024px) 100vw, 65vw"
-                  className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
-                />
-              </div>
-              <div className="mt-6">
-                <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.28em] text-gold-dark">
-                  {post.tag}
-                  <span className="h-px w-8 bg-gold/40" />
-                  <span className="text-ink-soft">{post.date}</span>
-                </div>
-                <h2 className="mt-3 font-display text-4xl italic leading-tight transition-colors group-hover:text-gold-dark sm:text-5xl">
-                  {post.title}
-                </h2>
-                <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-ink-soft">
-                  {post.excerpt}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {/* Left Column: All Blog Posts — all rendered in HTML (SEO), shown 3 at a time */}
+        <JournalList posts={allPosts} />
 
         {/* Right Column: Sticky Sidebar */}
         <aside className="lg:sticky lg:top-24 lg:self-start">

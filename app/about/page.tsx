@@ -83,6 +83,15 @@ export default function AboutPage() {
               Rs. 250 delivery, and backed by our 14-day return policy. We
               believe in making things properly, and standing behind them.
             </p>
+            <p>
+              We&apos;re also proud to be the first Pakistani brand to offer an{" "}
+              <Link href="/virtual-try-room" className="text-gold-dark hover:underline">
+                AI Virtual Try Room
+              </Link>{" "}
+              — letting you upload your photo and see yourself in an outfit
+              before you buy. It&apos;s innovation in service of the same goal:
+              giving every customer the confidence to shop with us.
+            </p>
           </div>
         </div>
       </section>
