@@ -75,57 +75,40 @@ export function TryRoomPopup() {
       {/* Backdrop */}
       <div className="absolute inset-0 bg-ink/55 backdrop-blur-[2px]" />
 
-      {/* Card */}
+      {/* Card — the poster image is the content (heading, before/after & steps
+          are baked into the image), so the modal only adds a close + one CTA */}
       <div
-        className="relative z-10 w-full max-w-md overflow-hidden border border-border-soft bg-ivory shadow-2xl"
+        className="relative z-10 flex max-h-[92vh] w-full max-w-sm flex-col overflow-hidden border border-border-soft bg-ivory shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           aria-label="Close"
           onClick={() => setOpen(false)}
-          className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-ivory/90 text-ink transition-colors hover:bg-ink hover:text-ivory"
+          className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-ink/70 text-ivory transition-colors hover:bg-ink"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative aspect-[16/10] w-full">
+        <div className="min-h-0 overflow-y-auto">
           <Image
             src="/try-on/popup.webp"
-            alt="Virtual Try Room — upload your photo and see yourself in the outfit"
-            fill
-            sizes="(max-width: 640px) 100vw, 28rem"
-            className="object-cover object-center"
+            alt="Unsure about your fit? The Habiba Minhas Virtual Try Room has you covered — Step 1: select your article, Step 2: click the Virtual Try Room button, Step 3: love your look."
+            width={1000}
+            height={1250}
+            sizes="(max-width: 640px) 100vw, 24rem"
+            className="block h-auto w-full"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/40 to-transparent" />
         </div>
 
-        <div className="p-7 text-center sm:p-8">
-          <span className="text-[11px] uppercase tracking-[0.3em] text-gold-dark">
-            ✦ New — Virtual Try Room
-          </span>
-          <h2 className="mt-3 font-display text-2xl font-light italic leading-tight sm:text-3xl">
-            Unsure how it&apos;ll look on you?
-          </h2>
-          <p className="mx-auto mt-3 max-w-xs text-[13.5px] leading-relaxed text-ink-soft">
-            Try it on — virtually. Pakistan&apos;s first AI virtual try-on:
-            upload your photo and see yourself in the actual outfit. Free,
-            private, instant.
-          </p>
+        <div className="shrink-0 border-t border-border-soft bg-ivory p-4">
           <Link
             href="/virtual-try-room"
             onClick={() => setOpen(false)}
-            className="mt-6 inline-flex h-12 w-full items-center justify-center bg-ink px-8 text-[11px] uppercase tracking-[0.26em] text-ivory transition-colors hover:bg-gold-dark"
+            className="inline-flex h-12 w-full items-center justify-center bg-ink px-8 text-[11px] uppercase tracking-[0.26em] text-ivory transition-colors hover:bg-gold-dark"
           >
             Open the Virtual Try Room
           </Link>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="mt-3 text-[11px] uppercase tracking-[0.22em] text-muted transition-colors hover:text-ink"
-          >
-            Maybe later
-          </button>
         </div>
       </div>
     </div>
