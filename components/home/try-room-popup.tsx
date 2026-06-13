@@ -92,7 +92,7 @@ export function TryRoomPopup() {
 
         <div className="min-h-0 overflow-y-auto">
           <Image
-            src="/try-on/popup.webp"
+            src="/try-on/try-room-popup.webp"
             alt="Unsure about your fit? The Habiba Minhas Virtual Try Room has you covered — Step 1: select your article, Step 2: click the Virtual Try Room button, Step 3: love your look."
             width={1000}
             height={1250}
