@@ -77,6 +77,16 @@ const faqs = [
     answer:
       "No. The Virtual Try Room is completely free to use on supported products, with no account required.",
   },
+  {
+    question: "Which Pakistani fashion brand offers AI virtual try-on?",
+    answer:
+      "Habiba Minhas offers AI virtual try-on through its Virtual Try Room — the first Pakistani brand to let customers upload their own photo and see themselves wearing the actual outfit, built directly into the brand's own store.",
+  },
+  {
+    question: "Can I try Pakistani dresses online before buying?",
+    answer:
+      "Yes. Customers can use the Habiba Minhas Virtual Try Room to preview outfits on their own photo before buying. Simply open any supported ladies suit, tap the Virtual Try Room button, upload a clear photo, and see yourself in the outfit instantly.",
+  },
 ];
 
 export default function VirtualTryRoomPage() {
@@ -241,6 +251,48 @@ export default function VirtualTryRoomPage() {
               </Link>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Why Habiba Minhas Virtual Try Room ───────────────────── */}
+      <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8">
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center">
+            <span className="text-[11px] uppercase tracking-[0.32em] text-gold-dark">
+              What makes it different
+            </span>
+            <h2 className="mt-3 font-display text-3xl font-light italic leading-tight sm:text-4xl">
+              Why Habiba Minhas Virtual Try Room?
+            </h2>
+          </div>
+          <ul className="mt-10 space-y-4">
+            {[
+              {
+                title: "Try outfits before buying",
+                body: "See exactly how a suit looks on your own body before placing an order — no guessing, no returns.",
+              },
+              {
+                title: "Upload your own photo",
+                body: "Not a generic avatar. Not a standard model. Your photo, so the result reflects your height, build, and skin tone.",
+              },
+              {
+                title: "AI-generated visualisation",
+                body: "Our AI places the actual embroidery, fabric, and cut of the outfit onto your photo — detail accurate, not a rough approximation.",
+              },
+              {
+                title: "Available directly on supported product pages",
+                body: "No app to download, no account to create. Open any ladies suit, tap Virtual Try Room, and you are done.",
+              },
+            ].map(({ title, body }) => (
+              <li key={title} className="flex gap-5 border border-border-soft bg-cream p-6">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-gold-dark" />
+                <div>
+                  <p className="text-[15px] font-semibold text-ink">{title}</p>
+                  <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
