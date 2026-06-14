@@ -119,13 +119,16 @@ export async function updateProduct(id: string, payload: TablesUpdate<"products"
 
   revalidatePath("/admin/products");
   revalidatePath("/shop");
+  revalidatePath(`/product/${data.category}/${data.slug}/`);
   return { data, error: null };
 }
 
 export async function deleteProduct(id: string) {
   const sb = createAdminClient();
+  const { data: deleted } = await sb.from("products").select("category, slug").eq("id", id).single();
   const { error } = await sb.from("products").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/products");
   revalidatePath("/shop");
+  if (deleted) revalidatePath(`/product/${deleted.category}/${deleted.slug}/`);
 }
