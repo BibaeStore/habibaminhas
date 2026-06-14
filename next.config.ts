@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   // Enable CSS optimization and compression
   experimental: {
     optimizeCss: true,
+    serverActions: {
+      bodySizeLimit: "20mb",
+    },
   },
 
   // Enable production optimizations

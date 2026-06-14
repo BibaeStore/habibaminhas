@@ -1052,10 +1052,15 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
                         <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
                           if (!e.target.files?.[0]) return;
                           setUploadingTryonImage(true);
-                          const fd = new FormData(); fd.append("file", e.target.files[0]);
-                          const r = await uploadProductImage(fd);
-                          if (r.url) setTryonImage(r.url); else setError(`Try-on image upload failed: ${r.error}`);
-                          setUploadingTryonImage(false);
+                          try {
+                            const fd = new FormData(); fd.append("file", e.target.files[0]);
+                            const r = await uploadProductImage(fd);
+                            if (r.url) setTryonImage(r.url); else setError(`Try-on image upload failed: ${r.error}`);
+                          } catch (err) {
+                            setError(`Try-on image upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+                          } finally {
+                            setUploadingTryonImage(false);
+                          }
                         }} />
                       </label>
                       <button type="button" onClick={() => setTryonImage(null)}
@@ -1072,10 +1077,15 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
                     <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
                       if (!e.target.files?.[0]) return;
                       setUploadingTryonImage(true);
-                      const fd = new FormData(); fd.append("file", e.target.files[0]);
-                      const r = await uploadProductImage(fd);
-                      if (r.url) setTryonImage(r.url); else setError(`Try-on image upload failed: ${r.error}`);
-                      setUploadingTryonImage(false);
+                      try {
+                        const fd = new FormData(); fd.append("file", e.target.files[0]);
+                        const r = await uploadProductImage(fd);
+                        if (r.url) setTryonImage(r.url); else setError(`Try-on image upload failed: ${r.error}`);
+                      } catch (err) {
+                        setError(`Try-on image upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+                      } finally {
+                        setUploadingTryonImage(false);
+                      }
                     }} />
                   </label>
                 )}
@@ -1810,10 +1820,15 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
                         <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
                           if (!e.target.files?.[0]) return;
                           setUploadingTryonImageEdit(true);
-                          const fd = new FormData(); fd.append("file", e.target.files[0]);
-                          const r = await uploadProductImage(fd);
-                          if (r.url) setTryonImageVal(r.url); else setError(`Upload failed: ${r.error}`);
-                          setUploadingTryonImageEdit(false);
+                          try {
+                            const fd = new FormData(); fd.append("file", e.target.files[0]);
+                            const r = await uploadProductImage(fd);
+                            if (r.url) setTryonImageVal(r.url); else setError(`Upload failed: ${r.error}`);
+                          } catch (err) {
+                            setError(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+                          } finally {
+                            setUploadingTryonImageEdit(false);
+                          }
                         }} />
                       </label>
                       <button type="button" onClick={() => setTryonImageVal(null)}
@@ -1830,10 +1845,15 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
                     <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
                       if (!e.target.files?.[0]) return;
                       setUploadingTryonImageEdit(true);
-                      const fd = new FormData(); fd.append("file", e.target.files[0]);
-                      const r = await uploadProductImage(fd);
-                      if (r.url) setTryonImageVal(r.url); else setError(`Upload failed: ${r.error}`);
-                      setUploadingTryonImageEdit(false);
+                      try {
+                        const fd = new FormData(); fd.append("file", e.target.files[0]);
+                        const r = await uploadProductImage(fd);
+                        if (r.url) setTryonImageVal(r.url); else setError(`Upload failed: ${r.error}`);
+                      } catch (err) {
+                        setError(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+                      } finally {
+                        setUploadingTryonImageEdit(false);
+                      }
                     }} />
                   </label>
                 )}
