@@ -11,7 +11,7 @@ import { HowToSchema } from "@/components/seo/howto-schema";
 // cluster (virtual try-on / AI try on clothes) — does not overlap with the
 // homepage/ladies money keywords, so it cannot cannibalise existing rankings.
 export const metadata: Metadata = {
-  title: "Virtual Try-On — See Yourself in the Outfit | Habiba Minhas",
+  title: "Virtual Try-On — See Yourself in the Outfit",
   description:
     "Pakistan's first AI virtual try-on. Upload your photo and see yourself in the actual outfit before you buy. Free, private, and instant — only at Habiba Minhas.",
   alternates: {
@@ -25,6 +25,13 @@ export const metadata: Metadata = {
       "Upload your photo and see yourself in the actual outfit before you buy. Free, private, instant.",
     url: "https://habibaminhas.com/virtual-try-room/",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Virtual Try Room — Pakistan's First AI Virtual Try-On",
+    description:
+      "Pakistan's first AI virtual try-on. Upload your photo and see yourself in the actual outfit before you buy.",
+    images: ["https://habibaminhas.com/logo/og-image.png"],
   },
 };
 
