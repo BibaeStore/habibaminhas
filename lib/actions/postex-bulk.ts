@@ -202,6 +202,37 @@ export async function bulkCancelPostex(orderIds: string[], adminEmail?: string):
 }
 
 /* ------------------------------------------------------------------ *
+ * 2c. Sync every in-flight booking (used by the scheduled poll)
+ * ------------------------------------------------------------------ */
+
+/** Orders in these states are final — no point asking PostEx about them again. */
+const TERMINAL_STATUSES = ["delivered", "returned", "cancelled"];
+
+/**
+ * Sync all orders that have a PostEx booking and are not in a terminal state.
+ * Called by the cron route; safe to run repeatedly.
+ */
+export async function syncAllActivePostexOrders(limit = 200): Promise<BulkReport> {
+  if (!isPostexEnabled()) return { ok: false, succeeded: 0, failed: 0, skipped: 0, results: [], message: "PostEx is not configured." };
+
+  const sb = createAdminClient();
+  const { data: orders, error } = await sb
+    .from("orders")
+    .select("id")
+    .not("postex_tracking_number", "is", null)
+    .not("status", "in", `(${TERMINAL_STATUSES.join(",")})`)
+    .order("postex_synced_at", { ascending: true, nullsFirst: true })
+    .limit(limit);
+
+  if (error) return { ok: false, succeeded: 0, failed: 0, skipped: 0, results: [], message: error.message };
+  if (!orders || orders.length === 0) {
+    return { ok: true, succeeded: 0, failed: 0, skipped: 0, results: [], message: "No active PostEx bookings to sync." };
+  }
+
+  return bulkSyncPostex(orders.map((o) => o.id), "cron@postex-sync");
+}
+
+/* ------------------------------------------------------------------ *
  * 3. Bulk airway bills (merged PDF)
  * ------------------------------------------------------------------ */
 export async function bulkGetAirwayBills(orderIds: string[]): Promise<BulkReport> {

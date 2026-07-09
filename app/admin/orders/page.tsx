@@ -931,9 +931,9 @@ export default function AdminOrdersPage() {
 
       {/* ✅ PHASE 1: Bulk Action Bar (Fixed Bottom) - CONTRAST FIXED */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 animate-fade-up">
-          <div className="rounded-lg bg-[#111827] px-6 py-4 shadow-lift">
-            <div className="flex items-center gap-3">
+        <div className="fixed bottom-6 left-1/2 z-50 w-[min(1180px,94vw)] -translate-x-1/2 animate-fade-up">
+          <div className="rounded-lg bg-[#111827] px-5 py-3 shadow-lift">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
               <span className="text-sm font-semibold text-white">
                 {selectedIds.size} order{selectedIds.size !== 1 ? "s" : ""} selected
               </span>
