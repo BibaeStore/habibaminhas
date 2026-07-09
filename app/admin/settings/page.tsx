@@ -130,7 +130,7 @@ export default function AdminSettingsPage() {
           standard: String(sr.standard ?? "200"),
           express: String(sr.express ?? "500"),
           freeThreshold: String(sr.freeThreshold ?? "3500"),
-          carrier: String(sr.carrier ?? "TCS"),
+          carrier: String(sr.carrier ?? "PostEx"),
           estimatedStd: String(sr.estimatedStd ?? "3–5"),
           estimatedExp: String(sr.estimatedExp ?? "1–2"),
           codEnabled: Boolean(sr.codEnabled ?? true),
@@ -185,7 +185,7 @@ export default function AdminSettingsPage() {
   // ── Shipping state ──
   const [shipping, setShipping] = useState({
     standard: "200", express: "500", freeThreshold: "3500",
-    carrier: "TCS", estimatedStd: "3–5", estimatedExp: "1–2",
+    carrier: "PostEx", estimatedStd: "3–5", estimatedExp: "1–2",
     codEnabled: true,
   });
 
@@ -312,7 +312,7 @@ export default function AdminSettingsPage() {
                 <div className="mt-5">
                   <p className="mb-2 text-[13px] font-semibold text-[var(--admin-text-soft)]">Courier partner</p>
                   <div className="flex flex-wrap gap-2">
-                    {["TCS", "Leopard", "Trax", "M&P"].map((c) => (
+                    {["PostEx", "TCS", "Leopard", "M&P"].map((c) => (
                       <button key={c} onClick={() => setShipping({ ...shipping, carrier: c })}
                         className={`h-9 rounded-[var(--admin-radius)] border px-4 text-[14px] font-medium transition-colors ${
                           shipping.carrier === c

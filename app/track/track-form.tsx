@@ -170,7 +170,7 @@ export function TrackForm({ initialOrder = "" }: { initialOrder?: string }) {
               { label: "Placed",  value: new Date(result.created_at).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" }) },
               { label: "Payment", value: result.payment_method },
               { label: "City",    value: result.city || "—" },
-              { label: "Courier", value: result.courier || "TCS" },
+              { label: "Courier", value: result.courier || "PostEx" },
             ].map(({ label, value }) => (
               <div key={label} className="border border-border-soft bg-cream px-4 py-4">
                 <div className="text-[9px] uppercase tracking-[0.22em] text-muted">{label}</div>

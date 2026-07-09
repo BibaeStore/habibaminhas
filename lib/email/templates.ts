@@ -410,7 +410,7 @@ export function buildAdminEmail(d: OrderEmailData): string {
     <td style="background:${GOLD_LIGHT};padding:20px 32px;text-align:center;">
       <p style="margin:0 0 4px;font-size:13px;color:${INK};font-weight:bold;">📋 Process This Order</p>
       <p style="margin:0;font-size:12px;color:${MUTED};">
-        Verify payment • Prepare items • Arrange TCS pickup • Update order status
+        Verify payment • Prepare items • Arrange PostEx pickup • Update order status
       </p>
     </td>
   </tr>`;

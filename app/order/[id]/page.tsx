@@ -70,7 +70,7 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
               {[
                 { icon: CheckCircle2, label: "Order received", sub: "Your order is confirmed and sent to our team.", done: true },
                 { icon: Package, label: "Packed with care", sub: "Each piece is inspected, pressed, and wrapped in tissue.", done: false },
-                { icon: Truck, label: `Dispatched via ${order.courier ?? "TCS"}`, sub: "Tracking details sent to your WhatsApp within 24 hours.", done: false },
+                { icon: Truck, label: `Dispatched via ${order.courier ?? "PostEx"}`, sub: "Tracking details sent to your WhatsApp within 24 hours.", done: false },
                 { icon: CheckCircle2, label: "Delivered to your door", sub: "Standard: 3–5 business days · Express: 1–2 business days.", done: false },
               ].map((step, i) => (
                 <li key={i} className="flex gap-4">

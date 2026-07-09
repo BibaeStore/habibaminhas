@@ -473,7 +473,7 @@ export default function OrderDetailPage() {
                     <input
                       value={courierName}
                       onChange={(e) => setCourierName(e.target.value)}
-                      placeholder="e.g. TCS, Leopards, M&P"
+                      placeholder="e.g. PostEx"
                       className="h-11 w-full px-3 text-[14px] outline-none transition-colors"
                       style={{
                         border:       "1px solid var(--admin-border)",

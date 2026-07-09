@@ -214,7 +214,7 @@ export default function AdminOrdersPage() {
       if (advancedFilters.courier !== "All") {
         if (advancedFilters.courier === "Other") {
           // "Other" means any courier not in the main list
-          if (!o.courier || ["TCS", "Leopards", "M&P"].includes(o.courier)) return false;
+          if (!o.courier || ["PostEx", "TCS", "Leopards", "M&P"].includes(o.courier)) return false;
         } else {
           if (o.courier !== advancedFilters.courier) return false;
         }
@@ -732,6 +732,7 @@ export default function AdminOrdersPage() {
                     className="h-10 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-sm outline-none focus:border-[var(--admin-primary)] md:w-64"
                   >
                     <option value="All">All Couriers</option>
+                    <option value="PostEx">PostEx</option>
                     <option value="TCS">TCS</option>
                     <option value="Leopards">Leopards</option>
                     <option value="M&P">M&P (Pakistan Post)</option>
