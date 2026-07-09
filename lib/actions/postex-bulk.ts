@@ -21,7 +21,7 @@ import {
   fetchPostexLoadSheetBase64,
   trackPostexOrdersBulk,
 } from "@/lib/courier/postex/client";
-import { bookPostexShipment, syncPostexStatus } from "@/lib/actions/postex";
+import { bookPostexShipment, cancelPostexShipment, syncPostexStatus } from "@/lib/actions/postex";
 
 /** PostEx caps the airway-bill endpoint at 10 tracking numbers per request. */
 const AWB_CHUNK = 10;
@@ -147,6 +147,52 @@ export async function bulkSyncPostex(orderIds: string[], adminEmail?: string): P
     } else {
       failed++;
       results.push({ orderId: o.id, orderNumber: o.order_number, ok: false, message: res.message ?? "Sync failed" });
+    }
+    await sleep(THROTTLE_MS);
+  }
+
+  revalidatePath("/admin/orders");
+  return { ok: failed === 0, succeeded, failed, skipped, results };
+}
+
+/* ------------------------------------------------------------------ *
+ * 2b. Bulk cancel bookings (destructive — always confirm in the UI first)
+ * ------------------------------------------------------------------ */
+export async function bulkCancelPostex(orderIds: string[], adminEmail?: string): Promise<BulkReport> {
+  if (!isPostexEnabled()) return { ok: false, succeeded: 0, failed: 0, skipped: 0, results: [], message: "PostEx is not configured." };
+
+  const sb = createAdminClient();
+  const { data: orders } = await sb
+    .from("orders")
+    .select("id, order_number, postex_tracking_number, status")
+    .in("id", orderIds);
+
+  const results: BulkItemResult[] = [];
+  let succeeded = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (const o of orders ?? []) {
+    if (!o.postex_tracking_number) {
+      skipped++;
+      results.push({ orderId: o.id, orderNumber: o.order_number, ok: true, message: "No PostEx booking — skipped", reason: "not_booked" });
+      continue;
+    }
+    // Refuse to cancel a parcel PostEx already picked up / delivered — that is
+    // a returns problem, not a cancellation, and the API would reject it anyway.
+    if (o.status === "delivered") {
+      skipped++;
+      results.push({ orderId: o.id, orderNumber: o.order_number, ok: false, message: "Already delivered — cannot cancel", reason: "delivered" });
+      continue;
+    }
+
+    const res = await cancelPostexShipment(o.id, { adminEmail });
+    if (res.ok) {
+      succeeded++;
+      results.push({ orderId: o.id, orderNumber: o.order_number, ok: true, message: "Booking cancelled" });
+    } else {
+      failed++;
+      results.push({ orderId: o.id, orderNumber: o.order_number, ok: false, message: res.message ?? "Cancel failed" });
     }
     await sleep(THROTTLE_MS);
   }

@@ -354,6 +354,21 @@ export default function AdminOrdersPage() {
       if (!confirmed) return;
     }
 
+    // Cancelling in the dashboard does NOT cancel the parcel at the courier.
+    // Warn loudly, otherwise a rider can still collect a "cancelled" order.
+    if (newStatus === "cancelled") {
+      const stillBooked = selectedOrders.filter((o) => o.postex_tracking_number);
+      if (stillBooked.length > 0) {
+        const confirmed = window.confirm(
+          `⚠️ ${stillBooked.length} of these orders still have an ACTIVE PostEx booking.\n\n` +
+          `Marking them "cancelled" here does NOT cancel the parcel at PostEx — a rider may still collect it.\n\n` +
+          `Use the PostEx "Cancel Bookings" button instead to cancel at PostEx AND mark them cancelled.\n\n` +
+          `Continue with status-only change anyway?`
+        );
+        if (!confirmed) return;
+      }
+    }
+
     // ✅ PHASE 1: Check for mixed statuses
     const statuses = [...new Set(selectedOrders.map((o) => o.status))];
     if (statuses.length > 1 || (statuses.length === 1 && statuses[0] !== newStatus)) {
