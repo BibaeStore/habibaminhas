@@ -38,6 +38,23 @@ export interface PostexMerchantAddress {
 /** 3.4 Order Types API — dist is a string[] e.g. ["Normal","Reversed","Replacement","Overland"] */
 export type PostexOrderType = string;
 
+/** 3.5 Order Creation API — request */
+export interface PostexCreateOrderRequest {
+  orderRefNumber: string;
+  invoicePayment: string; // COD amount to collect (0 for prepaid)
+  orderDetail?: string;
+  customerName: string;
+  customerPhone: string; // 03xxxxxxxxx
+  deliveryAddress: string;
+  transactionNotes?: string;
+  cityName: string; // must be a PostEx operational city
+  invoiceDivision: number; // # of airway bills (1 = single parcel)
+  items: number; // # of pieces
+  orderType: string; // "Normal"
+  pickupAddressCode?: string;
+  storeAddressCode?: string;
+}
+
 /** 3.5 Order Creation API — response */
 export interface PostexCreateOrderResult {
   trackingNumber: string; // "CX-XXXXXXXXXXX"

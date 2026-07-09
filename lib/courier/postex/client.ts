@@ -9,10 +9,14 @@
  */
 import { getPostexConfig } from "./config";
 import type {
+  PostexCreateOrderRequest,
+  PostexCreateOrderResult,
   PostexEnvelope,
   PostexMerchantAddress,
   PostexOperationalCity,
   PostexOrderType,
+  PostexPaymentStatus,
+  PostexTrackingResult,
 } from "./types";
 
 export class PostexError extends Error {
@@ -139,5 +143,66 @@ export async function getOrderTypes(): Promise<PostexOrderType[]> {
   return request<PostexOrderType[]>("/order/v1/get-order-types");
 }
 
-/** Exposed for later phases (booking/tracking) that live in their own modules. */
+/* ------------------------------------------------------------------ *
+ * Phase 3 — booking, cancel, tracking, airway bill
+ * ------------------------------------------------------------------ */
+
+/** 3.5 Create Order — books a shipment; returns the CX-… tracking number. */
+export async function createPostexOrder(
+  payload: PostexCreateOrderRequest,
+): Promise<PostexCreateOrderResult> {
+  return request<PostexCreateOrderResult>("/order/v3/create-order", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+/** 3.13 Cancel Order by tracking number. */
+export async function cancelPostexOrder(trackingNumber: string): Promise<void> {
+  await request<unknown>("/order/v1/cancel-order", {
+    method: "PUT",
+    body: { trackingNumber },
+  });
+}
+
+/** 3.8 Track a single order (includes transactionStatusHistory). */
+export async function trackPostexOrder(trackingNumber: string): Promise<PostexTrackingResult> {
+  return request<PostexTrackingResult>(
+    `/order/v1/track-order/${encodeURIComponent(trackingNumber)}`,
+  );
+}
+
+/** 3.14 COD payment/settlement status for a tracking number. */
+export async function getPostexPaymentStatus(trackingNumber: string): Promise<PostexPaymentStatus> {
+  return request<PostexPaymentStatus>(
+    `/order/v1/payment-status/${encodeURIComponent(trackingNumber)}`,
+  );
+}
+
+/**
+ * 3.10 Airway Bill PDF (max 10 tracking numbers). Non-JSON endpoint — we fetch
+ * the raw PDF and return it base64-encoded so a server action can hand it to
+ * the browser for download.
+ */
+export async function fetchPostexAirwayBillBase64(trackingNumbers: string[]): Promise<string> {
+  const cfg = getPostexConfig();
+  if (!cfg) throw new PostexError("PostEx is not configured (POSTEX_API_TOKEN missing).");
+  if (trackingNumbers.length === 0) throw new PostexError("No tracking numbers provided.");
+  if (trackingNumbers.length > 10) throw new PostexError("Airway Bill supports at most 10 tracking numbers.");
+
+  const url = `${cfg.baseUrl}/order/v1/getinvoice?trackingNumbers=${trackingNumbers
+    .map(encodeURIComponent)
+    .join(",")}`;
+  const res = await fetch(url, { headers: { token: cfg.token, Accept: "application/pdf" } });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new PostexError(`PostEx airway bill error: HTTP ${res.status}`, {
+      httpStatus: res.status,
+      body: t.slice(0, 300),
+    });
+  }
+  return Buffer.from(await res.arrayBuffer()).toString("base64");
+}
+
+/** Exposed for internal reuse (e.g. status sync in later phases). */
 export const __internal = { request };

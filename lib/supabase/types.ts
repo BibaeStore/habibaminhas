@@ -418,6 +418,15 @@ export type Database = {
           subtotal: number
           total: number
           tracking_number: string | null
+          postex_tracking_number: string | null
+          postex_status: string | null
+          postex_status_history: Json | null
+          postex_cod_amount: number | null
+          postex_cod_settled: boolean | null
+          postex_settlement_date: string | null
+          postex_cpr: string | null
+          postex_booked_at: string | null
+          postex_synced_at: string | null
           updated_at: string
         }
         Insert: {
@@ -438,6 +447,15 @@ export type Database = {
           subtotal: number
           total: number
           tracking_number?: string | null
+          postex_tracking_number?: string | null
+          postex_status?: string | null
+          postex_status_history?: Json | null
+          postex_cod_amount?: number | null
+          postex_cod_settled?: boolean | null
+          postex_settlement_date?: string | null
+          postex_cpr?: string | null
+          postex_booked_at?: string | null
+          postex_synced_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -458,6 +476,15 @@ export type Database = {
           subtotal?: number
           total?: number
           tracking_number?: string | null
+          postex_tracking_number?: string | null
+          postex_status?: string | null
+          postex_status_history?: Json | null
+          postex_cod_amount?: number | null
+          postex_cod_settled?: boolean | null
+          postex_settlement_date?: string | null
+          postex_cpr?: string | null
+          postex_booked_at?: string | null
+          postex_synced_at?: string | null
           updated_at?: string
         }
         Relationships: [

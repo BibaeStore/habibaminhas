@@ -15,7 +15,6 @@ import {
   getDeliveryCities,
   getMerchantAddresses,
   getOrderTypes,
-  asBool,
 } from "../lib/courier/postex/client";
 
 async function main() {
