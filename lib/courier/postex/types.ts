@@ -66,6 +66,14 @@ export interface PostexCreateOrderResult {
 export interface PostexStatusHistoryEntry {
   transactionStatusMessage: string; // "At Merchant's Warehouse", "Delivered", ...
   transactionStatusMessageCode: string; // "0001".."0013"
+  updatedAt?: string; // present on live responses, undocumented
+}
+
+/** 3.9 Bulk Order Tracking — one entry per requested tracking number. */
+export interface PostexBulkTrackingEntry {
+  trackingNumber: string;
+  message: string;
+  trackingResponse: PostexTrackingResult | null;
 }
 
 /** 3.8 Order Tracking API — response payload */

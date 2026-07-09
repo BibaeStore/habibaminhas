@@ -15,6 +15,7 @@ import type {
   PostexMerchantAddress,
   PostexOperationalCity,
   PostexOrderType,
+  PostexBulkTrackingEntry,
   PostexPaymentStatus,
   PostexTrackingResult,
 } from "./types";
@@ -170,6 +171,52 @@ export async function trackPostexOrder(trackingNumber: string): Promise<PostexTr
   return request<PostexTrackingResult>(
     `/order/v1/track-order/${encodeURIComponent(trackingNumber)}`,
   );
+}
+
+/**
+ * 3.9 Bulk Order Tracking. The guide shows a JSON body, but the live API
+ * requires a GET with a comma-separated `TrackingNumbers` query param
+ * (verified 2026-07-09). Returns one entry per requested number.
+ */
+export async function trackPostexOrdersBulk(
+  trackingNumbers: string[],
+): Promise<PostexBulkTrackingEntry[]> {
+  if (trackingNumbers.length === 0) return [];
+  return request<PostexBulkTrackingEntry[]>("/order/v1/track-bulk-order", {
+    query: { TrackingNumbers: trackingNumbers.join(",") },
+  });
+}
+
+/**
+ * 3.7 Generate Load Sheet — the rider pickup manifest PDF for a batch of
+ * consignments. Returns base64. Note PostEx rejects cancelled/ineligible
+ * tracking numbers with "INVALID TRACKING NUMBER(S)".
+ */
+export async function fetchPostexLoadSheetBase64(
+  trackingNumbers: string[],
+  pickupAddress?: string,
+): Promise<string> {
+  const cfg = getPostexConfig();
+  if (!cfg) throw new PostexError("PostEx is not configured (POSTEX_API_TOKEN missing).");
+  if (trackingNumbers.length === 0) throw new PostexError("No tracking numbers provided.");
+
+  const res = await fetch(`${cfg.baseUrl}/order/v2/generate-load-sheet`, {
+    method: "POST",
+    headers: { token: cfg.token, "Content-Type": "application/json", Accept: "application/pdf" },
+    body: JSON.stringify({ trackingNumbers, ...(pickupAddress ? { pickupAddress } : {}) }),
+  });
+
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    let msg = `HTTP ${res.status}`;
+    try {
+      msg = (JSON.parse(t) as { statusMessage?: string }).statusMessage ?? msg;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new PostexError(`PostEx load sheet error: ${msg}`, { httpStatus: res.status, body: t.slice(0, 300) });
+  }
+  return Buffer.from(await res.arrayBuffer()).toString("base64");
 }
 
 /** 3.14 COD payment/settlement status for a tracking number. */

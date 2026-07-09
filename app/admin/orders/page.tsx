@@ -17,6 +17,7 @@ import { StatusPill, type StatusTone } from "@/components/admin/ui/status-pill";
 import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
 import { getOrders, updateOrderStatus, updateOrder, deleteOrder, bulkDeleteOrders } from "@/lib/actions/orders";
 import { generateBulkInvoices, generateBulkPackingSlips } from "@/lib/actions/print";
+import { PostexBulkActions } from "@/components/admin/postex-bulk-actions";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
@@ -984,6 +985,15 @@ export default function AdminOrdersPage() {
                   >
                     Email
                   </button>
+
+                  {/* PostEx bulk actions (self-contained; renders only when PostEx is configured) */}
+                  <PostexBulkActions
+                    selectedIds={Array.from(selectedIds)}
+                    adminEmail={adminEmail}
+                    onDone={async () => {
+                      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+                    }}
+                  />
 
                   <div className="mx-1 h-6 w-px bg-white/30" />
 
