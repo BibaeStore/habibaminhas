@@ -80,7 +80,7 @@ const DEFAULTS: StorefrontSettings = {
     freeThreshold: 3500,
     estimatedStd: "3–5",
     estimatedExp: "1–2",
-    carrier: "TCS",
+    carrier: "PostEx",
     codEnabled: true,
   },
   payment: { cod: true, bank: false, jazzcash: false, easypaisa: false },

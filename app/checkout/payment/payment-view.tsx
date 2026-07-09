@@ -102,7 +102,8 @@ export function PaymentView({
           payment_method: payMethod,
           payment_status: payMethod === "cod" ? "pending" : "paid",
           status: "pending",
-          courier: shipping.shippingMethod === "express" ? `${shippingCfg.carrier} Overnight` : shippingCfg.carrier,
+          // Courier is assigned when the shipment is actually booked (PostEx),
+          // not at checkout — an unbooked order has no carrier yet.
         },
         orderItems
       );

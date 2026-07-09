@@ -49,7 +49,7 @@ function buildTimeline(status: string, courier: string | null) {
   return [
     { label: "Order received",                              done: true,                                           },
     { label: "Payment confirmed",                           done: true,                                           },
-    { label: `Packed & dispatched via ${courier ?? "TCS"}`, done: ["dispatched", "delivered"].includes(s),       },
+    { label: `Packed & dispatched via ${courier ?? "PostEx"}`, done: ["dispatched", "delivered"].includes(s),       },
     { label: "Out for delivery",                            done: s === "delivered",                              },
     { label: "Delivered",                                   done: s === "delivered",                              },
   ];
@@ -119,7 +119,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<Para
               <h2 className="font-display text-2xl italic">Shipment tracking</h2>
               {order.tracking_number && (
                 <p className="mt-1 text-[12px] uppercase tracking-[0.22em] text-muted">
-                  {order.courier ?? "TCS Courier"} ·{" "}
+                  {order.courier ?? "PostEx"} ·{" "}
                   <span className="text-ink-soft">{order.tracking_number}</span>
                 </p>
               )}

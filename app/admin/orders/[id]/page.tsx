@@ -17,6 +17,7 @@ import { AdminButton } from "@/components/admin/ui/button";
 import { StatusPill, type StatusTone } from "@/components/admin/ui/status-pill";
 import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
 import { getOrderById, updateOrderStatus, updateOrder, getOrderActivityLog } from "@/lib/actions/orders";
+import { PostexPanel } from "@/components/admin/postex-panel";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
@@ -472,7 +473,7 @@ export default function OrderDetailPage() {
                     <input
                       value={courierName}
                       onChange={(e) => setCourierName(e.target.value)}
-                      placeholder="e.g. TCS, Leopards, M&P"
+                      placeholder="e.g. PostEx"
                       className="h-11 w-full px-3 text-[14px] outline-none transition-colors"
                       style={{
                         border:       "1px solid var(--admin-border)",
@@ -507,6 +508,9 @@ export default function OrderDetailPage() {
                     />
                   </div>
                 </div>
+
+                {/* PostEx courier (self-contained; renders only when PostEx is configured) */}
+                <PostexPanel order={order} adminEmail={adminEmail} onRefresh={load} />
 
                 {/* Admin note */}
                 <div className="mt-4">

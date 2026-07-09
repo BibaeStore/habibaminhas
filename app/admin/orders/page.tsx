@@ -17,6 +17,7 @@ import { StatusPill, type StatusTone } from "@/components/admin/ui/status-pill";
 import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
 import { getOrders, updateOrderStatus, updateOrder, deleteOrder, bulkDeleteOrders } from "@/lib/actions/orders";
 import { generateBulkInvoices, generateBulkPackingSlips } from "@/lib/actions/print";
+import { PostexBulkActions } from "@/components/admin/postex-bulk-actions";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
@@ -214,7 +215,7 @@ export default function AdminOrdersPage() {
       if (advancedFilters.courier !== "All") {
         if (advancedFilters.courier === "Other") {
           // "Other" means any courier not in the main list
-          if (!o.courier || ["TCS", "Leopards", "M&P"].includes(o.courier)) return false;
+          if (!o.courier || ["PostEx", "TCS", "Leopards", "M&P"].includes(o.courier)) return false;
         } else {
           if (o.courier !== advancedFilters.courier) return false;
         }
@@ -351,6 +352,21 @@ export default function AdminOrdersPage() {
         `Continue anyway?`
       );
       if (!confirmed) return;
+    }
+
+    // Cancelling in the dashboard does NOT cancel the parcel at the courier.
+    // Warn loudly, otherwise a rider can still collect a "cancelled" order.
+    if (newStatus === "cancelled") {
+      const stillBooked = selectedOrders.filter((o) => o.postex_tracking_number);
+      if (stillBooked.length > 0) {
+        const confirmed = window.confirm(
+          `⚠️ ${stillBooked.length} of these orders still have an ACTIVE PostEx booking.\n\n` +
+          `Marking them "cancelled" here does NOT cancel the parcel at PostEx — a rider may still collect it.\n\n` +
+          `Use the PostEx "Cancel Bookings" button instead to cancel at PostEx AND mark them cancelled.\n\n` +
+          `Continue with status-only change anyway?`
+        );
+        if (!confirmed) return;
+      }
     }
 
     // ✅ PHASE 1: Check for mixed statuses
@@ -732,6 +748,7 @@ export default function AdminOrdersPage() {
                     className="h-10 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-sm outline-none focus:border-[var(--admin-primary)] md:w-64"
                   >
                     <option value="All">All Couriers</option>
+                    <option value="PostEx">PostEx</option>
                     <option value="TCS">TCS</option>
                     <option value="Leopards">Leopards</option>
                     <option value="M&P">M&P (Pakistan Post)</option>
@@ -914,9 +931,9 @@ export default function AdminOrdersPage() {
 
       {/* ✅ PHASE 1: Bulk Action Bar (Fixed Bottom) - CONTRAST FIXED */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 animate-fade-up">
-          <div className="rounded-lg bg-[#111827] px-6 py-4 shadow-lift">
-            <div className="flex items-center gap-3">
+        <div className="fixed bottom-6 left-1/2 z-50 w-[min(1180px,94vw)] -translate-x-1/2 animate-fade-up">
+          <div className="rounded-lg bg-[#111827] px-5 py-3 shadow-lift">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
               <span className="text-sm font-semibold text-white">
                 {selectedIds.size} order{selectedIds.size !== 1 ? "s" : ""} selected
               </span>
@@ -983,6 +1000,15 @@ export default function AdminOrdersPage() {
                   >
                     Email
                   </button>
+
+                  {/* PostEx bulk actions (self-contained; renders only when PostEx is configured) */}
+                  <PostexBulkActions
+                    selectedIds={Array.from(selectedIds)}
+                    adminEmail={adminEmail}
+                    onDone={async () => {
+                      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+                    }}
+                  />
 
                   <div className="mx-1 h-6 w-px bg-white/30" />
 
