@@ -125,6 +125,16 @@ export async function bookPostexShipment(
     };
   }
 
+  // Support re-booking after a cancellation: PostEx rejects a duplicate order
+  // reference, so use a unique ref (ORD-…-R2, -R3, …) on subsequent attempts.
+  const { count: priorBookings } = await sb
+    .from("order_activity_log")
+    .select("id", { count: "exact", head: true })
+    .eq("order_id", orderId)
+    .eq("action_type", "postex_booked");
+  const attempt = (priorBookings ?? 0) + 1;
+  if (attempt > 1) payload.orderRefNumber = `${order.order_number}-R${attempt}`;
+
   let result;
   try {
     result = await createPostexOrder(payload);
@@ -143,8 +153,8 @@ export async function bookPostexShipment(
     // Mirror into existing fields so the customer /track page + emails keep working unchanged.
     courier: "PostEx",
     tracking_number: tn,
-    // Advance a fresh order to "processing" (booked, awaiting pickup).
-    ...(order.status === "pending" ? { status: "processing" } : {}),
+    // Advance a fresh (or previously-cancelled) order to "processing".
+    ...(order.status === "pending" || order.status === "cancelled" ? { status: "processing" } : {}),
   };
   await sb.from("orders").update(patch).eq("id", orderId);
   await logActivity(sb, orderId, "postex_booked", null, { trackingNumber: tn, city: cm.cityName, codAmount }, opts.adminEmail);
@@ -172,7 +182,21 @@ export async function cancelPostexShipment(
 
   await sb
     .from("orders")
-    .update({ postex_status: "Cancelled", status: "cancelled", postex_synced_at: new Date().toISOString() })
+    .update({
+      status: "cancelled",
+      // Clear the PostEx booking so the order can be edited and re-booked.
+      // The cancelled tracking number is preserved in the activity log below.
+      postex_tracking_number: null,
+      postex_status: null,
+      postex_cod_amount: null,
+      postex_cod_settled: null,
+      postex_settlement_date: null,
+      postex_cpr: null,
+      postex_booked_at: null,
+      postex_synced_at: new Date().toISOString(),
+      courier: null,
+      tracking_number: null,
+    })
     .eq("id", orderId);
   await logActivity(sb, orderId, "postex_cancelled", { trackingNumber: order.postex_tracking_number }, { status: "cancelled" }, opts.adminEmail);
 
