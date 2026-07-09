@@ -190,7 +190,9 @@ export async function fetchPostexAirwayBillBase64(trackingNumbers: string[]): Pr
   if (trackingNumbers.length === 0) throw new PostexError("No tracking numbers provided.");
   if (trackingNumbers.length > 10) throw new PostexError("Airway Bill supports at most 10 tracking numbers.");
 
-  const url = `${cfg.baseUrl}/order/v1/getinvoice?trackingNumbers=${trackingNumbers
+  // NOTE: the v4.1.9 guide documents this as `getinvoice`, but the live API
+  // only answers on the hyphenated `get-invoice` (verified 2026-07-09).
+  const url = `${cfg.baseUrl}/order/v1/get-invoice?trackingNumbers=${trackingNumbers
     .map(encodeURIComponent)
     .join(",")}`;
   const res = await fetch(url, { headers: { token: cfg.token, Accept: "application/pdf" } });
