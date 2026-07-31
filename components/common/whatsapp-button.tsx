@@ -2,8 +2,21 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export function WhatsAppButton() {
+  const pathname = usePathname();
+
+  /*
+   * Product pages render a fixed Add-to-Bag bar along the bottom on mobile
+   * (~73px tall plus the safe-area inset). At the default bottom-6 the 56px FAB
+   * landed on top of that bar and covered the wishlist heart. Lift it clear there.
+   * Everywhere else the bar does not exist, so the FAB keeps its normal position.
+   *
+   * Desktop (lg+) has no sticky bar — the lg:bottom-6 reset returns it to the corner.
+   */
+  const onProductPage = pathname?.startsWith("/product");
+
   return (
     <Link
       href="https://wa.me/923120295812"
@@ -13,7 +26,11 @@ export function WhatsAppButton() {
       // z-[46]: above page content, below the cart drawer (z-49) and its backdrop (z-48).
       // It was z-50, which painted the FAB on top of the drawer's Checkout / Continue
       // Shopping buttons and hijacked those taps to WhatsApp.
-      className="group fixed bottom-6 right-6 z-[46] transition-transform duration-300 hover:scale-110"
+      className={`group fixed right-6 z-[46] transition-transform duration-300 hover:scale-110 lg:bottom-6 ${
+        onProductPage
+          ? "bottom-[calc(6rem+env(safe-area-inset-bottom))]"
+          : "bottom-6"
+      }`}
     >
       <Image
         src="/icons/whatsapp.png"

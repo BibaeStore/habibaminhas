@@ -8,6 +8,7 @@ import { PageLoader } from "@/components/common/page-loader";
 import { CookieConsent } from "@/components/common/cookie-consent";
 import { WhatsAppButton } from "@/components/common/whatsapp-button";
 import { PurchaseNotification } from "@/components/common/purchase-notification";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 import { useCartStore } from "@/lib/cart-store";
 import type { MegaMenu } from "@/lib/data";
 
@@ -22,7 +23,8 @@ export function LayoutShell({
   const isAdmin   = pathname?.startsWith("/admin");
   const isInvoice = pathname?.endsWith("/invoice");
 
-  const drawerOpen = useCartStore((s) => s.drawerOpen);
+  const drawerOpen  = useCartStore((s) => s.drawerOpen);
+  const closeDrawer = useCartStore((s) => s.closeDrawer);
 
   /*
    * Overlay suppression inside the funnel.
@@ -54,6 +56,12 @@ export function LayoutShell({
       {/* Spacer pushes page content below the fixed header */}
       <main className="flex-1" style={{ paddingTop: "var(--header-h)" }}>{children}</main>
       <Footer />
+      {/*
+        Mounted here, at the document root — NOT inside the navbar. See the note in
+        cart-trigger.tsx: nesting it in the fixed z-40 header trapped its z-49 inside
+        that stacking context, letting the product page's sticky bar paint over it.
+      */}
+      <CartDrawer open={drawerOpen} onClose={closeDrawer} />
       {showOverlays && <WhatsAppButton />}
       {showOverlays && <PurchaseNotification />}
     </>

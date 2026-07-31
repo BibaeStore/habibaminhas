@@ -122,19 +122,37 @@ export function ProductCard({
           type="button"
           aria-label={mounted && isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
           onClick={handleWishlist}
+          /*
+            Same hover-visibility trap as the row below: opacity-0 left an invisible but
+            tappable heart on the top-right of every card on mobile. Rather than hide it,
+            keep it visible on touch (max-lg:opacity-100) — wishlisting is a real feature
+            phone users should be able to reach, and an always-visible control is honest
+            about being tappable. Desktop keeps the reveal-on-hover behaviour.
+          */
           className={`rounded-full p-2 shadow-soft backdrop-blur-sm transition-all duration-300 group-hover:opacity-100 ${
             mounted && isWishlisted
               ? "bg-ink text-ivory opacity-100"
-              : "bg-ivory/90 text-ink opacity-0 hover:bg-ink hover:text-ivory"
+              : "bg-ivory/90 text-ink opacity-0 max-lg:opacity-100 hover:bg-ink hover:text-ivory"
           }`}
         >
           <Heart className={`h-3.5 w-3.5 ${mounted && isWishlisted ? "fill-current" : ""}`} />
         </button>
       </div>
 
-      {/* Bottom row: Quick View + Add to Bag */}
+      {/*
+        Bottom row: Quick View + Add to Bag — DESKTOP ONLY.
+
+        These are hover affordances. `opacity-0` hides them visually but leaves them
+        fully tappable, and touch devices never fire :hover — so on a phone these were
+        two invisible buttons sitting over the bottom-left and bottom-right of every
+        product image. Tapping the card there opened the Quick View modal instead of
+        navigating to the product, or silently added the item to the bag. Hence
+        "sometimes it shows a modal, sometimes the product page".
+        max-lg:hidden removes them from touch layouts entirely rather than relying on
+        opacity, which is not a hit-testing property.
+      */}
       {!isOutOfStock && (
-        <div className="absolute inset-x-3 bottom-3 flex translate-y-2 items-center justify-between gap-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        <div className="absolute inset-x-3 bottom-3 hidden translate-y-2 items-center justify-between gap-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 lg:flex">
           <button
             type="button"
             onClick={handleQuickView}

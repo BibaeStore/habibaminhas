@@ -42,6 +42,7 @@ export function AddToCartSection({
 
   const addItem    = useCartStore((s) => s.addItem);
   const openDrawer = useCartStore((s) => s.openDrawer);
+  const drawerOpen = useCartStore((s) => s.drawerOpen);
   const toggle     = useWishlistStore((s) => s.toggle);
   const isWished   = useWishlistStore((s) => s.has(slug));
 
@@ -213,8 +214,16 @@ export function AddToCartSection({
         )}
       </div>
 
-      {/* ── Mobile sticky bottom bar ────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-[45] border-t border-border-soft bg-ivory px-4 py-3 shadow-[0_-4px_24px_rgba(26,22,18,0.1)] lg:hidden">
+      {/*
+        ── Mobile sticky bottom bar ──────────────────────────────
+        Hidden while the bag is open: you cannot add to a bag you are currently
+        reviewing, and it otherwise sits over the drawer's checkout buttons.
+        The stacking fix (drawer moved to the root in layout-shell) already puts the
+        drawer above this, but unmounting is unambiguous and survives future z-index
+        changes.
+      */}
+      {!drawerOpen && (
+      <div className="fixed bottom-0 left-0 right-0 z-[45] border-t border-border-soft bg-ivory px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_24px_rgba(26,22,18,0.1)] lg:hidden">
         {hasSizes && !selectedSize && (
           <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-sale">
             Please select a size above
@@ -269,6 +278,7 @@ export function AddToCartSection({
           </button>
         </div>
       </div>
+      )}
 
       {/* Virtual Try Room modal */}
       {isTryOnOpen && showTryOn && (
