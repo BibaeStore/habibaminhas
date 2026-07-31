@@ -10,7 +10,10 @@ export function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
-      className="group fixed bottom-6 right-6 z-50 transition-transform duration-300 hover:scale-110"
+      // z-[46]: above page content, below the cart drawer (z-49) and its backdrop (z-48).
+      // It was z-50, which painted the FAB on top of the drawer's Checkout / Continue
+      // Shopping buttons and hijacked those taps to WhatsApp.
+      className="group fixed bottom-6 right-6 z-[46] transition-transform duration-300 hover:scale-110"
     >
       <Image
         src="/icons/whatsapp.png"

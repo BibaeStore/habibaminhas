@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Minus, Plus, Heart, Share2, Sparkles, Lock } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useWishlistStore } from "@/lib/wishlist-store";
+import { trackViewItem, trackAddToCart } from "@/lib/analytics";
 import Image from "next/image";
 
 const TryOnModal = dynamic(
@@ -56,6 +57,12 @@ export function AddToCartSection({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // GA4 view_item — once per product view
+  useEffect(() => {
+    trackViewItem({ id, title, price, category });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   const canAdd = !hasSizes || !!selectedSize;
 
   function handleTryOnClick() {
@@ -67,7 +74,9 @@ export function AddToCartSection({
 
   function handleAdd() {
     if (!canAdd) return;
-    addItem({ id, slug, category, title, image, palette, price, compare_at, size: hasSizes ? selectedSize : null, sku });
+    const size = hasSizes ? selectedSize : null;
+    addItem({ id, slug, category, title, image, palette, price, compare_at, size, sku });
+    trackAddToCart({ id, title, price, category, size });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
     openDrawer();

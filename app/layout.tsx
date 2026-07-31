@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -28,6 +28,20 @@ const manrope = Manrope({
   preload: true,
   fallback: ["system-ui", "sans-serif"],
 });
+
+/*
+ * viewport-fit=cover is required for env(safe-area-inset-*) to return non-zero values
+ * on notched iPhones. Without it, the safe-area padding on the cart drawer footer and
+ * the PDP sticky bar silently resolves to 0 and their CTAs sit in the home-indicator
+ * gesture strip, where taps get swallowed by the OS.
+ * Deliberately NOT setting maximumScale/userScalable — blocking pinch-zoom is an
+ * accessibility regression.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://habibaminhas.com"),
