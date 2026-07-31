@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, X, ShieldCheck, Truck, RotateCcw, Tag } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
+import { trackViewCart } from "@/lib/analytics";
 import { formatPrice } from "@/lib/utils";
 import type { ShippingConfig } from "@/lib/actions/settings";
 
@@ -12,6 +13,15 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
   const { items, removeItem, updateQty } = useCartStore();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
+
+  /* GA4 view_cart — once, on arrival with a non-empty bag */
+  useEffect(() => {
+    if (!mounted || items.length === 0) return;
+    trackViewCart(
+      items.map((i) => ({ id: i.id, title: i.title, price: i.price, qty: i.qty, size: i.size, category: i.category })),
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const shipping = shippingCfg.standard;

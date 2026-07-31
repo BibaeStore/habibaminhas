@@ -107,7 +107,7 @@ export function PurchaseNotification() {
       aria-live="polite"
       aria-atomic="true"
       className={`
-        fixed bottom-6 left-4 z-[60]
+        fixed bottom-6 left-4 z-[47]
         w-[calc(100vw-2rem)] max-w-[384px]
         overflow-hidden
         border border-gold-dark/25

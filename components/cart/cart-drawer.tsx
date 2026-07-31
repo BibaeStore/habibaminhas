@@ -5,10 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
+import { trackViewCart } from "@/lib/analytics";
 import { formatPrice } from "@/lib/utils";
-
-const SHIPPING       = 250;
-const FREE_THRESHOLD = 3500;
 
 interface Props {
   open: boolean;
@@ -23,6 +21,15 @@ export function CartDrawer({ open, onClose }: Props) {
   useEffect(() => setMounted(true), []);
 
   const handleClose = () => { onClose(); closeDrawer(); };
+
+  /* GA4 view_cart — on each open, with the bag as it stands */
+  useEffect(() => {
+    if (!open) return;
+    trackViewCart(
+      items.map((i) => ({ id: i.id, title: i.title, price: i.price, qty: i.qty, size: i.size, category: i.category })),
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   /* Escape key */
   useEffect(() => {
@@ -53,9 +60,6 @@ export function CartDrawer({ open, onClose }: Props) {
 
   const itemCount = items.length; // distinct products — for the badge
   const subtotal  = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const shipping  = subtotal >= FREE_THRESHOLD ? 0 : SHIPPING;
-  const remaining = Math.max(FREE_THRESHOLD - subtotal, 0);
-  const progress  = Math.min((subtotal / FREE_THRESHOLD) * 100, 100);
 
   return (
     <>
@@ -71,7 +75,16 @@ export function CartDrawer({ open, onClose }: Props) {
       {/* Drawer panel */}
       <aside
         aria-label="Shopping bag"
-        className={`fixed right-0 top-0 z-[49] flex h-screen w-full max-w-[420px] flex-col bg-white transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
+        /*
+         * Height: NEVER use h-screen (100vh) here. On mobile browsers 100vh is the
+         * *large* viewport — the height with the URL bar retracted — so a fixed,
+         * top-anchored panel extends 60–110px below what the user can actually see,
+         * and the footer (which holds every CTA) lands off-screen and unreachable.
+         * svh = small viewport, always fits. dvh tracks the bar as it shows/hides
+         * and is exact where supported. overflow-hidden guarantees the footer stays
+         * inside the box even if content ever overflows.
+         */
+        className={`fixed right-0 top-0 z-[49] flex h-[100svh] w-full max-w-[420px] flex-col overflow-hidden bg-white transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] supports-[height:100dvh]:h-[100dvh] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         style={{ boxShadow: "-4px 0 40px rgba(26,22,18,0.15)" }}
@@ -119,35 +132,6 @@ export function CartDrawer({ open, onClose }: Props) {
           </div>
         ) : (
           <>
-            {/* ── Free-shipping banner + progress ─────────────────── */}
-            <div className="flex-none border-b border-border-soft bg-cream px-5 py-3">
-              <p className="text-center text-[11px] font-bold uppercase tracking-[0.26em] text-ink">
-                Free Shipping Over {formatPrice(FREE_THRESHOLD)}
-              </p>
-              {remaining > 0 ? (
-                <p className="mt-0.5 text-center text-[11px] text-gold-dark">
-                  Amount Left for Free Shipping: <strong>{formatPrice(remaining)}</strong>
-                </p>
-              ) : (
-                <p className="mt-0.5 text-center text-[11px] font-medium text-sage">
-                  🎉 You've unlocked free shipping!
-                </p>
-              )}
-              {/* Progress bar with Rs.0 — Rs.threshold labels */}
-              <div className="mt-2">
-                <div className="relative h-[4px] w-full overflow-hidden rounded-full bg-border-soft">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-gold-dark transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <div className="mt-1 flex items-center justify-between text-[10px] text-muted">
-                  <span>Rs.0</span>
-                  <span>{formatPrice(FREE_THRESHOLD)}</span>
-                </div>
-              </div>
-            </div>
-
             {/* ── Items list ──────────────────────────────────────── */}
             <ul className="flex-1 divide-y divide-border-soft overflow-y-auto overscroll-contain px-5">
               {items.map((item) => (
@@ -249,7 +233,13 @@ export function CartDrawer({ open, onClose }: Props) {
             </ul>
 
             {/* ── Footer ──────────────────────────────────────────── */}
-            <div className="flex-none border-t border-border-soft bg-white px-5 pb-6 pt-4">
+            {/*
+              pb clears the iOS home indicator / Android gesture strip. Without it the
+              bottom ~34px of the CTA sits inside the system gesture area, where taps
+              are swallowed by the OS. Requires viewport-fit=cover (set in app/layout.tsx)
+              or env() resolves to 0.
+            */}
+            <div className="flex-none border-t border-border-soft bg-white px-5 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
 
               {/* Subtotal row */}
               <div className="flex items-center justify-between pb-4">

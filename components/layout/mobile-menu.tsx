@@ -43,7 +43,9 @@ export function MobileMenu({
       {/* Slide panel */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-[200] flex h-full w-[86%] max-w-[380px] flex-col bg-ivory shadow-[4px_0_24px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-in-out lg:hidden",
+          // svh/dvh rather than h-full — see the note in cart-drawer.tsx; a fixed
+          // panel sized to the layout viewport overshoots the visible area on mobile.
+          "fixed left-0 top-0 z-[200] flex h-[100svh] w-[86%] max-w-[380px] flex-col bg-ivory shadow-[4px_0_24px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-in-out supports-[height:100dvh]:h-[100dvh] lg:hidden",
           open ? "translate-x-0" : "-translate-x-full",
         )}
         aria-modal="true"

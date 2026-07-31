@@ -62,6 +62,17 @@ export const useCartStore = create<CartStore>()(
       },
       clearCart: () => set({ items: [] }),
     }),
-    { name: "hm-cart", storage: createJSONStorage(() => localStorage) }
+    {
+      name: "hm-cart",
+      storage: createJSONStorage(() => localStorage),
+      /*
+       * Persist the bag only. Without partialize the whole state is written, including
+       * the transient `drawerOpen` flag — so a user who left with the drawer open got it
+       * rehydrated open over the homepage on their next visit. It also desynced SSR
+       * (always false) from the client's first render (rehydrated from localStorage),
+       * which now matters because layout-shell reads drawerOpen to hide overlays.
+       */
+      partialize: (s) => ({ items: s.items }),
+    }
   )
 );

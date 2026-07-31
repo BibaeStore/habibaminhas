@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/*
+ * Tailwind v4 auto-detects sources from the project root and scans .md files too, so
+ * class names quoted inside documentation get compiled into real utilities and shipped
+ * to users. Our planning/audit docs are full of CSS snippets, which produced dead rules
+ * in the bundle (and one invalid one, from a prose ellipsis inside a max() call).
+ * Markdown is documentation, never a source of classes — exclude it.
+ */
+@source not "../docs";
+@source not "../*.md";
+
 @theme {
   --color-ivory: #faf7f1;
   --color-cream: #f3eee3;

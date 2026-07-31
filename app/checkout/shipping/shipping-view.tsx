@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, ShieldCheck, Truck, RotateCcw, Check } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
+import { trackBeginCheckout, trackAddShippingInfo } from "@/lib/analytics";
 import { formatPrice } from "@/lib/utils";
 import type { ShippingConfig } from "@/lib/actions/settings";
 
@@ -49,6 +50,19 @@ export function ShippingView({ shipping: shippingCfg }: { shipping: ShippingConf
     if (items.length === 0) router.replace("/cart");
   }, [mounted, items, router]);
 
+  /* GA4 begin_checkout — once, on arrival with a non-empty bag */
+  useEffect(() => {
+    if (!mounted || items.length === 0) return;
+    trackBeginCheckout(analyticsItems());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]);
+
+  function analyticsItems() {
+    return items.map((i) => ({
+      id: i.id, title: i.title, price: i.price, qty: i.qty, size: i.size, category: i.category,
+    }));
+  }
+
   function set(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
     setErrors((e) => ({ ...e, [field]: "" }));
@@ -74,6 +88,7 @@ export function ShippingView({ shipping: shippingCfg }: { shipping: ShippingConf
       return;
     }
     setShipping({ ...form, shippingMethod: method, shippingCost, giftMessage: "", paymentMethod: "cod" });
+    trackAddShippingInfo(analyticsItems(), method);
     router.push("/checkout/payment");
   }
 

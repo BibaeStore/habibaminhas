@@ -8,6 +8,7 @@ import { ChevronRight, ShieldCheck, Truck, RotateCcw, Lock, Check, Pencil } from
 import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { createOrder } from "@/lib/actions/orders";
+import { trackAddPaymentInfo, trackPurchase } from "@/lib/analytics";
 import { formatPrice } from "@/lib/utils";
 import { ProductImage } from "@/components/common/product-image";
 import type { PaymentMethodsConfig, ShippingConfig } from "@/lib/actions/settings";
@@ -66,6 +67,23 @@ export function PaymentView({
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  function analyticsItems() {
+    return items.map((i) => ({
+      id: i.id, title: i.title, price: i.price, qty: i.qty, size: i.size, category: i.category,
+    }));
+  }
+
+  /*
+   * GA4 add_payment_info for the pre-selected default (COD). A radio's onChange never
+   * fires for the option that is already checked, so without this the step would read
+   * ~0 for the majority of orders, which are COD.
+   */
+  useEffect(() => {
+    if (!mounted || items.length === 0) return;
+    trackAddPaymentInfo(analyticsItems(), payMethod);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]);
+
   async function handlePlaceOrder(e: React.FormEvent) {
     e.preventDefault();
     if (!shipping || items.length === 0) return;
@@ -113,6 +131,12 @@ export function PaymentView({
         return;
       }
       orderPlaced.current = true;
+      // Must fire before clearCart() — it reads the bag that is about to be emptied.
+      trackPurchase(analyticsItems(), {
+        transactionId: result.order.order_number,
+        value: total,
+        shipping: shippingCost,
+      });
       localStorage.setItem("hm_customer_email", shipping.email);
       clearCart();
       clearCheckout();
@@ -218,7 +242,10 @@ export function PaymentView({
                       type="radio"
                       name="payment"
                       checked={payMethod === opt.value}
-                      onChange={() => setPayMethod(opt.value)}
+                      onChange={() => {
+                        setPayMethod(opt.value);
+                        trackAddPaymentInfo(analyticsItems(), opt.value);
+                      }}
                       className="sr-only"
                     />
                     <div className="relative h-9 w-[52px] shrink-0">
