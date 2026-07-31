@@ -3,13 +3,20 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
-import { CartDrawer } from "./cart-drawer";
 
+/*
+ * This renders ONLY the bag button. The drawer itself is mounted at the root in
+ * layout-shell.tsx — it must not live here.
+ *
+ * CartTrigger sits inside the navbar, which sits inside the fixed `z-40` header
+ * wrapper. A positioned element with a z-index creates a stacking context, so every
+ * z-index inside that wrapper is resolved *within* it: the drawer's z-49 competed at
+ * z-40 against the rest of the page. The product page's sticky Add-to-Bag bar (z-45)
+ * therefore painted on top of the open drawer, over its checkout buttons.
+ */
 export function CartTrigger() {
   const items      = useCartStore((s) => s.items);
-  const drawerOpen = useCartStore((s) => s.drawerOpen);
   const openDrawer = useCartStore((s) => s.openDrawer);
-  const closeDrawer= useCartStore((s) => s.closeDrawer);
   const [mounted, setMounted] = useState(false);
 
   /* Avoid hydration mismatch — badge only renders after client mount */
@@ -35,8 +42,6 @@ export function CartTrigger() {
           </span>
         )}
       </button>
-
-      <CartDrawer open={drawerOpen} onClose={closeDrawer} />
     </>
   );
 }
