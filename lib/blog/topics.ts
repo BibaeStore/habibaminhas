@@ -114,7 +114,7 @@ export async function getLinkTargets(): Promise<{
 }> {
   const sb = createAdminClient();
 
-  const [{ data: posts }, { data: products }] = await Promise.all([
+  const [{ data: posts }, { data: products }, { data: allActive }] = await Promise.all([
     sb.from("journal_posts").select("slug, title").eq("status", "published").limit(60),
     sb
       .from("products")
@@ -122,7 +122,28 @@ export async function getLinkTargets(): Promise<{
       .eq("status", "active")
       .gt("stock", 0)
       .limit(40),
+    // Subcategory landing pages, derived the same way app/sitemap.ts derives them.
+    sb.from("products").select("category, subcategory").eq("status", "active"),
   ]);
+
+  /*
+   * Collection subcategory routes (e.g. /baby/baby-bedding-set, /ladies/formal-wear).
+   * These are real, indexed landing pages and often the most useful thing an article
+   * can link to — more specific than the top-level collection, more durable than an
+   * individual product that may sell out.
+   */
+  const CATEGORY_PATH: Record<string, string> = {
+    "ladies-suits": "ladies",
+    "kids-formal": "kids",
+    "baby-products": "baby",
+  };
+  const subcategories = new Map<string, string>();
+  for (const p of allActive ?? []) {
+    const base = CATEGORY_PATH[p.category] ?? p.category;
+    for (const sub of (p.subcategory as string[] | null) ?? []) {
+      if (sub) subcategories.set(`/${base}/${sub}`, sub.replace(/-/g, " "));
+    }
+  }
 
   return {
     collections: [
@@ -145,6 +166,7 @@ export async function getLinkTargets(): Promise<{
       { url: "/help/shipping", label: "Shipping Information" },
       { url: "/help/returns", label: "Returns Policy" },
       { url: "/help/payments", label: "Payment Methods" },
+      ...[...subcategories.entries()].map(([url, label]) => ({ url, label })),
     ],
     posts: (posts ?? []).map((p) => ({ url: `/journal/${p.slug}`, title: p.title })),
     products: (products ?? []).map((p) => ({
