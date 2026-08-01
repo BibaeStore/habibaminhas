@@ -9,7 +9,8 @@ import { LOW_STOCK_THRESHOLD } from "@/lib/inventory-constants";
  * products, images and PRICES that no longer matched the catalogue — it could advertise a
  * price the customer would not actually be charged.
  *
- * Products here are real and live: real title, real current price, real photo, real stock.
+ * Products here are real and live: real title, real photo, real stock. Price is
+ * deliberately NOT sent or shown — the card sells scarcity, not a number.
  * Only active, in-stock items are eligible, so the card can never promote something
  * sold out — and only from the categories in CATEGORIES below (ladies + baby).
  *
@@ -78,7 +79,6 @@ type ProductRow = {
   title: string;
   slug: string;
   category: string;
-  price: number;
   stock: number;
   images: string[] | null;
   created_at: string;
@@ -157,7 +157,7 @@ export async function GET() {
     const sb = createAdminClient();
     const { data, error } = await sb
       .from("products")
-      .select("id, title, slug, category, price, stock, images, created_at")
+      .select("id, title, slug, category, stock, images, created_at")
       .eq("status", "active")
       .gt("stock", 0)
       // Hard filter — kids and accessories never reach this card.
@@ -179,7 +179,7 @@ export async function GET() {
         title: p.title,
         slug: p.slug,
         category: p.category,
-        price: p.price,
+        /* No price is sent — the card deliberately never shows one (owner decision). */
         /*
          * Real stock, straight from the column. The client turns this into "Only N
          * left" when it is at or below the threshold, and shows nothing otherwise —

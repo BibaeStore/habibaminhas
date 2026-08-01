@@ -1,8 +1,25 @@
 # "Live Sale" Notification — show real products, not stock data
 
-**Status:** 📋 Plan only. **Nothing implemented.** Awaiting go-ahead.
-**Opened:** 2026-08-01
-**File:** `components/common/purchase-notification.tsx` · `public/data/sold.json`
+**Status:** ✅ **Implemented** on `feat/live-sale-real-products` — awaiting merge.
+**Opened:** 2026-08-01 · **Built:** 2026-08-01
+**Files:** `app/api/notifications/live-sale/route.ts` · `components/common/purchase-notification.tsx`
+(`public/data/sold.json` deleted)
+
+> Sections below marked "Proposed" were the plan; the **Final behaviour** table immediately
+> below records what actually shipped, after three rounds of owner feedback.
+
+## Final behaviour (as built)
+
+| Aspect | Decision |
+|---|---|
+| Products | Real, live from the catalogue — `active` + `stock > 0` only |
+| Categories | **`ladies-suits` + `baby-products` only** — kids and accessories excluded |
+| Balance | **Ladies majority**, 2:1 weighting; feed shortens rather than going baby-heavy |
+| **Price** | **Never sent, never shown** — the card sells scarcity, not a number |
+| Urgency | 🔥 **"Only N left"** from the real `stock` column, when `stock ≤ 5` |
+| Customers | Invented personas (owner decision), carried over from the old file |
+| Clickable | Yes — links to the product page |
+| Frequency | Unchanged: first at 8s, then every 60s, visible 8s |
 
 ---
 
@@ -87,13 +104,15 @@ recommend it.
 New file `app/api/notifications/products/route.ts`, returning a small payload:
 
 ```ts
-[{ id, title, slug, category, price, image, badge, createdAt }]
+[{ id, title, slug, category, stock, lowStock, image }, customer, badge ]
 ```
 
 Rules:
 - **Categories: `ladies-suits` and `baby-products` ONLY** — kids and accessories are excluded by
   owner decision (2026-08-01). Enforced as a hard `.in()` filter on the query, and controlled
   from a single `CATEGORIES` constant in the route
+- **No price is sent or shown** — owner decision: the card sells scarcity, not a number. Price
+  lives on the product page, one tap away
 - `status = 'active'` **and** `stock > 0` — never advertise something sold out
 - **Ladies suits must stay the majority.** 2 ladies : 1 baby per cycle, and baby is only ever
   added *alongside* ladies — never to pad the feed after ladies run out. The loop stops when a
@@ -111,7 +130,7 @@ The card exists to create scarcity pressure: *"only 1 left"*. That claim is driv
 |---|---|
 | 0 | Product never reaches the card — filtered server-side |
 | 1–5 (`LOW_STOCK_THRESHOLD`) | 🔥 **"Only N left"** |
-| 6+ | Price only — no scarcity claim |
+| 6+ | Nothing — no scarcity claim, and no price either |
 
 **It can never overstate.** If stock is 4 it says 4. If stock is healthy it says nothing rather
 than inventing pressure. That is the difference between urgency that converts and urgency a
@@ -144,7 +163,7 @@ Now and blocking Add to Bag sitewide.
 
 `components/common/purchase-notification.tsx`:
 - Fetch the new route instead of `/data/sold.json`
-- Render: badge · product image · title · price · optional "Only N left"
+- Render: badge · product image · title · "Only N left" — **no price**
 - **Make the card a `<Link>` to the product page** — turns decoration into traffic
 - Keep everything else: 8s display, 60s interval, dismiss button, slide animation
 

@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { X, ShoppingBag, MapPin, User, BadgeCheck, Flame } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
 
 /* ── Timing (unchanged) ─────────────────────────────────────── */
 const DISPLAY_MS     = 8_000;  // visible duration per card
@@ -29,7 +28,7 @@ type SoldProduct = {
   title:     string;
   slug:      string;
   category:  string;
-  price:     number;
+  /* No `price` — the card deliberately never shows a price. Owner decision. */
   /** Real remaining units, from the products table. Drives the "Only N left" line. */
   stock:     number;
   /** True when stock is at or below LOW_STOCK_THRESHOLD — server decides, client just renders. */
@@ -173,28 +172,26 @@ export function PurchaseNotification() {
             </span>
           </div>
 
-          {/* Product title + live price (price comes from the catalogue, never frozen) */}
+          {/*
+            Product title. NO PRICE — deliberate owner decision: the card sells
+            scarcity, not a number. Price is on the product page, one tap away.
+          */}
           <p className="mt-1.5 line-clamp-2 text-[12px] font-semibold leading-snug text-ink">
             {product.title}
           </p>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="text-[12px] font-semibold text-gold-dark">
-              {formatPrice(product.price)}
-            </span>
 
-            {/*
-              Scarcity line — the point of this card. Rendered ONLY when the real stock
-              column is at or below the low-stock threshold, and it prints the actual
-              number, so it can never overstate. No stock left ⇒ the product never
-              reaches this card at all (filtered server-side).
-            */}
-            {product.lowStock && product.stock > 0 && (
-              <span className="inline-flex items-center gap-1 bg-sale/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sale">
-                <Flame className="h-2.5 w-2.5" />
-                Only {product.stock} left
-              </span>
-            )}
-          </div>
+          {/*
+            Scarcity line — the point of this card. Rendered ONLY when the real stock
+            column is at or below the low-stock threshold, and it prints the actual
+            number, so it can never overstate. No stock left ⇒ the product never
+            reaches this card at all (filtered server-side).
+          */}
+          {product.lowStock && product.stock > 0 && (
+            <span className="mt-1 inline-flex w-fit items-center gap-1 bg-sale/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sale">
+              <Flame className="h-2.5 w-2.5" />
+              Only {product.stock} left
+            </span>
+          )}
 
           {/* Customer details */}
           <div className="mt-2 flex flex-col gap-1">
