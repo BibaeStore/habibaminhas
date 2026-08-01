@@ -132,6 +132,19 @@ export async function getLinkTargets(): Promise<{
       { url: "/accessories", label: "Accessories" },
       { url: "/shop", label: "Shop All" },
       { url: "/virtual-try-room", label: "Virtual Try Room" },
+      /*
+       * Static reference pages. Genuinely useful link targets from an article —
+       * a sizing paragraph should be able to point at the size guide, a returns
+       * mention at the returns policy. Omitting these was catching valid links as
+       * errors in the quality gate.
+       */
+      { url: "/content/size-guide", label: "Size Guide" },
+      { url: "/content/fabric-glossary", label: "Fabric Glossary" },
+      { url: "/content/denim-fit-guide", label: "Denim Fit Guide" },
+      { url: "/help/faq", label: "FAQ" },
+      { url: "/help/shipping", label: "Shipping Information" },
+      { url: "/help/returns", label: "Returns Policy" },
+      { url: "/help/payments", label: "Payment Methods" },
     ],
     posts: (posts ?? []).map((p) => ({ url: `/journal/${p.slug}`, title: p.title })),
     products: (products ?? []).map((p) => ({
