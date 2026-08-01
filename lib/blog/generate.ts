@@ -181,7 +181,7 @@ export async function generatePost(
   const json = await callClaude(cfg, {
     model: WRITER_MODEL,
     max_tokens: 16000,
-    output_config: { effort: "high", format: { type: "json_schema", schema: POST_SCHEMA } },
+    output_config: { effort: cfg.effort, format: { type: "json_schema", schema: POST_SCHEMA } },
     system: `You write for Habiba Minhas, a Pakistani fashion house in Karachi selling handcrafted ladies suits, kids formal wear, baby nursery products, and accessories.
 
 VOICE

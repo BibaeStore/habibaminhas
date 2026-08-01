@@ -3,9 +3,9 @@
 -- Deliberately NOT Vercel Cron: the project is on Vercel's free plan, and this same
 -- pg_net + pg_cron pattern already runs the PostEx status sync reliably.
 --
--- TWO JOBS PER POST, spaced 10 minutes apart:
+-- ONE POST PER DAY, generated in two jobs 10 minutes apart:
 --   phase=write  -> research + write + validate, saved as status='draft'
---   phase=image  -> illustrate the oldest draft and flip it to 'published'
+--   phase=image  -> illustrate the draft and flip it to 'published'
 -- Splitting them keeps each HTTP request well inside a serverless function timeout,
 -- and means a failed image never forces the expensive writing step to be redone.
 --
@@ -13,10 +13,8 @@
 -- status='published' (journal listing, post page, related articles, sitemap).
 --
 -- Schedule is UTC. Pakistan is UTC+5, so:
---   03:30 UTC = 08:30 PKT   write post 1
---   03:40 UTC = 08:40 PKT   publish post 1
---   11:30 UTC = 16:30 PKT   write post 2
---   11:40 UTC = 16:40 PKT   publish post 2
+--   03:30 UTC = 08:30 PKT   write the day's post
+--   03:40 UTC = 08:40 PKT   illustrate and publish it
 --
 -- ⚠️ RUN THIS ONLY AFTER the app is deployed with /api/cron/blog-generate/ live and
 --    ANTHROPIC_API_KEY, OPENAI_API_KEY and CRON_SECRET are set in Vercel. Scheduling
@@ -34,10 +32,8 @@ create extension if not exists pg_net;
 -- Re-runnable: drop any previous schedule of the same names first.
 select cron.unschedule('blog-write-morning')   where exists (select 1 from cron.job where jobname = 'blog-write-morning');
 select cron.unschedule('blog-image-morning')   where exists (select 1 from cron.job where jobname = 'blog-image-morning');
-select cron.unschedule('blog-write-afternoon') where exists (select 1 from cron.job where jobname = 'blog-write-afternoon');
-select cron.unschedule('blog-image-afternoon') where exists (select 1 from cron.job where jobname = 'blog-image-afternoon');
 
--- ── Post 1 ────────────────────────────────────────────────────────────────
+-- ── The daily post ──────────────────────────────────────────────────────
 select cron.schedule('blog-write-morning', '30 3 * * *', $$
   select net.http_post(
     url     := 'https://habibaminhas.com/api/cron/blog-generate/?phase=write',
@@ -48,25 +44,6 @@ select cron.schedule('blog-write-morning', '30 3 * * *', $$
 $$);
 
 select cron.schedule('blog-image-morning', '40 3 * * *', $$
-  select net.http_post(
-    url     := 'https://habibaminhas.com/api/cron/blog-generate/?phase=image',
-    headers := jsonb_build_object('Content-Type','application/json','x-cron-secret','<CRON_SECRET>'),
-    body    := '{}'::jsonb,
-    timeout_milliseconds := 300000
-  );
-$$);
-
--- ── Post 2 ────────────────────────────────────────────────────────────────
-select cron.schedule('blog-write-afternoon', '30 11 * * *', $$
-  select net.http_post(
-    url     := 'https://habibaminhas.com/api/cron/blog-generate/?phase=write',
-    headers := jsonb_build_object('Content-Type','application/json','x-cron-secret','<CRON_SECRET>'),
-    body    := '{}'::jsonb,
-    timeout_milliseconds := 300000
-  );
-$$);
-
-select cron.schedule('blog-image-afternoon', '40 11 * * *', $$
   select net.http_post(
     url     := 'https://habibaminhas.com/api/cron/blog-generate/?phase=image',
     headers := jsonb_build_object('Content-Type','application/json','x-cron-secret','<CRON_SECRET>'),

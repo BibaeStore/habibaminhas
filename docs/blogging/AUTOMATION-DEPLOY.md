@@ -1,6 +1,7 @@
 # Blog Automation — Deployment Guide
 
 **Status:** ✅ Built and proven end-to-end. One real post published by the pipeline.
+**Cadence:** 1 post per day.
 **Branch:** `feat/blog-automation`
 
 ---
@@ -16,7 +17,8 @@ want to test there).
 | `OPENAI_API_KEY` | `sk-proj-...` | **Rotate first** — same reason |
 | `CRON_SECRET` | *(already set)* | Reused from the PostEx sync |
 | `BLOG_POSTS_PER_RUN` | `1` | One post per cron firing |
-| `BLOG_MAX_PER_DAY` | `2` | Hard ceiling — nothing can exceed this |
+| `BLOG_MAX_PER_DAY` | `1` | Hard ceiling — nothing can exceed this |
+| `BLOG_WRITER_EFFORT` | `high` | Cost lever — `medium` roughly halves the writing bill |
 | `BLOG_AUTOMATION_ENABLED` | *(omit)* | Set to `false` to kill the feature instantly |
 
 **Kill switch:** deleting `ANTHROPIC_API_KEY` or setting `BLOG_AUTOMATION_ENABLED=false`
@@ -29,17 +31,31 @@ stops all generation. No deploy needed beyond the env change.
 Generation stops the moment either balance runs out. It failed exactly this way during
 testing — the Anthropic balance emptied after the first post.
 
-| Account | Per post | 62 posts/month | Where |
-|---|---|---|---|
-| **Anthropic** | ~$0.49 | **~$30** | console.anthropic.com → Billing |
-| **OpenAI** | ~$0.04 | **~$2.50** | platform.openai.com → Billing |
+**At 1 post per day (30/month):**
 
-> ⚠️ **The writing cost is higher than my earlier $0.15 estimate.** The measured run was
-> **$0.53 total** ($0.49 writing + $0.04 image), because the post came out at 2,307 words
-> with a separate web-research call. Budget **~$33/month for 2 posts a day**, not $12.
->
-> To cut it: drop `effort` from `"high"` to `"medium"` in `lib/blog/generate.ts`, or run
-> 1 post a day instead of 2 (~$16/month).
+| Account | Per post | Per month | Where |
+|---|---|---|---|
+| **Anthropic** (writing) | $0.4897 | **$14.69** | console.anthropic.com → Billing |
+| **OpenAI** (image) | $0.0412 | **$1.23** | platform.openai.com → Billing |
+| | **$0.5309** | **$15.93** | |
+
+Your existing $10 of OpenAI credit covers roughly **8 months** of images. Anthropic is
+the one that needs topping up — it is currently at zero.
+
+### Where the writing cost actually goes
+
+Reconstructed from the measured run: of ~17,500 output tokens, only ~3,900 were the
+article itself. **Roughly 78% was thinking.** Claude Opus 5 reasons by default and
+`effort` controls how much.
+
+| `BLOG_WRITER_EFFORT` | Est. per post | Est. per month | Trade |
+|---|---|---|---|
+| `high` (default) | ~$0.53 | **~$16** | Best quality — what produced the verified test post |
+| `medium` | ~$0.30 | **~$9** | Modest quality drop, ~45% cheaper |
+| `low` | ~$0.18 | **~$5** | Noticeably thinner reasoning; may fail the 1,200-word gate |
+
+Change it in Vercel env — no redeploy needed. Start at `high`, and if the monthly bill
+matters more than the last increment of quality, move to `medium` and compare a few posts.
 
 ---
 
@@ -52,14 +68,12 @@ replacing `<CRON_SECRET>` with the real value first.
 **Vercel Cron is deliberately not used** — free plan. This uses Supabase `pg_cron`, the
 same scheduler already running your PostEx sync.
 
-Four jobs, two posts a day (UTC; Pakistan is UTC+5):
+Two jobs, one post a day (UTC; Pakistan is UTC+5):
 
 | Time (UTC) | Time (PKT) | Job |
 |---|---|---|
-| 03:30 | 08:30 | write post 1 → draft |
-| 03:40 | 08:40 | illustrate + publish post 1 |
-| 11:30 | 16:30 | write post 2 → draft |
-| 11:40 | 16:40 | illustrate + publish post 2 |
+| 03:30 | 08:30 | write the day's post → draft |
+| 03:40 | 08:40 | illustrate + publish it |
 
 ### Why two phases
 
@@ -153,7 +167,7 @@ curl -X POST "https://habibaminhas.com/api/cron/blog-generate/?phase=write" \
 ## 8. Topic queue
 
 Topics come from `docs/blogging/topical-map.md` — 100 parsed, minus whatever is already
-in `journal_posts`. At 2/day the queue lasts about **five weeks**, then the run returns
+in `journal_posts`. At 1/day the queue lasts about **ten weeks**, then the run returns
 `queue_empty` and stops cleanly. Add more entries to that file in the same format to
 extend it.
 
@@ -163,9 +177,9 @@ extend it.
 
 | Item | Status |
 |---|---|
-| Cost is ~2.7× my original estimate | Measured, documented above |
+| Cost is ~2.9× my original estimate | Measured $0.53/post, not $0.18. Documented above |
 | Fully automatic publishing | Your explicit decision; the quality gate is the mitigation |
-| 2/day = 60 posts/month on a 38-post site | Content-velocity risk was flagged in `AUTOMATION-PLAN-2026-08-01.md` §4 |
-| Topic queue runs dry in ~5 weeks | Extend `topical-map.md` before then |
+| 1/day = 30 posts/month on a 38-post site | Still a fast ramp; risk flagged in `AUTOMATION-PLAN-2026-08-01.md` §4 |
+| Topic queue runs dry in ~10 weeks | Extend `topical-map.md` before then |
 | Both API keys were pasted in chat | **Rotate both before deploying** |
 

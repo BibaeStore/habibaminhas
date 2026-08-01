@@ -13,6 +13,8 @@ export interface BlogAutomationConfig {
   postsPerRun: number;
   /** Hard ceiling — refuse to run if the day already produced this many. */
   maxPerDay: number;
+  /** Reasoning depth on the writing call — the main cost lever. */
+  effort: BlogEffort;
 }
 
 /** Returns config, or null when blog automation is not configured (the kill-switch). */
@@ -28,9 +30,22 @@ export function getBlogConfig(): BlogAutomationConfig | null {
     anthropicKey,
     openaiKey,
     postsPerRun: Number(process.env.BLOG_POSTS_PER_RUN ?? 1) || 1,
-    maxPerDay: Number(process.env.BLOG_MAX_PER_DAY ?? 2) || 2,
+    maxPerDay: Number(process.env.BLOG_MAX_PER_DAY ?? 1) || 1,
+    /*
+     * Reasoning depth on the writing call, and the main cost lever.
+     *
+     * Measured on the first real post: $0.49 of writing, of which roughly 14,500 of
+     * ~17,600 output tokens were thinking rather than prose. Claude Opus 5 thinks by
+     * default, and effort controls how much. Dropping to "medium" cuts the bill
+     * materially for a modest quality trade; "high" is the quality default.
+     *
+     * Env-tunable so it can be changed in Vercel without a redeploy.
+     */
+    effort: (process.env.BLOG_WRITER_EFFORT?.trim() || "high") as BlogEffort,
   };
 }
+
+export type BlogEffort = "low" | "medium" | "high" | "xhigh";
 
 export function isBlogAutomationEnabled(): boolean {
   return getBlogConfig() !== null;
