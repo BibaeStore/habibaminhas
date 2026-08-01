@@ -32,6 +32,7 @@ export default async function EditPage() {
     badge:       p.badge,
     subcategory: p.subcategory,
     subtype:     p.subtype,
+    stock:       p.stock,
   }));
 
   const faqs = [

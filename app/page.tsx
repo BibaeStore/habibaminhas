@@ -27,23 +27,33 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const allProducts = await getProducts({ status: "active" }).catch(() => []);
-  const trendingProducts: TrendingProduct[] = (allProducts ?? []).map((p) => ({
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    price: p.price,
-    images: p.images,
-    compare_at: p.compare_at,
-    palette: p.palette,
-    badge: p.badge,
-    subcategory: p.subcategory,
-    subtype: p.subtype,
-    category: p.category,
-  }));
+  /*
+   * Trending Now must only ever show buyable products. `stock` is the same field
+   * product-card.tsx checks to render the Out of Stock overlay — filtering on it here
+   * means nothing sold out reaches this section instead of showing sold-out with a
+   * badge, which is the right call for a curated "trending" shelf.
+   */
+  const trendingProducts: TrendingProduct[] = (allProducts ?? [])
+    .filter((p) => p.stock > 0)
+    .map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      price: p.price,
+      images: p.images,
+      compare_at: p.compare_at,
+      palette: p.palette,
+      badge: p.badge,
+      subcategory: p.subcategory,
+      subtype: p.subtype,
+      category: p.category,
+      stock: p.stock,
+    }));
   return (
     <>
       <HeroCarousel />
       <AnnouncementStrip />
+      <TrendingTabs products={trendingProducts} />
       <CategoryTiles />
 
       <EditorialBlock
@@ -108,7 +118,6 @@ export default async function HomePage() {
       <TryRoomBand />
 
       <TrendTiles />
-      <TrendingTabs products={trendingProducts} />
 
       {/* Meet the Founder Section */}
       <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8">

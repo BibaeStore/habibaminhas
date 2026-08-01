@@ -44,6 +44,7 @@ export default function WishlistPage() {
             badge: p.badge,
             subcategory: p.subcategory,
             subtype: p.subtype,
+            stock: p.stock,
           })),
         );
         const liveSlugs = new Set(rows.map((r) => r.slug));

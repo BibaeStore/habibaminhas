@@ -27,7 +27,13 @@ export interface CardProduct {
   subtype?: string | null;
   palette: string[];
   badge?: string | null;
-  stock?: number;
+  /*
+   * Required, not optional. This used to be `stock?: number` and the homepage's
+   * trending-products mapper simply forgot to include it — with `(product.stock ?? 0)
+   * <= 0` below, a missing field silently rendered as "Out of Stock" on every card in
+   * that section. Making it required turns that class of bug into a compile error.
+   */
+  stock: number;
 }
 
 export function ProductCard({
