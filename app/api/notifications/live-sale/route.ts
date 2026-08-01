@@ -10,7 +10,7 @@ import { createAdminClient } from "@/lib/supabase/server";
  *
  * Products here are real and live: real title, real current price, real photo, real stock.
  * Only active, in-stock items are eligible, so the card can never promote something
- * sold out.
+ * sold out — and only from the categories in CATEGORIES below (ladies + baby).
  *
  * The customer names are illustrative personas (see CUSTOMERS below), a deliberate product
  * decision by the store owner — the same personas the previous static file used. They are
@@ -27,8 +27,13 @@ export const revalidate = 300;
 /** How many notifications to hand the client to cycle through. */
 const FEED_SIZE = 12;
 
-/** Categories we try to represent, so one category cannot monopolise the feed. */
-const CATEGORIES = ["ladies-suits", "kids-formal", "baby-products", "accessories"] as const;
+/**
+ * Categories eligible for this card — owner's decision: ladies and baby ONLY.
+ * Kids and accessories are deliberately excluded. This is both the hard filter on
+ * the query and the list used to guarantee spread, so adding a category here is
+ * the single place to change if that decision changes.
+ */
+const CATEGORIES = ["ladies-suits", "baby-products"] as const;
 
 /**
  * Illustrative customer personas, carried over from the previous sold.json so the card's
@@ -68,41 +73,39 @@ type ProductRow = {
 };
 
 /**
- * Newest-first, but guarantee category spread.
+ * Newest-first within each category, round-robin across categories.
  *
- * Straight newest-first would let a batch of ladies suits fill every slot. So we take one
- * pass across the categories (newest from each), then fill the remainder newest-first from
- * whatever is left. Result: mostly recent items, with kids/baby/accessories still surfacing.
+ * Round-robin rather than "one pass then fill newest-first": the catalogue's newest
+ * products are heavily weighted to one category (currently baby), so a newest-first
+ * fill produced 11 baby products and a single ladies suit — burying the flagship
+ * category the card exists to promote.
+ *
+ * Alternating gives a balanced feed (≈50/50 for two categories) while still showing
+ * the newest items within each. If one category runs out, the other fills the
+ * remainder rather than leaving slots empty.
  */
 function mixByCategory(rows: ProductRow[], limit: number): ProductRow[] {
-  const byCategory = new Map<string, ProductRow[]>();
-  for (const r of rows) {
-    const list = byCategory.get(r.category) ?? [];
-    list.push(r);
-    byCategory.set(r.category, list);
-  }
+  // rows arrive newest-first, so each bucket stays newest-first.
+  const buckets = CATEGORIES.map((cat) => rows.filter((r) => r.category === cat));
 
   const picked: ProductRow[] = [];
-  const taken = new Set<string>();
+  let round = 0;
 
-  // Round 1 — newest from each category that has stock.
-  for (const cat of CATEGORIES) {
-    const first = byCategory.get(cat)?.[0];
-    if (first && !taken.has(first.id)) {
-      picked.push(first);
-      taken.add(first.id);
+  while (picked.length < limit) {
+    let addedThisRound = false;
+    for (const bucket of buckets) {
+      if (picked.length >= limit) break;
+      const item = bucket[round];
+      if (item) {
+        picked.push(item);
+        addedThisRound = true;
+      }
     }
+    if (!addedThisRound) break; // every bucket exhausted
+    round++;
   }
 
-  // Round 2 — fill the rest newest-first, skipping anything already picked.
-  for (const r of rows) {
-    if (picked.length >= limit) break;
-    if (taken.has(r.id)) continue;
-    picked.push(r);
-    taken.add(r.id);
-  }
-
-  return picked.slice(0, limit);
+  return picked;
 }
 
 export async function GET() {
@@ -113,6 +116,8 @@ export async function GET() {
       .select("id, title, slug, category, price, images, created_at")
       .eq("status", "active")
       .gt("stock", 0)
+      // Hard filter — kids and accessories never reach this card.
+      .in("category", [...CATEGORIES])
       .order("created_at", { ascending: false })
       .limit(60);
 

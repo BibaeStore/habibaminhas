@@ -91,11 +91,24 @@ New file `app/api/notifications/products/route.ts`, returning a small payload:
 ```
 
 Rules:
+- **Categories: `ladies-suits` and `baby-products` ONLY** — kids and accessories are excluded by
+  owner decision (2026-08-01). Enforced as a hard `.in()` filter on the query, and controlled
+  from a single `CATEGORIES` constant in the route
 - `status = 'active'` **and** `stock > 0` — never advertise something sold out
-- Newest first, capped at ~12
-- Optional category mix so ladies / kids / baby / accessories all get airtime rather than the
-  newest category dominating
-- Cached (`revalidate`) so it isn't a database hit per visitor
+- **Round-robin across the two categories**, newest-first within each, capped at 12.
+  Not "newest-first overall": the catalogue's newest products are heavily weighted to baby, and
+  a plain newest-first fill produced **11 baby products and 1 ladies suit**, burying the flagship
+  category. Alternating fixes that. If one category runs out, the other fills the remainder
+- Cached (`revalidate = 300`) so it isn't a database hit per visitor
+
+### ⚠️ Observed constraint — ladies stock
+
+With round-robin in place, the feed returns **3 ladies suits and 9 baby products**. That is not a
+bug in the rotation — it is the catalogue: only **3 ladies-suits products currently have
+`stock > 0`**. The card takes every in-stock ladies suit that exists and fills the rest with baby.
+
+To get a more even split, more ladies suits need stock. Nothing in the code needs changing — the
+balance will improve automatically as ladies stock is replenished.
 
 ### 2. Component changes
 
