@@ -37,7 +37,7 @@ export function CartTrigger() {
 
         {/* Badge shows number of distinct line items, not total quantity */}
         {mounted && itemCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gold px-1 text-[9px] font-semibold text-ivory tabular-nums">
+          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-ink px-1 text-[9px] font-semibold text-ivory tabular-nums">
             {itemCount > 99 ? "99+" : itemCount}
           </span>
         )}
