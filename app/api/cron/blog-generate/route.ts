@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { getBlogConfig } from "@/lib/blog/config";
+import { getBlogConfig, WRITER_MODEL, priceFor } from "@/lib/blog/config";
 import { getNextTopic, getLinkTargets } from "@/lib/blog/topics";
+import { getNextQueuedPost, getQueueStatus } from "@/lib/blog/queue";
 import { generatePost } from "@/lib/blog/generate";
 import { validatePost } from "@/lib/blog/validate";
 import { generateHeroImage } from "@/lib/blog/image";
@@ -56,9 +57,6 @@ async function createdToday(): Promise<number> {
  * invisible to visitors and search engines until phase 2 completes it.
  */
 async function phaseWrite(cfg: NonNullable<ReturnType<typeof getBlogConfig>>) {
-  const topic = await getNextTopic();
-  if (!topic) return { ok: false as const, phase: "write", reason: "queue_empty", message: "No unwritten topics remain in topical-map.md" };
-
   const links = await getLinkTargets();
   const allowed = new Set<string>([
     ...links.collections.map((c) => c.url),
@@ -66,16 +64,41 @@ async function phaseWrite(cfg: NonNullable<ReturnType<typeof getBlogConfig>>) {
     ...links.products.map((p) => p.url),
   ]);
 
-  const post = await generatePost(cfg, topic, links);
+  /*
+   * Two sources, same downstream pipeline.
+   *
+   * "queue" — pre-written JSON from content/blog-queue. Costs nothing; the owner
+   *   writes these in a Claude Code session their subscription already covers.
+   * "api" — fresh text with live web research, ~$0.50 a post.
+   *
+   * Either way the post goes through the same validator before it can be saved, so a
+   * queued post with a link that has since gone dead is caught rather than published.
+   */
+  let post: Awaited<ReturnType<typeof generatePost>>;
+  let writeCostUsd = 0;
+  let sourceLabel: string;
+
+  if (cfg.source === "queue") {
+    const queued = await getNextQueuedPost();
+    if (!queued) return { ok: false as const, phase: "write", reason: "queue_empty", message: "No unpublished posts left in content/blog-queue" };
+    post = { ...queued, usage: { inputTokens: 0, outputTokens: 0 } };
+    sourceLabel = `queue:${queued._file}`;
+  } else {
+    const topic = await getNextTopic();
+    if (!topic) return { ok: false as const, phase: "write", reason: "queue_empty", message: "No unwritten topics remain in topical-map.md" };
+    post = await generatePost(cfg, topic, links);
+    const rate = priceFor(WRITER_MODEL);
+    writeCostUsd =
+      (post.usage.inputTokens / 1_000_000) * rate.in +
+      (post.usage.outputTokens / 1_000_000) * rate.out;
+    sourceLabel = `api:${WRITER_MODEL}`;
+  }
 
   const check = validatePost(post, allowed);
   if (!check.ok) {
     // Nothing is written — a post that fails the gate never reaches the database.
-    return { ok: false as const, phase: "write", reason: "failed_validation", slug: topic.slug, errors: check.errors, stats: check.stats };
+    return { ok: false as const, phase: "write", reason: "failed_validation", slug: post.slug, source: sourceLabel, errors: check.errors, stats: check.stats };
   }
-
-  const writeCost =
-    (post.usage.inputTokens / 1_000_000) * 5 + (post.usage.outputTokens / 1_000_000) * 25;
 
   const sb = createAdminClient();
   const { error } = await sb.from("journal_posts").insert({
@@ -102,7 +125,8 @@ async function phaseWrite(cfg: NonNullable<ReturnType<typeof getBlogConfig>>) {
     title: post.title,
     stats: check.stats,
     warnings: check.warnings,
-    costUsd: Number(writeCost.toFixed(4)),
+    source: sourceLabel,
+    costUsd: Number(writeCostUsd.toFixed(4)),
   };
 }
 
@@ -193,8 +217,11 @@ async function handle(req: Request) {
   }
 
   const succeeded = results.filter((r: any) => r?.ok).length;
+  const queue = cfg.source === "queue" ? await getQueueStatus() : undefined;
   return NextResponse.json({
     phase,
+    source: cfg.source,
+    queue,
     ran: results.length,
     succeeded,
     failed: results.length - succeeded,
