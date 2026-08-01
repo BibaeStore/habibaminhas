@@ -1,40 +1,42 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import Link from "next/link";
 import { X, ShoppingBag, MapPin, User, BadgeCheck } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
-/* ── Timing ─────────────────────────────────────────────────── */
+/* ── Timing (unchanged) ─────────────────────────────────────── */
 const DISPLAY_MS     = 8_000;  // visible duration per card
 const INTERVAL_MS    = 60_000; // 60 seconds between notifications
 const FIRST_DELAY_MS = 8_000;  // wait before very first card
 
-/* ── Types matching sold.json ───────────────────────────────── */
+/*
+ * Data now comes from /api/notifications/live-sale — REAL products straight from the
+ * catalogue (live title, live price, live photo, in-stock only). It replaces the old
+ * public/data/sold.json, which was frozen in May and could advertise prices and products
+ * that no longer existed.
+ *
+ * Customer names remain illustrative personas, by the store owner's decision. See the
+ * note in the route file.
+ */
 type SoldCustomer = {
   firstName: string;
   city:      string;
   province:  string;
-  phone:     string;
-  email:     string;
 };
 
 type SoldProduct = {
   title:    string;
-  image:    string;
+  slug:     string;
+  category: string;
   price:    number;
-  quantity: number;
-};
-
-type SoldReview = {
-  rating:  number;
-  comment: string;
+  image:    string | null;
 };
 
 type SoldEntry = {
-  id:       number;
+  id:       string;
   customer: SoldCustomer;
   product:  SoldProduct;
-  review:   SoldReview;
-  status:   string;
   badge:    string;
 };
 
@@ -58,12 +60,12 @@ export function PurchaseNotification() {
   const firstTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loopTimer  = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  /* Fetch sold.json once on mount */
+  /* Fetch the live product feed once on mount. Failure ⇒ empty ⇒ card never renders. */
   useEffect(() => {
-    fetch("/data/sold.json")
+    fetch("/api/notifications/live-sale/")
       .then((r) => r.json())
       .then((data: { notifications: SoldEntry[] }) => {
-        setItems(shuffle(data.notifications));
+        setItems(shuffle(data.notifications ?? []));
       })
       .catch(() => {});
   }, []);
@@ -120,7 +122,25 @@ export function PurchaseNotification() {
       {/* Brand gradient bar */}
       <div className="h-[3px] w-full bg-gradient-to-r from-[#9a7b38] via-[#b89464] to-[#d4b87a]" />
 
-      <div className="flex items-stretch">
+      {/*
+        Dismiss sits outside the Link — a <button> nested inside an <a> is invalid HTML and
+        the click would race the navigation.
+      */}
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Dismiss"
+        className="absolute right-2 top-[11px] z-10 flex-none rounded-full bg-ivory/80 p-0.5 text-muted transition-colors hover:bg-cream hover:text-ink"
+      >
+        <X className="h-3 w-3" />
+      </button>
+
+      {/* The card is now a link to the product — it used to be pure decoration. */}
+      <Link
+        href={`/product/${product.category}/${product.slug}`}
+        onClick={dismiss}
+        className="flex items-stretch"
+      >
 
         {/* Product image — fills full card height */}
         <div className="relative w-[88px] flex-none self-stretch overflow-hidden bg-parchment">
@@ -141,28 +161,21 @@ export function PurchaseNotification() {
         {/* Content */}
         <div className="flex flex-1 min-w-0 flex-col gap-0 border-l border-gold-dark/15 px-4 py-3">
 
-          {/* Header: live badge + dismiss */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold-dark" />
-              <span className="text-[8px] font-bold uppercase tracking-[0.36em] text-gold-dark">
-                {badge}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={dismiss}
-              aria-label="Dismiss"
-              className="flex-none rounded-full p-0.5 text-muted transition-colors hover:bg-cream hover:text-ink"
-            >
-              <X className="h-3 w-3" />
-            </button>
+          {/* Header: live badge */}
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold-dark" />
+            <span className="text-[8px] font-bold uppercase tracking-[0.36em] text-gold-dark">
+              {badge}
+            </span>
           </div>
 
-          {/* Product title */}
+          {/* Product title + live price (price comes from the catalogue, never frozen) */}
           <p className="mt-1.5 line-clamp-2 text-[12px] font-semibold leading-snug text-ink">
             {product.title}
           </p>
+          <span className="mt-0.5 text-[12px] font-semibold text-gold-dark">
+            {formatPrice(product.price)}
+          </span>
 
           {/* Customer details */}
           <div className="mt-2 flex flex-col gap-1">
@@ -181,7 +194,7 @@ export function PurchaseNotification() {
           </div>
 
         </div>
-      </div>
+      </Link>
 
       {/* Progress bar */}
       <div className="h-[2px] w-full overflow-hidden bg-border-soft">
