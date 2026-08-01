@@ -349,6 +349,24 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
   const contentSections = post.content as any[];
   const currentUrl = `https://habibaminhas.com/journal/${slug}/`;
 
+  /*
+   * Flatten every `faq` block's Q&As into the {question, answer} shape FAQSchema needs.
+   *
+   * Posts were authored in two different shapes over time and BOTH are live:
+   *   {q, a}                → 10 posts
+   *   {question, answer}    → 21 posts
+   * Handle either, or the schema silently covers only a third of the site. Malformed
+   * entries are dropped rather than throwing, so one bad row can never break the page.
+   */
+  const faqSchemaItems = (contentSections ?? [])
+    .filter((s) => s?.type === "faq" && Array.isArray(s.questions))
+    .flatMap((s) => s.questions)
+    .map((qa: any) => ({
+      question: String(qa?.question ?? qa?.q ?? "").trim(),
+      answer: String(qa?.answer ?? qa?.a ?? "").trim(),
+    }))
+    .filter((qa) => qa.question && qa.answer);
+
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-12 sm:px-8">
       <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.26em] text-muted">
@@ -727,6 +745,17 @@ export default async function JournalPostPage({ params }: { params: Promise<Para
           { name: post.title, url: `/journal/${slug}/` }
         ]}
       />
+      {/*
+        FAQPage schema. Every post carries a `faq` content block whose Q&As already
+        render visually (see the faq branch above) — but until now they were emitted as
+        plain paragraphs with no structured markup, so Google, AI Overviews and answer
+        engines could not read them as Q&A. FAQSchema was imported at the top of this
+        file and never rendered.
+
+        Purely additive: no visible text, URL, or layout changes — it only describes
+        content that is already on the page.
+      */}
+      <FAQSchema faqs={faqSchemaItems} />
     </div>
   );
 }
