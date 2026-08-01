@@ -95,20 +95,50 @@ Rules:
   owner decision (2026-08-01). Enforced as a hard `.in()` filter on the query, and controlled
   from a single `CATEGORIES` constant in the route
 - `status = 'active'` **and** `stock > 0` — never advertise something sold out
-- **Round-robin across the two categories**, newest-first within each, capped at 12.
-  Not "newest-first overall": the catalogue's newest products are heavily weighted to baby, and
-  a plain newest-first fill produced **11 baby products and 1 ladies suit**, burying the flagship
-  category. Alternating fixes that. If one category runs out, the other fills the remainder
+- **Ladies suits must stay the majority.** 2 ladies : 1 baby per cycle, and baby is only ever
+  added *alongside* ladies — never to pad the feed after ladies run out. The loop stops when a
+  cycle can add no more ladies, so **the feed gets shorter rather than baby-heavy**
+- **Scarcest first.** Within each category, items at or below `LOW_STOCK_THRESHOLD` (5) come
+  first, scarcest first; everything else newest-first
 - Cached (`revalidate = 300`) so it isn't a database hit per visitor
+
+### The urgency mechanic — the point of the card
+
+The card exists to create scarcity pressure: *"only 1 left"*. That claim is driven by the real
+`stock` column and prints the actual number.
+
+| Real stock | Card shows |
+|---|---|
+| 0 | Product never reaches the card — filtered server-side |
+| 1–5 (`LOW_STOCK_THRESHOLD`) | 🔥 **"Only N left"** |
+| 6+ | Price only — no scarcity claim |
+
+**It can never overstate.** If stock is 4 it says 4. If stock is healthy it says nothing rather
+than inventing pressure. That is the difference between urgency that converts and urgency a
+shopper can catch you out on.
+
+### Why two earlier approaches failed — recorded so they aren't retried
+
+| Approach | Real-world result |
+|---|---|
+| Newest-first overall | **1 ladies / 11 baby** — the newest products are mostly baby |
+| Plain 1:1 round-robin | **3 ladies / 9 baby** — baby kept filling to `FEED_SIZE` once ladies ran out |
+| **Weighted 2:1, stop when ladies exhausted** ✅ | **3 ladies / 2 baby — 60% ladies** |
 
 ### ⚠️ Observed constraint — ladies stock
 
-With round-robin in place, the feed returns **3 ladies suits and 9 baby products**. That is not a
-bug in the rotation — it is the catalogue: only **3 ladies-suits products currently have
-`stock > 0`**. The card takes every in-stock ladies suit that exists and fills the rest with baby.
+Verified against the live database: of **13** ladies-suits products, 12 are `active`, and only
+**3 have `stock > 0` — each with exactly 1 unit.** Nine active ladies suits sit at zero stock and
+currently show "Out of Stock" on `/ladies`. All 13 carry the `stitched-suits` subcategory, so
+"ladies suits" and "ladies stitched suits" are the same set.
 
-To get a more even split, more ladies suits need stock. Nothing in the code needs changing — the
-balance will improve automatically as ladies stock is replenished.
+The feed is therefore 5 items, not 12. That is correct behaviour, not a bug — the card shows
+every in-stock ladies suit that exists and refuses to pad the rest with baby. **Restock ladies
+and the feed grows and stays ~2/3 ladies, with no code change.**
+
+Worth checking whether those nine are genuinely sold out or whether `stock` simply isn't being
+maintained in admin. If it's the latter, the same field is also suppressing them from Trending
+Now and blocking Add to Bag sitewide.
 
 ### 2. Component changes
 

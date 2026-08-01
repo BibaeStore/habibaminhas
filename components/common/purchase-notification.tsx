@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { X, ShoppingBag, MapPin, User, BadgeCheck } from "lucide-react";
+import { X, ShoppingBag, MapPin, User, BadgeCheck, Flame } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 /* ── Timing (unchanged) ─────────────────────────────────────── */
@@ -26,11 +26,15 @@ type SoldCustomer = {
 };
 
 type SoldProduct = {
-  title:    string;
-  slug:     string;
-  category: string;
-  price:    number;
-  image:    string | null;
+  title:     string;
+  slug:      string;
+  category:  string;
+  price:     number;
+  /** Real remaining units, from the products table. Drives the "Only N left" line. */
+  stock:     number;
+  /** True when stock is at or below LOW_STOCK_THRESHOLD — server decides, client just renders. */
+  lowStock:  boolean;
+  image:     string | null;
 };
 
 type SoldEntry = {
@@ -173,9 +177,24 @@ export function PurchaseNotification() {
           <p className="mt-1.5 line-clamp-2 text-[12px] font-semibold leading-snug text-ink">
             {product.title}
           </p>
-          <span className="mt-0.5 text-[12px] font-semibold text-gold-dark">
-            {formatPrice(product.price)}
-          </span>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="text-[12px] font-semibold text-gold-dark">
+              {formatPrice(product.price)}
+            </span>
+
+            {/*
+              Scarcity line — the point of this card. Rendered ONLY when the real stock
+              column is at or below the low-stock threshold, and it prints the actual
+              number, so it can never overstate. No stock left ⇒ the product never
+              reaches this card at all (filtered server-side).
+            */}
+            {product.lowStock && product.stock > 0 && (
+              <span className="inline-flex items-center gap-1 bg-sale/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sale">
+                <Flame className="h-2.5 w-2.5" />
+                Only {product.stock} left
+              </span>
+            )}
+          </div>
 
           {/* Customer details */}
           <div className="mt-2 flex flex-col gap-1">
