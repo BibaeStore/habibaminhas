@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Tables, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 import { emitLowStockNotifications } from "@/lib/actions/inventory";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 import { LOW_STOCK_THRESHOLD } from "@/lib/inventory-constants";
 
 export async function uploadProductImage(formData: FormData) {
@@ -81,7 +82,7 @@ export async function createProduct(payload: TablesInsert<"products">) {
     .single();
   if (error) return { data: null, error: error.message };
   revalidatePath("/admin/products");
-  revalidatePath("/shop");
+  revalidateStorefront(data);
   return { data, error: null };
 }
 
@@ -118,8 +119,7 @@ export async function updateProduct(id: string, payload: TablesUpdate<"products"
   }
 
   revalidatePath("/admin/products");
-  revalidatePath("/shop");
-  revalidatePath(`/product/${data.category}/${data.slug}/`);
+  revalidateStorefront(data);
   return { data, error: null };
 }
 
@@ -129,6 +129,5 @@ export async function deleteProduct(id: string) {
   const { error } = await sb.from("products").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/products");
-  revalidatePath("/shop");
-  if (deleted) revalidatePath(`/product/${deleted.category}/${deleted.slug}/`);
+  revalidateStorefront(deleted);
 }

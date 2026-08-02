@@ -4,6 +4,7 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Tables, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 import { decrementStock, emitLowStockNotifications } from "@/lib/actions/inventory";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 import { sendOrderEmails } from "@/lib/email";
 
 export async function getOrders(status?: string) {
@@ -78,6 +79,14 @@ export async function createOrder(
     items.map((i) => ({ product_id: i.product_id ?? null, quantity: i.quantity })),
   );
   await emitLowStockNotifications(crossed);
+
+  /*
+   * The sale just changed what is in stock, and every storefront collection page is
+   * statically prerendered — so without this the last unit of a product keeps showing
+   * as available to every subsequent visitor until the next deploy. That sells stock we
+   * do not have, which is worse than the reverse.
+   */
+  revalidateStorefront();
 
   // Optional: link Supabase Auth user (non-critical, guest checkout works without it)
   let authUserId: string | null = null;

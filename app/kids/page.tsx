@@ -4,6 +4,21 @@ import { CollectionTemplate } from "@/components/collection/collection-template"
 import { SubcategoryLinks } from "@/components/collection/subcategory-links";
 import { FAQSchema } from "@/components/seo/faq-schema";
 
+/*
+ * ISR safety net for stock accuracy.
+ *
+ * This page is statically prerendered, so without a revalidate window its HTML — and
+ * the in-stock / out-of-stock badge on every card in it — is frozen at build time and
+ * served unchanged until the next deploy.
+ *
+ * `revalidateStorefront()` in lib/revalidate-storefront.ts pushes changes immediately
+ * on admin edits and on order placement; this is the backstop for any stock path that
+ * is added later and forgets to call it. Five minutes is short enough that the storefront
+ * is never meaningfully wrong and long enough that the page stays static for crawlers,
+ * so Core Web Vitals are unaffected.
+ */
+export const revalidate = 300;
+
 // SEO Focus Keyword: "kids festive wear Pakistan" / "Pakistani kids formal dress"
 // Target: Mothers shopping for kids Eid outfits, wedding wear, festive clothing
 export const metadata: Metadata = {
