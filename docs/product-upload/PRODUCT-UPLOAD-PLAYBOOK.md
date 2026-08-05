@@ -196,6 +196,49 @@ before/after counts.
 
 ---
 
+## If the product creates a NEW collection page
+
+Tagging a product with a `subcategory` no product used before creates a live collection page
+(`/ladies/<sub>/`). A brand-new collection row usually has `description`, `seo_title` and
+`seo_desc` **null**, which means the page ships with no copy and a bare `Casual` as its title.
+Fill all three on `public.categories` before leaving it.
+
+How the copy renders (`components/collection/collection-template.tsx:33`):
+- `description` is split on `'. '` — the **first two sentences become the hero intro** under the
+  `<h1>`; the whole text also renders below the product grid, split into paragraphs on `\n\n`.
+- Because of that split, **never put `Rs. ` in the first two sentences** — `"Rs. 250"` splits at
+  `"Rs. "` and truncates the intro mid-thought. Write `250 rupees` there, or move it later.
+- Target ~2,000–3,300 chars, 6–8 paragraphs. Sibling rows sit at 2,016–2,224.
+
+### Writing collection copy for AEO / GEO
+
+Answer engines (ChatGPT, Claude, Perplexity) and Google AI Overviews lift *sentences*, not pages.
+Structure the copy so individual sentences survive being pulled out of context:
+
+1. **Open with a definition.** `"Casual wear in Pakistani fashion means everyday stitched suits
+   built for real life…"` — a definitional first sentence is what gets quoted for
+   "what is casual Pakistani wear" style queries.
+2. **Include one explicit contrast paragraph.** `"The difference between casual and formal
+   Pakistani wear is not the cut, it is the weight."` Comparative statements are cited
+   disproportionately because they answer a decision, not just a fact.
+3. **Justify claims with reasoning.** `"Cotton breathes in Karachi summers where temperatures
+   pass 40°C, and it machine washes at home"` beats `"premium quality cotton"`. Cited answers
+   need a *because*.
+4. **Give a negative recommendation.** `"For evening weddings, barat, and walima, choose formal
+   wear instead."` Telling a reader when *not* to buy reads as trustworthy to both raters and
+   models, and internally links the sibling collection.
+5. **Anchor entities and numbers** — Habiba Minhas, Karachi, Lahore, Islamabad, Rawalpindi,
+   Faisalabad, Multan, Peshawar, Quetta, flat Rs. 250, 14-day exchange, standard Pakistani sizes.
+6. **Cover the practical tail** — care, washing, sizing, styling. These match long-tail
+   conversational queries that product grids never rank for.
+
+Verify the copy is server-rendered (not client-only), or crawlers never see it:
+```bash
+curl -s -L https://habibaminhas.com/ladies/<sub>/ | grep -oE '<first few words of paragraph 1>'
+```
+
+---
+
 ## Known gaps (not yet approved to fix)
 
 - **Product FAQs do not emit `FAQPage` JSON-LD.** `app/product/[category]/[slug]/page.tsx`
@@ -203,6 +246,28 @@ before/after counts.
   pages (`/new/`, `/ladies/`) *do* use `FAQSchema`. Wiring product FAQs into schema would be a
   real rich-result win — FAQ rich snippets and AI answer extraction — but it is an SEO-surface
   change and needs the owner's explicit go-ahead first.
+- **Every collection page renders the brand name twice in its `<title>`.** The `seo_title` values
+  stored in `public.categories` already end with `| Habiba Minhas`, and the root layout's title
+  template appends it again:
+
+  ```
+  <title>Ladies Formal Wear Pakistan | Pakistani Wedding Outfits | Habiba Minhas | Habiba Minhas</title>
+  <title>Stitched Suits Pakistan | Ready-to-Wear Ladies Suits | Habiba Minhas | Habiba Minhas</title>
+  <title>3-Piece Silk Suits Pakistan | Ladies Formal Wear | Habiba Minhas | Habiba Minhas</title>
+  <title>Ladies Party Wear Pakistan | Semi-Formal Suits | Habiba Minhas | Habiba Minhas</title>
+  <title>Ladies Formal Suits Pakistan | Pakistani Women's Fashion | Habiba Minhas | Habiba Minhas</title>
+  ```
+
+  This wastes ~17 characters of an already over-length title and reads as low quality. The fix is
+  one `UPDATE` stripping the trailing ` | Habiba Minhas` from those `seo_title` rows — but these
+  are **live, ranking pages**, so it needs the owner's explicit approval first. Verified affected:
+  `/ladies/`, `/ladies/formal-wear/`, `/ladies/stitched-suits/`, `/ladies/3-piece-suits/`,
+  `/ladies/party-wear/` (2026-08-06). Likely the same across kids / baby / accessories.
+
+  New rows should **omit** the brand from `seo_title` — the template supplies it. `casual` is
+  already written this way and renders correctly.
+- `2-piece-suits` has null `description`, `seo_title`, and `seo_desc` — same empty state `casual`
+  had. It has no products yet so no page is live, but fill it when the first 2-piece is uploaded.
 - Older ladies-suits rows have keyword-free `ld-sku-*` slugs. **Leave them alone** — they are
   indexed. Only new products get descriptive slugs.
 - Most products have `seo_keywords` null.
