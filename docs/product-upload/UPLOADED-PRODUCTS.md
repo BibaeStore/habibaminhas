@@ -5,21 +5,84 @@ Records what the owner specified vs. what was inferred, so any wrong inference c
 
 ---
 
-## 037 — Coral Lattice (coral chikankari shirt + digital print trousers) — ⏸ NOT YET LIVE
+## 039 & 040 — Ink Blossom / Ivory Noir (chiffon frocks, net dupattas)
 
-**Blocked 2026-08-06 by a local network outage.** DNS failed for every host (Supabase, the live
-site, and google.com all returned 000 / exit 6), so the images could not be uploaded and the row
-was never inserted.
+A deliberate pair. Same silhouette and price, opposite colourways — the copy cross-links them and
+explains which to choose, which is useful to a shopper and good internal linking.
 
-**To finish, in this order:**
-1. `node scripts/upload-product-images.mjs "<scratchpad>/coral-webp"` — the 2 WebPs are already
-   converted and waiting (4.2 MB → 266 KB, −93.6%)
-2. Run the prepared insert: `scratchpad/037-coral-insert.sql` — complete, with copy, SEO fields,
-   and 10 FAQs already written. Image URLs in it match what step 1 will produce.
-3. Verify the product URL, and check the sitemap moved 148 → 149.
+| | **039 Ink Blossom** | **040 Ivory Noir** |
+|---|---|---|
+| **id** | `cf265015-2618-483d-a1fd-6f4fc515decc` | `b579dc64-63d8-4822-858a-618f7524a5ec` |
+| **slug** | `ld-white-black-floral-chiffon-frock-2-piece-039` | `ld-white-frock-black-net-dupatta-chiffon-2-piece-040` |
+| **SKU** | `BIBA-WHT-CHF-M-039` | `BIBA-WHT-CHF-M-040` |
+| **Print** | fine black line-art floral | bold black brush-stroke floral |
+| **Dupatta** | white net, black embroidered border | black net, ivory embroidered border |
+| **Price / stock** | Rs. 3,500 · Medium ×1 | Rs. 3,500 · Medium ×1 |
+| **Images** | 2 × WebP, 4.3 MB → 284 KB | 2 × WebP, 4.3 MB → 290 KB |
+
+**Owner specified (identically for both):** chiffon frock with net dupatta, 2-piece only, Medium
+only, Rs. 3,500.
+
+### 🔴 Two things here that differ from every earlier product
+
+**1. First non-cotton products.** Chiffon and net, not cotton. The care block is completely
+different and must not be copied from the cotton suits: **dry clean recommended, never machine
+wash**, no wringing, dry flat in shade (wet chiffon stretches under its own weight), lowest iron
+setting with a cloth, and **steam the net rather than pressing it — direct heat melts net**. 040
+additionally warns to wash the black dupatta separately, since black dye bleeds onto ivory and
+that damage is not reversible.
+
+**2. ⚠️ Trousers are not included, and the photos are ambiguous about it.** The owner said
+"two-piece suit only", so the set was written as **frock + dupatta**. But image 2 of 039 shows a
+printed layer below the frock hem that could read as a trouser. Rather than guess, the copy states
+in the second paragraph *and* in the first FAQ that trousers are not supplied — a customer who
+expects them and does not get them is a guaranteed return. **Worth confirming with the owner.**
+
+**Copy angle:** monochrome is genuinely unusual in a Pakistani market that is overwhelmingly
+colour-led, so the copy leans on what that buys the wearer — takes gold or silver equally, works
+with any shoe colour, and never clashes with other guests at a function.
+
+---
+
+## 038 — Tea Rose (tea pink cotton, white block floral, 3-piece)
 
 | Field | Value |
 |---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `940a5fdc-fa6b-4c83-93ed-9574a39ae7a8` |
+| **slug** | `ld-tea-pink-floral-print-cotton-3-piece-suit-038` |
+| **SKU** | `BIBA-TPK-COT-SML-038` · **Price** Rs. 3,900 · **Stock** S ×1, M ×3, L ×1 (5) |
+| **Subcategory** | `stitched-suits`, `3-piece-suits`, `casual` |
+| **Images** | 4 × WebP, 9.0 MB → 587 KB (−93.5%) |
+| **Source folder** | `new articles august 2026/all hb clothes/tea pink` |
+
+**Owner specified:** tea pink, shirt and trousers same print, plain chiffon dupatta, 3-piece,
+Rs. 3,900, M ×3 / L ×1 / S ×1.
+
+**Colour naming.** The fabric is a deep rose, noticeably darker than the pale dusty blush that
+"tea pink" usually denotes in the Pakistani market. Rather than override the owner's term or
+misdescribe the garment, the copy uses "tea pink" as the name and opens by explaining that the
+term covers a range, placing this piece at the deeper end. Both "tea pink" and "deep rose pink"
+are in `seo_keywords`.
+
+**Copy angle:** *"How is a block-style print different from a digital print?"* — a direct
+contrast with 036, which is a multicolour digital floral. Two-colour prints are graphic rather
+than photographic, read cleanly at distance, and fade more evenly because there are no tonal
+gradients. Cross-links the two products and is genuinely useful to a buyer choosing between them.
+
+---
+
+## 037 — Coral Lattice (coral chikankari shirt + digital print trousers)
+
+**Was blocked by a local network outage; completed once connectivity returned.** Images uploaded
+and the staged insert ran unchanged — `docs/product-upload/pending-037-coral-insert.sql` is now
+spent and can be deleted.
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `cda18ac5-c2a6-49a0-842f-f0f69e19fd21` |
+| **Images** | 2 × WebP, 4.2 MB → 266 KB (−93.6%) |
 | **slug** | `ld-coral-pink-chikankari-2-piece-suit-037` |
 | **SKU** | `BIBA-COR-COT-SML-037` · **Price** Rs. 3,999 · **Stock** S ×1, M ×2, L ×1 (4) |
 | **Subcategory** | `stitched-suits`, `2-piece-suits`, `casual` |
