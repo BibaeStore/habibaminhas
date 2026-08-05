@@ -30,6 +30,22 @@ supplies: product type, fabric, category, sizes, stock, price. The recurring gap
 | 7 | **Badge?** | `badge` — constrained, see below | `New In` for a fresh drop |
 | 8 | **Which subcategories?** | `subcategory` text[] drives `/ladies/<sub>/` pages | see mapping below |
 
+### 2b. Check resolution and decide image order before converting
+
+The gallery shows `images[0]` as the main/LCP shot, so **order matters** and the script sorts by
+filename. Rename into a staging folder as `1.png`, `2.png`, `3.png` in display order first —
+best full-length front view, then back/side, then detail close-ups.
+
+Check dimensions before converting. Owner folders have contained mixed resolutions (product 031
+had a 561×701 front view alongside two 1122×1402 shots). The script caps the long edge at 1600px
+and **never upscales**, so a small source stays small. If the intended hero image is under
+~1000px wide, keep the order, flag it to the owner, and ask for a full-resolution replacement —
+never upscale to hide it, that fakes detail and looks worse.
+
+```bash
+node -e "const s=require('sharp');['1','2','3'].forEach(f=>s(f+'.png').metadata().then(m=>console.log(f,m.width+'x'+m.height)))"
+```
+
 ### 3. Convert the images
 
 ```bash
@@ -266,8 +282,8 @@ curl -s -L https://habibaminhas.com/ladies/<sub>/ | grep -oE '<first few words o
 
   New rows should **omit** the brand from `seo_title` — the template supplies it. `casual` is
   already written this way and renders correctly.
-- `2-piece-suits` has null `description`, `seo_title`, and `seo_desc` — same empty state `casual`
-  had. It has no products yet so no page is live, but fill it when the first 2-piece is uploaded.
+- ~~`2-piece-suits` has null description/seo_title/seo_desc~~ — **filled 2026-08-06** when
+  product 031 made `/ladies/2-piece-suits/` live. All ladies subcategories now have copy.
 - Older ladies-suits rows have keyword-free `ld-sku-*` slugs. **Leave them alone** — they are
   indexed. Only new products get descriptive slugs.
 - Most products have `seo_keywords` null.
