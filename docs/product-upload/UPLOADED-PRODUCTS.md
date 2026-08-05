@@ -5,6 +5,70 @@ Records what the owner specified vs. what was inferred, so any wrong inference c
 
 ---
 
+## 042 — Apricot Weave (peach cross-stitch shirt + printed trousers, 2-piece)
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `656bc968-e754-48e3-af30-7f8e5101a0f9` |
+| **slug** | `ld-peach-cross-stitch-2-piece-suit-042` |
+| **SKU** | `BIBA-PCH-COT-M-042` · **Price** Rs. 3,999 · **Stock** Medium ×1 |
+| **Subcategory** | `stitched-suits`, `2-piece-suits`, `casual` |
+| **Images** | 3 × WebP, 6.5 MB → 429 KB (−93.4%) |
+| **Source folder** | `new articles august 2026/all hb clothes/crossstitch` |
+
+**Owner specified:** plain shirt with cross-stitch embroidery, printed trousers, 2-piece,
+Medium ×1, Rs. 3,999.
+
+**Structurally a sibling to 037 Coral Lattice** — tonal embroidered solid shirt over printed
+trousers. The copy cross-links the two and explains the difference in technique: *chikankari
+builds pattern from raised stitching and cut eyelets that open the fabric, so light passes
+through; cross-stitch builds it from a dense grid of small crosses on the surface, so it catches
+light instead.* Useful to a shopper choosing between them, and good internal linking.
+
+⚠️ **"Cross Stitch" is also a well-known Pakistani clothing brand.** The copy describes the
+technique generically and never references or implies any brand association. Keep it that way.
+
+**Copy angle:** *"What is cross-stitch embroidery?"* — a counted-thread technique where each
+stitch is an X worked on the fabric's own weave grid, which is why the motifs stay geometric even
+when they are flowers. Plus *"What is a ditsy print?"*, which explains why a very small scattered
+motif works underneath an embroidered shirt without competing.
+
+---
+
+## 041 — Midnight Gold (black cotton, gold embroidery, printed dupatta)
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `715e0dca-b7ef-46c7-b7d5-0ca1df39be12` |
+| **slug** | `ld-black-gold-embroidered-3-piece-suit-041` |
+| **SKU** | `BIBA-BLK-COT-SML-041` · **Price** Rs. 7,000 · **Stock** S ×1, M ×2, L ×1 (4) |
+| **Subcategory** | `stitched-suits`, `3-piece-suits`, `casual` |
+| **Images** | 4 × WebP, 8.4 MB → 571 KB (−93.2%) |
+| **Source folder** | `new articles august 2026/all hb clothes/black dress with patches` |
+
+**Highest-priced piece in the collection at Rs. 7,000.**
+
+**Transcription decoded:** the owner said *"the buttons are printed"*. Read as **the dupatta is
+printed** — dupatta has transcribed as "to batta", "d'abata", and "duppata" throughout this
+session, and the photos confirm it exactly: plain black shirt, plain black trousers, printed
+ivory-and-black dupatta. No printed buttons exist on the garment.
+
+**Fabric risk handled by care line, not by guessing.** The owner did not state the fabric and the
+black has a slight sheen that could be cotton or cotton silk. Rather than gamble a Rs. 7,000
+garment on a machine-wash instruction, the care line is **"dry clean recommended"** — which is
+correct for gold beadwork and cutwork lace regardless of which fabric it is, so the guess cannot
+hurt anyone. **Use this trick whenever fabric is unconfirmed on an embellished piece.**
+
+**Copy angle:** the price needed justifying, so the copy explains where it sits — gold beadwork
+at a neckline is slow to place, and a full-width hem border with cutwork lace is slower still,
+because the scalloping must be cut and finished by hand so it does not fray. Second angle is why
+gold specifically works on black (it gains warmth against black; silver goes cold, white goes
+stark, coloured thread muddies).
+
+---
+
 ## 039 & 040 — Ink Blossom / Ivory Noir (chiffon frocks, net dupattas)
 
 A deliberate pair. Same silhouette and price, opposite colourways — the copy cross-links them and
