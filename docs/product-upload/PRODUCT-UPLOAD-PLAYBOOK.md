@@ -40,6 +40,22 @@ as cotton silk; the owner confirmed cotton.
 dupatta matched `party-wear`'s own description closely, but the owner placed it in `casual`.
 Offer a recommendation, then follow the answer.
 
+**Never trust the folder name as a product descriptor.** Product 033 arrived in a folder called
+`green chicken kari`; the suit is a printed lawn with an applied lace trim and has no chikankari
+on it at all. Craft and technique terms — chikankari, gota, mirror work, zari, block print,
+hand-embroidered — are **material claims**. Read the close-up photos, and confirm with the owner
+before any of them reaches the copy. Getting one wrong is a false product claim, not a bad keyword.
+
+**Image filenames are crawler-visible.** They appear in Google Images. If the product name changes
+after upload, re-run both scripts under the corrected slug and delete the old objects from the
+bucket rather than leaving them orphaned:
+
+```bash
+node -e "const {createClient}=require('@supabase/supabase-js');require('dotenv').config({path:'.env.local',quiet:true});
+const sb=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false}});
+sb.storage.from('products').remove(['old-name-1.webp','old-name-2.webp']).then(r=>console.log(r.error||r.data.length))"
+```
+
 **Watch for ambiguous stock phrasing.** "Sizes are three: medium, one large, and one small" meant
 S×1, M×3, L×1 (five pieces), not one of each. Confirm before inserting — `stock` must equal the
 sum of `sizes_stock`.

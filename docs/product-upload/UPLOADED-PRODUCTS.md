@@ -5,6 +5,69 @@ Records what the owner specified vs. what was inferred, so any wrong inference c
 
 ---
 
+## 033 — Mehndi Bloom (olive green branded lawn, floral print, lace trim)
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `b99aff4c-af57-4318-b739-65f2aebf7136` |
+| **slug** | `ld-olive-green-floral-lawn-3-piece-suit-033` |
+| **URL** | https://habibaminhas.com/product/ladies-suits/ld-olive-green-floral-lawn-3-piece-suit-033/ |
+| **SKU** | `BIBA-OLV-LWN-SML-033` |
+| **Title** | Mehndi Bloom – 3-Piece Stitched Lawn Suit with Lace Trim and Chiffon Dupatta |
+| **Price** | Rs. 5,500 (`compare_at` null) |
+| **Category** | `ladies-suits` |
+| **Subcategory** | `stitched-suits`, `3-piece-suits`, `casual` |
+| **Sizes** | S ×1, M ×2, L ×1 (total stock 4) |
+| **featured** | true → homepage strip + `/new/` |
+| **badge** | `New In` |
+| **Try-on** | enabled, reference = image 1 |
+| **Images** | 3 × WebP, 7.0 MB → 493 KB (−93%) |
+| **Source folder** | `new articles august 2026/all hb clothes/green chicken kari` |
+
+**Owner specified:** green, long shirt + trousers + chiffon dupatta, lace on all four sides of
+the dupatta, price Rs. 5,500, stock M ×2 / L ×1 / S ×1. Fabric given as "cotton, or you can say
+branded lawn."
+
+### ⚠️ Mid-upload correction — the source folder name is wrong
+
+The folder is named **"green chicken kari"** (chikankari), and work had started on that basis.
+The owner corrected mid-flight: *"It's not chicken curry. It's just a simple green cotton suit,
+or you can say branded lawn."*
+
+The photos supported the correction — the close-up shows a **printed** floral vine plus an
+**applied openwork cotton lace trim**, not hand-worked chikankari embroidery. Chikankari appears
+nowhere in the title, slug, copy, or keywords. Verified: `grep -ci chikankari` on the live page
+returns 0.
+
+**Three image files had already been uploaded as `olive-green-chikankari-lawn-3-piece-*.webp`.**
+They were re-generated as `olive-green-floral-lawn-3-piece-*.webp` and the mis-named originals
+deleted from the bucket. Storage filenames are crawler-visible and surface in Google Images, so
+a wrong one is worth correcting rather than leaving orphaned.
+
+**Lesson for next time: never trust the folder name as a product descriptor.** Read the photos,
+and confirm any technique or craft term with the owner before it reaches copy — claiming
+chikankari on a printed lawn suit is a false material claim, not just a bad keyword.
+
+**Inferred from photos:**
+- Olive / mehndi green ground; fine climbing floral vine in peach, white, and soft blue.
+- White openwork lace at neckline, front placket, both cuffs, and all four dupatta edges.
+- Long straight shirt with side slits; full sleeves; wide-leg trousers in matching print.
+- Dupatta is plain olive chiffon, not printed lawn.
+- Palette sampled `#7f9243` / `#e8a06a` / `#f5f3ec`.
+
+**Copy angle:** the AEO hook is *"Is lawn the same as cotton?"* — a real, high-volume question
+that the owner's own phrasing ("cotton, or you can say branded lawn") raised. The copy answers
+it directly and plainly, which is exactly the sentence shape answer engines extract. Second hook
+is the honest lace-vs-embroidery distinction.
+
+**Verified live after insert:**
+- Product URL → 200; title, description, canonical, `robots: index, follow` correct
+- Schema: `Product`, `Offer`, `Brand`, `AggregateRating`, `BreadcrumbList`
+- Sitemap 144 → 145. +1 `/product/` only, no new collection page. Nothing removed.
+
+---
+
 ## 032 — Emerald Grace (solid emerald green cotton, embroidered cuffs)
 
 | Field | Value |
