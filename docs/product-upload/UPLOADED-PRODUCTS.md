@@ -5,6 +5,141 @@ Records what the owner specified vs. what was inferred, so any wrong inference c
 
 ---
 
+## 037 — Coral Lattice (coral chikankari shirt + digital print trousers) — ⏸ NOT YET LIVE
+
+**Blocked 2026-08-06 by a local network outage.** DNS failed for every host (Supabase, the live
+site, and google.com all returned 000 / exit 6), so the images could not be uploaded and the row
+was never inserted.
+
+**To finish, in this order:**
+1. `node scripts/upload-product-images.mjs "<scratchpad>/coral-webp"` — the 2 WebPs are already
+   converted and waiting (4.2 MB → 266 KB, −93.6%)
+2. Run the prepared insert: `scratchpad/037-coral-insert.sql` — complete, with copy, SEO fields,
+   and 10 FAQs already written. Image URLs in it match what step 1 will produce.
+3. Verify the product URL, and check the sitemap moved 148 → 149.
+
+| Field | Value |
+|---|---|
+| **slug** | `ld-coral-pink-chikankari-2-piece-suit-037` |
+| **SKU** | `BIBA-COR-COT-SML-037` · **Price** Rs. 3,999 · **Stock** S ×1, M ×2, L ×1 (4) |
+| **Subcategory** | `stitched-suits`, `2-piece-suits`, `casual` |
+| **Source folder** | `new articles august 2026/all hb clothes/pink chicken kaari` |
+
+**The owner's description needed the photos to decode.** They said "the shirt is a pink chikan
+kari with a digital print, and the trouser is a trouser." The photos show the opposite split:
+**chikankari on the shirt, digital print on the trousers.** Worth confirming with the owner, but
+the images are unambiguous.
+
+**Copy angle:** this is the inverse of the standard Pakistani formula (printed shirt + plain
+trouser), and the copy leads on why reversing it works — the eye lands on the trousers, which
+lengthens the leg line, and a tonal top is more forgiving through the torso than a busy print.
+Second angle is **tonal chikankari** vs the white-on-white of 035, which cross-links the two
+products.
+
+**Not claimed: hand embroidery.** The owner did not say hand-worked, same as 035. Only 034 has
+that claim, because the owner stated it explicitly.
+
+---
+
+## 036 — Marigold Garden (orange digital floral, 3-piece)
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `76705c62-519b-499f-bcea-8e06b69d4446` |
+| **slug** | `ld-orange-floral-digital-print-cotton-3-piece-suit-036` |
+| **SKU** | `BIBA-ORG-COT-SML-036` · **Price** Rs. 3,999 · **Stock** S ×1, M ×2, L ×1 (4) |
+| **Subcategory** | `stitched-suits`, `3-piece-suits`, `casual` |
+| **Images** | 4 × WebP, 8.5 MB → 513 KB (−94%) |
+| **Source folder** | `new articles august 2026/all hb clothes/orangee no1 dress` |
+
+**Owner specified:** orange, all-over digital print, shirt and trousers the same print, plain
+chiffon dupatta, 3-piece, Rs. 3,999.
+
+⚠️ **Stock was corrected after insert.** Originally given as "three medium, one large, one small,
+and three medium" and entered as M ×3 (stock 5); the owner corrected to **M ×2 (stock 4)**. The
+fix had to touch three places, not one — `sizes_stock`, `stock`, and **two sentences of copy**
+that stated the quantity ("three pieces in Medium" in the description, "Medium has three pieces
+in stock" in the FAQs). **When stock changes, grep the description and faqs for the old number.**
+
+**Fabric was not stated** — cotton assumed from the six previous products and the matte, sheen-free
+drape in the photos. Confirm with the owner; the care line depends on it.
+
+**Copy angle:** *"What is digital printing on fabric?"* — a genuinely useful explanation (single
+pass, unlimited colours and gradients, versus one screen per colour for block/screen printing)
+that justifies the print quality. Plus colour advice on orange, which most buyers assume will not
+suit them.
+
+---
+
+## 035 — Ivory Whisper (off-white chikankari cotton, 2-piece)
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `9c9adacb-cc32-41e1-a81f-e046e40b1566` |
+| **slug** | `ld-off-white-chikankari-cotton-2-piece-suit-035` |
+| **SKU** | `BIBA-OWH-COT-SML-035` · **Price** Rs. 4,900 · **Stock** S ×1, M ×2, L ×1 (4) |
+| **Subcategory** | `stitched-suits`, `2-piece-suits`, `casual` |
+| **Images** | 3 × WebP, 6.2 MB → 325 KB (−94.8%) |
+| **Source folder** | `new articles august 2026/all hb clothes/off white chicken kari` |
+
+**Owner specified:** off-white chikankari shirt + plain trousers, "normal" (not long) shirt
+length, cotton, casual, Rs. 4,900, M ×2 / L ×1 / S ×1.
+
+**This time chikankari is accurate** — unlike 033, which came from a similarly named folder. The
+close-up shows genuine white-on-white embroidery with cut eyelet openwork across the whole shirt.
+Compare the two entries before writing any chikankari copy again: **the folder name proved
+nothing in either direction; the close-up photo settled it both times.**
+
+**Deliberately NOT claimed: hand embroidery.** The owner said "hand-embroidered" explicitly for
+034 and did not for this one, and the eyelets here are regular enough to read as machine schiffli.
+The copy says "chikankari" and "white-on-white embroidery" throughout and never "hand". If it is
+in fact hand-worked, that is a valuable claim worth adding — ask the owner.
+
+**Copy angles:** the definitional *"What is chikankari?"* opener, and *"How do I keep white
+cotton from turning yellow?"* — a real high-volume query, answered with the genuinely useful
+detail that chlorine bleach yellows cotton over time rather than whitening it, and that strong
+Pakistani sun yellows white faster than it brightens. The no-dupatta angle is reframed as an
+advantage specific to white: a neutral base takes any dupatta the customer already owns.
+
+---
+
+## 034 — Lilac Meadow (light purple cotton, hand-embroidered yoke)
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `ed4aec9a-53a3-4de6-9582-4efcd7dd1f46` |
+| **slug** | `ld-lilac-hand-embroidered-cotton-3-piece-suit-034` |
+| **SKU** | `BIBA-LIL-COT-SML-034` · **Price** Rs. 5,500 · **Stock** S ×1, M ×1, L ×1 (3) |
+| **Subcategory** | `stitched-suits`, `3-piece-suits`, `casual` |
+| **Images** | 3 × WebP, 6.6 MB → 398 KB (−94%) |
+| **Source folder** | `new articles august 2026/all hb clothes/light purple dress` |
+
+**Owner specified:** light purple, neck embroidery + border embroidery, **hand-embroidered**,
+cotton, long shirt, Rs. 5,500, one piece each in S / M / L.
+
+**Collection placement — asked and overridden again.** Recommended `formal-wear`, since this is
+the first product that actually matches that page's "substantial embroidery" copy. Owner chose
+`casual`. That is now three for three: **the owner wants casual; recommend once, then follow.**
+
+⚠️ **Known copy conflict.** `/ladies/casual/` says the collection has "little to no heavy
+embellishment", and this piece has a fully hand-worked yoke. Softening that one clause would
+resolve it, but the casual page is live, so it needs owner approval before editing.
+
+**Care instructions deliberately differ from every other product here.** Individually placed
+sequins and beads mean this one is hand wash or dry clean, dry flat, iron on the reverse only —
+not the machine-wash line used on the plain cotton suits. Copying the standard care block onto
+an embroidered piece would damage a customer's garment.
+
+**Copy angle:** *"How can I tell hand embroidery from machine embroidery?"* — a real question
+with a real answer (machine work is perfectly uniform with a dense backing; hand work varies in
+stitch tension and motif spacing, and threads follow the shape of a petal rather than filling it
+mechanically). It justifies the price without asserting anything unverifiable.
+
+---
+
 ## 033 — Mehndi Bloom (olive green branded lawn, floral print, lace trim)
 
 | Field | Value |

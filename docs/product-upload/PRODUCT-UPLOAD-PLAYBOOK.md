@@ -36,9 +36,21 @@ linen look similar in a photo but their care instructions are opposites — mach
 clean. Publishing the wrong one gets a customer's garment ruined. On product 032 the sheen read
 as cotton silk; the owner confirmed cotton.
 
-**Do not infer the collection from the garment.** On 032 the embroidered cuffs and worked chiffon
-dupatta matched `party-wear`'s own description closely, but the owner placed it in `casual`.
-Offer a recommendation, then follow the answer.
+**Do not infer the collection from the garment — default to `casual`.** Asked three times (032,
+034, and by implication 033); the owner chose `casual` every time, including on 034 which has a
+fully hand-embroidered yoke and matched `formal-wear`'s own copy. **Stop asking. Use `casual`
+unless the owner says otherwise**, and mention the alternative in the reply rather than blocking
+on it.
+
+⚠️ This means `/ladies/casual/` now holds heavily embroidered pieces while its copy says the
+collection has "little to no heavy embellishment". Softening that clause needs owner approval —
+it is live collection copy.
+
+**Match the care line to the embellishment, not to the fabric.** A plain cotton suit is machine
+wash cold. A suit with individually placed sequins or beads (034) is hand wash or dry clean, dry
+flat, iron on the reverse only. Off-white (035) needs "wash separately, never chlorine bleach,
+dry in shade". Reusing one care block across all of them will eventually ruin a customer's
+garment.
 
 **Never trust the folder name as a product descriptor.** Product 033 arrived in a folder called
 `green chicken kari`; the suit is a printed lawn with an applied lace trim and has no chikankari
