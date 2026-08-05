@@ -5,6 +5,59 @@ Records what the owner specified vs. what was inferred, so any wrong inference c
 
 ---
 
+## 032 — Emerald Grace (solid emerald green cotton, embroidered cuffs)
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-06 |
+| **id** | `ab55a049-fd25-4ed1-8d01-3b983d9623b6` |
+| **slug** | `ld-emerald-green-embroidered-cotton-3-piece-suit-032` |
+| **URL** | https://habibaminhas.com/product/ladies-suits/ld-emerald-green-embroidered-cotton-3-piece-suit-032/ |
+| **SKU** | `BIBA-GRN-COT-SML-032` |
+| **Title** | Emerald Grace – 3-Piece Stitched Cotton Suit with Embroidered Cuffs and Chiffon Dupatta |
+| **Price** | Rs. 4,900 (`compare_at` null) |
+| **Category** | `ladies-suits` |
+| **Subcategory** | `stitched-suits`, `3-piece-suits`, `casual` |
+| **Sizes** | S ×1, M ×3, L ×1 (total stock 5) — **first product with a real size range** |
+| **featured** | true → homepage strip + `/new/` |
+| **badge** | `New In` |
+| **Try-on** | enabled, reference = image 1 (clean front) |
+| **Images** | 4 × WebP, 8.1 MB → 385 KB (−95%), all 1122×1402 |
+| **Source folder** | `new articles august 2026/all hb clothes/dark green dress` |
+
+**Owner specified:** dark green, price Rs. 4,900, sizes S ×1 / M ×3 / L ×1, and "everything else
+per the playbook." Confirmed on asking: fabric is **cotton**, and it belongs in **casual**.
+
+**Asked rather than assumed — worth repeating next time:**
+- **Fabric was not stated.** The photos show a soft sheen that could read as cotton silk, and the
+  care line changes completely between the two (machine wash vs. dry clean). Wrong care advice
+  ruins a garment, so this is worth a question every time it is not stated.
+- **Collection placement.** The embroidered cuffs and worked chiffon dupatta border read
+  semi-formal, and `party-wear`'s own copy ("lighter embroidery, dinners, Eid dawat") matched
+  it closely. Owner chose `casual` anyway — follow the owner, not the category description.
+- **"Sizes are three: medium, one large, and one small"** was genuinely ambiguous between
+  1 each (3 total) and 3 medium + 1 + 1 (5 total). It was the latter.
+
+**Inferred from photos:**
+- Solid emerald / bottle green, no print. Detail is tonal thread + fine sequin work on the sleeve
+  cuffs and an embroidered scalloped border on the dupatta. Trousers plain.
+- Straight-cut shirt, side slits, below-knee; round neck with a centre-front V-notch.
+- Full-length sleeves; wide-leg palazzo trousers; chiffon dupatta.
+- Palette sampled `#1e4a3c` / `#2d5c4b` / `#0f3329`.
+
+**Copy angle:** because this is the first solid-colour product, the AEO contrast paragraph is
+*solid vs printed* ("a solid suit asks more of its construction than a printed one"), and there
+is a colour-advice paragraph on deep green, which targets conversational queries that a product
+grid cannot rank for.
+
+**Verified live after insert:**
+- Product URL → 200; title, description, canonical, `robots: index, follow` correct, brand not duplicated
+- Schema: `Product`, `Offer`, `Brand`, `AggregateRating`, `BreadcrumbList`
+- Sitemap 143 → 144. Delta: +1 `/product/` only — no new collection page, since `casual` and
+  `3-piece-suits` both already existed and had copy. Nothing removed.
+
+---
+
 ## 031 — Midnight Blossom (royal blue cotton, pink blossom print)
 
 | Field | Value |

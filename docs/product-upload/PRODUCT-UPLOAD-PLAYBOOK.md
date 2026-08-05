@@ -29,6 +29,20 @@ supplies: product type, fabric, category, sizes, stock, price. The recurring gap
 | 6 | **Featured on homepage / New Arrivals?** | `featured` — this one boolean drives BOTH the homepage strip AND `/new/` | ask |
 | 7 | **Badge?** | `badge` — constrained, see below | `New In` for a fresh drop |
 | 8 | **Which subcategories?** | `subcategory` text[] drives `/ladies/<sub>/` pages | see mapping below |
+| 9 | **What fabric?** (if not stated) | drives the spec line, the care instructions, and the keywords | **never guess** — see below |
+
+**Always ask about fabric when the owner does not state it.** Cotton, cotton silk, lawn, and
+linen look similar in a photo but their care instructions are opposites — machine wash vs. dry
+clean. Publishing the wrong one gets a customer's garment ruined. On product 032 the sheen read
+as cotton silk; the owner confirmed cotton.
+
+**Do not infer the collection from the garment.** On 032 the embroidered cuffs and worked chiffon
+dupatta matched `party-wear`'s own description closely, but the owner placed it in `casual`.
+Offer a recommendation, then follow the answer.
+
+**Watch for ambiguous stock phrasing.** "Sizes are three: medium, one large, and one small" meant
+S×1, M×3, L×1 (five pieces), not one of each. Confirm before inserting — `stock` must equal the
+sum of `sizes_stock`.
 
 ### 2b. Check resolution and decide image order before converting
 
