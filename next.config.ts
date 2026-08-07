@@ -54,11 +54,18 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' widget.trustpilot.com *.supabase.co *.googletagmanager.com *.google-analytics.com js.puter.com",
+              // connect.facebook.net serves fbevents.js for the Meta Pixel. Without it the
+              // pixel is present in the HTML but the browser refuses to load the script,
+              // so no events are ever recorded. See docs/analytics/META-PIXEL.md.
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' widget.trustpilot.com *.supabase.co *.googletagmanager.com *.google-analytics.com js.puter.com connect.facebook.net",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' *.supabase.co wss://*.supabase.co *.google-analytics.com *.analytics.google.com *.googletagmanager.com *.puter.com *.openai.com",
+              // www.facebook.com receives the event beacons (/tr), connect.facebook.net is
+              // contacted by fbevents.js after it loads. img-src is deliberately not touched
+              // here: it already allows the `https:` scheme, which covers the <noscript>
+              // tracking pixel served from www.facebook.com.
+              "connect-src 'self' *.supabase.co wss://*.supabase.co *.google-analytics.com *.analytics.google.com *.googletagmanager.com *.puter.com *.openai.com connect.facebook.net www.facebook.com",
               "frame-src 'self' widget.trustpilot.com",
               "object-src 'none'",
               "base-uri 'self'",
