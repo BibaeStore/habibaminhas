@@ -114,6 +114,7 @@ export default async function RootLayout({
         />
         <link rel="preconnect" href="https://goykebkdqjrgbofmusjv.supabase.co" />
         <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://connect.facebook.net" />
         <link rel="preconnect" href="https://widget.trustpilot.com" />
       </head>
       <body className="min-h-screen flex flex-col bg-ivory text-ink">
@@ -142,15 +143,32 @@ gtag('config', '${seo.ga4_id}');`}
           </>
         )}
         {seo.fb_pixel && (
-          <Script id="fb-pixel" strategy="afterInteractive">
-            {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          <>
+            <Script id="fb-pixel" strategy="afterInteractive">
+              {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
 n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
 document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '${seo.fb_pixel}');
 fbq('track', 'PageView');`}
-          </Script>
+            </Script>
+            {/*
+             * Meta's canonical snippet includes this <noscript> beacon so a PageView is
+             * still recorded for visitors with JavaScript disabled. It costs nothing when
+             * JS is on — browsers do not fetch anything inside <noscript> in that case.
+             */}
+            <noscript>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                height="1"
+                width="1"
+                alt=""
+                style={{ display: "none" }}
+                src={`https://www.facebook.com/tr?id=${seo.fb_pixel}&ev=PageView&noscript=1`}
+              />
+            </noscript>
+          </>
         )}
       </body>
     </html>
