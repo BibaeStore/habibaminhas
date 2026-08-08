@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { BUSINESS_ADDRESS_LINE } from "@/lib/business-info";
 
 type Params = { slug: string };
 
@@ -12,7 +13,7 @@ const legal: Record<string, { title: string; body: { h: string; p: string }[] }>
       },
       {
         h: "Who We Are",
-        p: "Habiba Minhas Clothing (SMC-Private) Limited is a legally registered company in Pakistan (Registration No. 0338396) based in Karachi, Pakistan. We are Pakistan's leading handcrafted fashion brand specializing in premium ladies suits, kids festive wear, and baby products. Our registered business address is Karachi, Pakistan — 75533. For privacy-related inquiries, you can contact us at info@habibaminhas.com or call +92 312 0295812. We operate our e-commerce website at habibaminhas.com and comply with all applicable Pakistani data protection laws and international best practices.",
+        p: "Habiba Minhas Clothing (SMC-Private) Limited is a legally registered company in Pakistan (Registration No. 0338396) based in Karachi, Pakistan. We are Pakistan's leading handcrafted fashion brand specializing in premium ladies suits, kids festive wear, and baby products. Our registered business address is " + BUSINESS_ADDRESS_LINE + ". For privacy-related inquiries, you can contact us at info@habibaminhas.com or call +92 312 0295812. We operate our e-commerce website at habibaminhas.com and comply with all applicable Pakistani data protection laws and international best practices.",
       },
       {
         h: "Information We Collect",
@@ -52,7 +53,7 @@ const legal: Record<string, { title: string; body: { h: string; p: string }[] }>
       },
       {
         h: "Contact Us",
-        p: "If you have any questions, concerns, or requests regarding this Privacy Policy or how we handle your personal information, please don't hesitate to contact us. You can reach us by email at info@habibaminhas.com, by phone or WhatsApp at +92 312 0295812 (Monday-Friday, 10 AM - 6 PM PKT), or by mail at Habiba Minhas Clothing (SMC-Private) Limited, Karachi, Pakistan — 75533. We are committed to addressing your privacy concerns promptly and transparently. Our customer service team typically responds to all inquiries within 24 hours on business days.",
+        p: "If you have any questions, concerns, or requests regarding this Privacy Policy or how we handle your personal information, please don't hesitate to contact us. You can reach us by email at info@habibaminhas.com, by phone or WhatsApp at +92 312 0295812 (Monday-Friday, 10 AM - 6 PM PKT), or by mail at Habiba Minhas Clothing (SMC-Private) Limited, " + BUSINESS_ADDRESS_LINE + ". We are committed to addressing your privacy concerns promptly and transparently. Our customer service team typically responds to all inquiries within 24 hours on business days.",
       },
     ],
   },
@@ -113,7 +114,7 @@ const legal: Record<string, { title: string; body: { h: string; p: string }[] }>
       },
       {
         h: "Contact Information",
-        p: "If you have any questions, concerns, or feedback regarding these Terms of Service, please contact us at: Habiba Minhas Clothing (SMC-Private) Limited, Email: info@habibaminhas.com, Phone/WhatsApp: +92 312 0295812 (Monday-Friday, 10 AM - 6 PM PKT), Address: Karachi, Pakistan — 75533. We are committed to addressing your concerns promptly and transparently. Our customer service team responds to all inquiries within 24 hours on business days. Thank you for shopping with Habiba Minhas.",
+        p: "If you have any questions, concerns, or feedback regarding these Terms of Service, please contact us at: Habiba Minhas Clothing (SMC-Private) Limited, Email: info@habibaminhas.com, Phone/WhatsApp: +92 312 0295812 (Monday-Friday, 10 AM - 6 PM PKT), Address: " + BUSINESS_ADDRESS_LINE + ". We are committed to addressing your concerns promptly and transparently. Our customer service team responds to all inquiries within 24 hours on business days. Thank you for shopping with Habiba Minhas.",
       },
     ],
   },

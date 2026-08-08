@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react";
 import { submitContactMessage } from "@/lib/actions/notifications";
+import { BUSINESS_ADDRESS_LINES } from "@/lib/business-info";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "Order status", message: "" });
@@ -75,7 +76,9 @@ export default function ContactPage() {
               </span>
               <div>
                 <div className="text-[11px] uppercase tracking-[0.24em] text-muted">Location</div>
-                <div>Karachi, Pakistan — 75533</div>
+                {BUSINESS_ADDRESS_LINES.map((line) => (
+                  <div key={line}>{line}</div>
+                ))}
               </div>
             </li>
             <li className="flex items-start gap-4">

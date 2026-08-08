@@ -1,3 +1,5 @@
+import { BUSINESS_POSTAL_ADDRESS_SCHEMA } from "@/lib/business-info";
+
 export function OrganizationSchema() {
   const schema = {
     "@context": "https://schema.org",
@@ -6,11 +8,7 @@ export function OrganizationSchema() {
     "url": "https://habibaminhas.com",
     "logo": "https://habibaminhas.com/logo/logo.png",
     "description": "Couture-inspired unstitched fabric, ready-to-wear silhouettes, modest wear, and fragrance — made in Pakistan, shipped worldwide.",
-    "address": {
-      "@type": "PostalAddress",
-      "addressCountry": "PK",
-      "addressLocality": "Karachi"
-    },
+    "address": BUSINESS_POSTAL_ADDRESS_SCHEMA,
     "contactPoint": {
       "@type": "ContactPoint",
       "telephone": "+92-312-0295812",

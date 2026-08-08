@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
 import { SectionHeading } from "@/components/common/section-heading";
+import { BUSINESS_ADDRESS_LINE } from "@/lib/business-info";
 
 export const metadata = { title: "Contact & Studio" };
 
@@ -44,7 +45,7 @@ export default function StoresPage() {
               <h3 className="mt-1 font-display text-2xl italic">Habiba Minhas Studio</h3>
               <ul className="mt-4 flex flex-col gap-2 text-[13px] text-ink-soft">
                 <li className="flex items-start gap-2">
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Karachi, Pakistan — 75533
+                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold-dark" /> {BUSINESS_ADDRESS_LINE}
                 </li>
                 <li className="flex items-start gap-2">
                   <Clock className="mt-0.5 h-3.5 w-3.5 text-gold-dark" /> Mon–Fri · 9a — 6p PKT

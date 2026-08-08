@@ -1,3 +1,5 @@
+import { BUSINESS_POSTAL_ADDRESS_SCHEMA } from "@/lib/business-info";
+
 export function LocalBusinessSchema() {
   const schema = {
     "@context": "https://schema.org",
@@ -7,13 +9,7 @@ export function LocalBusinessSchema() {
     "url": "https://habibaminhas.com",
     "telephone": "+92-312-0295812",
     "email": "info@habibaminhas.com",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Karachi",
-      "addressLocality": "Karachi",
-      "postalCode": "75533",
-      "addressCountry": "PK"
-    },
+    "address": BUSINESS_POSTAL_ADDRESS_SCHEMA,
     "geo": {
       "@type": "GeoCoordinates",
       "latitude": "24.8607",

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { getOrderByNumber } from "@/lib/actions/orders";
 import { formatPrice } from "@/lib/utils";
 import { PrintButton } from "./_print-button";
+import { BUSINESS_ADDRESS_LINE } from "@/lib/business-info";
 import type { Tables, Json } from "@/lib/supabase/types";
 
 type OrderItem = Tables<"order_items">;
@@ -88,7 +89,7 @@ export default async function InvoicePage({ params }: { params: Promise<Params> 
                 priority
               />
               <div className="text-[11px] leading-relaxed text-[#8a8179]">
-                Karachi, Pakistan<br />
+                {BUSINESS_ADDRESS_LINE}<br />
                 info@habibaminhas.com<br />
                 WhatsApp: +92 312 0295812
               </div>
@@ -160,7 +161,7 @@ export default async function InvoicePage({ params }: { params: Promise<Params> 
             </div>
             <div className="flex flex-col gap-0.5 text-[13px] leading-relaxed text-[#1a1612]">
               <div className="text-[15px] font-semibold">Habiba Minhas</div>
-              <div>Karachi, Pakistan</div>
+              <div>{BUSINESS_ADDRESS_LINE}</div>
               <div className="mt-1 text-[#3d3731]">info@habibaminhas.com</div>
               <div className="text-[#3d3731]">+92 312 0295812</div>
             </div>

@@ -1,3 +1,5 @@
+import { BUSINESS_POSTAL_ADDRESS_SCHEMA } from "@/lib/business-info";
+
 export function PersonSchema() {
   const schema = {
     "@context": "https://schema.org",
@@ -32,11 +34,7 @@ export function PersonSchema() {
       "Fashion Design",
       "Artisan Embroidery"
     ],
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": "Karachi",
-      "addressCountry": "PK"
-    }
+    "address": BUSINESS_POSTAL_ADDRESS_SCHEMA
   };
 
   return (

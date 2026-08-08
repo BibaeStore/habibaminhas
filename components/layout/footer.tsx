@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Package, RotateCcw, MapPin, ShieldCheck } from "lucide-react";
 import { Newsletter } from "./newsletter";
 import { TrustpilotWidget } from "@/components/trustpilot-widget";
+import { BUSINESS_ADDRESS_LINE } from "@/lib/business-info";
 import {
   InstagramIcon, FacebookIcon, YouTubeIcon, TikTokIcon,
   XIcon, PinterestIcon, QuoraIcon, RedditIcon,
@@ -180,7 +181,7 @@ export function Footer() {
                   +92 312 0295812
                 </a>
               </li>
-              <li className="text-ivory/30">Karachi, Pakistan — 75533</li>
+              <li className="text-ivory/30">{BUSINESS_ADDRESS_LINE}</li>
             </ul>
           </div>
         </div>
