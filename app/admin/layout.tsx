@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import { AdminQueryProvider } from "@/components/admin/query-provider";
 import { RealtimeSync } from "@/components/admin/realtime-sync";
+import { NewOrderAlert } from "@/components/admin/new-order-alert";
 import "./admin.css";
 
 const inter = Inter({
@@ -20,6 +21,9 @@ export default function AdminLayout({
       <AdminQueryProvider>
         <RealtimeSync />
         {children}
+        {/* Mounted at the layout level so a new order alerts on every admin page, not just
+            the dashboard. Renders only a fixed bottom-right container — no layout impact. */}
+        <NewOrderAlert />
       </AdminQueryProvider>
     </div>
   );

@@ -3,8 +3,10 @@
 import { Bell, Menu, ExternalLink, Search, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getUnreadCount } from "@/lib/actions/notifications";
+import { NOTIFICATIONS_UNREAD_KEY } from "@/lib/notifications-shared";
 
 const LABELS: Record<string, string> = {
   admin:         "Dashboard",
@@ -30,20 +32,25 @@ function useBreadcrumbs() {
 }
 
 export function AdminTopbar({ onMenuClick }: { onMenuClick?: () => void }) {
-  const [unread, setUnread] = useState(0);
   const [search, setSearch] = useState("");
   const breadcrumbs         = useBreadcrumbs();
   const currentPage         = breadcrumbs[breadcrumbs.length - 1]?.label ?? "Dashboard";
 
-  const refresh = useCallback(() => {
-    getUnreadCount().then(setUnread).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, 30_000);
-    return () => clearInterval(id);
-  }, [refresh]);
+  /*
+   * Shared query cache rather than local state on a 30s interval.
+   *
+   * The badge used to hold its own useState and re-poll every 30 seconds, so opening the
+   * notifications page and reading everything left the red badge sitting there for up to
+   * half a minute. Now the page and the realtime listener both invalidate this exact key,
+   * so the badge clears the instant it should and lights up the moment an order lands.
+   * The interval is kept only as a slow backstop for a dropped realtime socket.
+   */
+  const { data: unread = 0 } = useQuery({
+    queryKey: NOTIFICATIONS_UNREAD_KEY,
+    queryFn: getUnreadCount,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  });
 
   return (
     <header

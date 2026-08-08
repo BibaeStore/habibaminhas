@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { ALERT_TYPES } from "@/lib/notifications-shared";
 
 export type Notification = {
   id: string;
@@ -12,6 +13,9 @@ export type Notification = {
   data: Record<string, unknown>;
   created_at: string;
 };
+
+/* ALERT_TYPES lives in lib/notifications-shared.ts — a "use server" module may only export
+ * async functions, and client components need that constant too. */
 
 export async function getNotifications(limit = 50): Promise<Notification[]> {
   const sb = createAdminClient();
@@ -24,14 +28,45 @@ export async function getNotifications(limit = 50): Promise<Notification[]> {
   return (data ?? []) as Notification[];
 }
 
+/** Unread count for the topbar badge. Scoped to ALERT_TYPES so it always matches what the
+ *  notifications page actually shows — otherwise the badge counts rows you cannot see. */
 export async function getUnreadCount(): Promise<number> {
   const sb = createAdminClient();
   const { count, error } = await sb
     .from("notifications")
     .select("*", { count: "exact", head: true })
-    .eq("read", false);
+    .eq("read", false)
+    .in("type", ALERT_TYPES as unknown as string[]);
   if (error) return 0;
   return count ?? 0;
+}
+
+/**
+ * New-order notifications created strictly after `sinceIso`. Drives the desk alert.
+ *
+ * This is polled rather than pushed over Supabase Realtime, and that is deliberate. Admin
+ * auth here is a custom JWT (ADMIN_JWT_SECRET), not Supabase Auth, so the browser client
+ * carries the anon key with no session. Realtime enforces RLS, and the notifications
+ * policies grant access to `authenticated` only — a postgres_changes subscription would
+ * therefore receive nothing at all, silently. Opening those policies to `anon` is not an
+ * option: the anon key ships in client JavaScript, so every order number, customer name and
+ * order total would become publicly readable.
+ *
+ * Running it as a server action side-steps all of that. It executes with the service-role
+ * client, returns only the handful of fields the alert card needs, and is already behind the
+ * admin session.
+ */
+export async function getNewOrderAlertsSince(sinceIso: string): Promise<Notification[]> {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("notifications")
+    .select("*")
+    .eq("type", "new_order")
+    .gt("created_at", sinceIso)
+    .order("created_at", { ascending: true })
+    .limit(10);
+  if (error) return [];
+  return (data ?? []) as Notification[];
 }
 
 export async function markNotificationRead(id: string) {
@@ -40,10 +75,22 @@ export async function markNotificationRead(id: string) {
   revalidatePath("/admin/notifications");
 }
 
-export async function markAllNotificationsRead() {
+/**
+ * Clears the badge. Called automatically when the notifications page is opened, which is
+ * what makes this behave like WhatsApp: seeing the list is what marks it seen.
+ *
+ * Returns how many rows it actually cleared so the caller can skip a needless refetch.
+ */
+export async function markAllNotificationsRead(): Promise<number> {
   const sb = createAdminClient();
-  await sb.from("notifications").update({ read: true }).eq("read", false);
+  const { data } = await sb
+    .from("notifications")
+    .update({ read: true })
+    .eq("read", false)
+    .in("type", ALERT_TYPES as unknown as string[])
+    .select("id");
   revalidatePath("/admin/notifications");
+  return data?.length ?? 0;
 }
 
 export async function deleteNotification(id: string) {

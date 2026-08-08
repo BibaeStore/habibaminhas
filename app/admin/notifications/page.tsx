@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, ShoppingBag, RefreshCw, MessageSquare, CheckCheck, Trash2, Package } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -14,6 +14,7 @@ import {
   deleteNotification,
   type Notification,
 } from "@/lib/actions/notifications";
+import { isAlertType, NOTIFICATIONS_UNREAD_KEY } from "@/lib/notifications-shared";
 import Link from "next/link";
 
 const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
@@ -35,10 +36,7 @@ function timeAgo(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-PK", { day: "numeric", month: "short" });
 }
 
-/* order_updated notifications are intentionally excluded — too noisy */
-const IMPORTANT_TYPES = ["new_order", "low_stock", "contact_form"];
-
-type FilterType = "all" | "new_order" | "low_stock" | "contact_form" | "unread";
+type FilterType = "all" | "new_order" | "low_stock" | "unread";
 
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
@@ -55,8 +53,8 @@ export default function NotificationsPage() {
   const patchCache = (updater: (prev: Notification[]) => Notification[]) =>
     queryClient.setQueryData<Notification[]>(["notifications"], (prev) => updater(prev ?? []));
 
-  /* Always hide order_updated — only surface important notification types */
-  const important = notifications.filter((n) => IMPORTANT_TYPES.includes(n.type));
+  /* Only new orders and low stock — the same set the topbar badge counts. */
+  const important = notifications.filter((n) => isAlertType(n.type));
 
   const filtered = important.filter((n) => {
     if (filter === "unread") return !n.read;
@@ -66,10 +64,35 @@ export default function NotificationsPage() {
 
   const unreadCount = important.filter((n) => !n.read).length;
 
+  /*
+   * Opening this page is what marks everything seen — the WhatsApp rule. The badge drops to
+   * zero the moment you land here, rather than only when you click each row or remember to
+   * press "Mark all read".
+   *
+   * Two deliberate details:
+   *
+   * - `clearedRef` stops this running twice. React StrictMode invokes effects twice in
+   *   development, and the effect re-evaluates as the list loads in.
+   * - The rows keep their unread styling for this visit (we only patch the cache after the
+   *   server call resolves, and never re-render them as read mid-session), so you can still
+   *   see at a glance what arrived while you were away. Next visit they are plain.
+   */
+  const clearedRef = useRef(false);
+  useEffect(() => {
+    if (clearedRef.current || loading || unreadCount === 0) return;
+    clearedRef.current = true;
+    void markAllNotificationsRead().then(() => {
+      // Only the badge is refreshed. The list intentionally keeps showing this visit's
+      // unread markers so the page does not visibly "blank out" as you are reading it.
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_UNREAD_KEY });
+    });
+  }, [loading, unreadCount, queryClient]);
+
   function handleRead(id: string) {
     startTransition(async () => {
       await markNotificationRead(id);
       patchCache((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_UNREAD_KEY });
     });
   }
 
@@ -84,6 +107,7 @@ export default function NotificationsPage() {
     startTransition(async () => {
       await markAllNotificationsRead();
       patchCache((prev) => prev.map((n) => ({ ...n, read: true })));
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_UNREAD_KEY });
     });
   }
 
@@ -92,7 +116,6 @@ export default function NotificationsPage() {
     { key: "unread",       label: `Unread (${unreadCount})`  },
     { key: "new_order",    label: "New Orders"               },
     { key: "low_stock",    label: "Low Stock"                },
-    { key: "contact_form", label: "Contact Forms"            },
   ];
 
   return (
