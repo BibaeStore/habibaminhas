@@ -18,7 +18,7 @@ export function OrganizationSchema() {
     },
     "sameAs": [
       "https://www.facebook.com/habibaminhas.official",
-      "https://www.instagram.com/habibaminhas.pk",
+      "https://www.instagram.com/habibaminhas.official",
       "https://www.youtube.com/@habibaminhas",
       "https://www.tiktok.com/@habibaminhas.pk",
       "https://x.com/habibaminhas_pk",

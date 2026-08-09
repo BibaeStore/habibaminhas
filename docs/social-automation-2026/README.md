@@ -65,12 +65,25 @@ At the requested "no repeats until all are used":
 Two per day burns the entire catalogue in a week and a half. This is worth knowing before
 choosing a cadence — see [03](./03-CONTENT-AND-SCHEDULE.md).
 
-### 3. App Review is the long pole — 2 to 4 weeks
+### 3. ~~App Review is the long pole — 2 to 4 weeks~~ — **WRONG, corrected 2026-08-09**
 
-`instagram_content_publish` and `pages_manage_posts` both require Meta App Review before
-they work on a live account. Nothing publishes until that is approved. **The application
-should be started immediately**, in parallel with everything else, because the waiting is
-free and it gates the entire project.
+**App Review is not required for this project.** Meta's App Review page for the Instagram API
+gives an explicit table of development scenarios:
+
+| Development scenario | Login type | Access level | App Review |
+|---|---|---|---|
+| **My app is only for a business I own or manage** | No login **or Facebook Login** | Standard | **Not required** |
+| Tech Provider, app serves multiple businesses | either | Advanced | Required |
+
+Habiba Minhas publishes to its own Page and its own Instagram — the first row. Meta also
+states: *"All Business, Consumer, and Gaming apps are automatically approved for Standard
+Access for all permissions and features available to their app type"* and *"If your app only
+serves your Instagram professional account or an account you manage, Standard Access is all
+your app needs."* **Business Verification also drops away**, being tied to Advanced Access.
+
+⚠️ Not yet proven. Meta warns that on Standard Access "some features might not work properly"
+without saying which. Treat as highly likely, verify with a real post (B-15). If it fails, the
+cost is days — not weeks — because the rest is already built by then.
 
 ### 4. Use a System User token, not a personal one
 

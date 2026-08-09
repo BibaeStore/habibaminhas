@@ -7,13 +7,18 @@ Work top to bottom. Steps 1–3 are probably already done.
 
 ---
 
-## Step 0 — Start App Review today, before anything else
+## Step 0 — ~~Start App Review today~~ — **REMOVED, 2026-08-09**
 
-App Review takes **2–4 weeks** and gates the entire project. It can be applied for while the
-rest of the setup is still in progress, so it should be started first even though it appears
-last in the logical order.
+**App Review is not required.** Because this app serves only a business the owner owns and
+manages, it runs on **Standard Access**, which every Business app receives automatically for
+all permissions available to its type. Business Verification is likewise not needed.
 
-The permissions to request are listed in Step 6.
+See `README.md` § finding 3 and `TRACKER.md` for the sourced correction. Step 6 below still
+lists the permissions the System User token must carry — they are just requested directly
+rather than through review.
+
+**Consequence:** the critical path is now `create app → System User → token → build → test`.
+Setup is roughly an hour of clicking, not a month of waiting.
 
 ---
 
@@ -40,7 +45,12 @@ on the Page. As the owner, that will already be true.
 
 ## Step 3 — Instagram Professional account, linked to the Page
 
-The site links to `instagram.com/habibaminhas.pk`.
+The account is **`instagram.com/habibaminhas.official`** — confirmed 2026-08-09 via the Graph
+API as the Instagram Business account linked to the Page (IG ID `17841447359531039`).
+
+> An earlier draft of this doc said `habibaminhas.pk`. That was wrong, and the same wrong handle
+> had reached `components/seo/organization-schema.tsx`. Fixed 2026-08-09 — see
+> `docs/seo-optimization-2026/TRACKER.md`.
 
 Two things must both be true, and the second is the one people miss:
 

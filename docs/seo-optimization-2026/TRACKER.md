@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: June 5, 2026 - Phase 1 Complete ✅  
+**Last Updated**: August 9, 2026 - Entity fix: Organization `sameAs` Instagram handle ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -20,6 +20,51 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### August 9, 2026 - Entity Fix: wrong Instagram handle in Organization `sameAs`
+
+**Changed**:
+- File: `components/seo/organization-schema.tsx`
+- Line: 21
+- Action: `https://www.instagram.com/habibaminhas.pk` → `https://www.instagram.com/habibaminhas.official`
+
+**Reason**: The `sameAs` array pointed at `habibaminhas.pk`, which is **not** the brand's
+Instagram account. Verified against Meta's Graph API during social-automation setup: the
+Instagram Business account actually linked to the Facebook Page (`1065982543267666`) is
+**`@habibaminhas.official`** (IG ID `17841447359531039`, 225 followers, 46 posts).
+
+Every other reference in the codebase already used `.official` — `components/layout/footer.tsx`,
+`components/seo/person-schema.tsx`, `app/about/author/page.tsx`, `app/journal/[slug]/page.tsx`.
+`organization-schema.tsx` was the sole outlier.
+
+This matters because `sameAs` is the primary signal Google and AI answer engines use to resolve
+a brand entity to its social profiles. A wrong entry splits or breaks that association — and it
+was about to matter more, because the social-automation pipeline
+(`docs/social-automation-2026/`) will start driving traffic from that exact account.
+
+**Scope discipline**: only the Instagram entry was changed. The TikTok / X / Pinterest / Reddit
+handles in the same array also use `.pk`-style names, but those were **left untouched** — no
+evidence they are wrong, and different platforms legitimately use different handles.
+
+**Owner approval**: explicitly granted 2026-08-09 — *"it's confirmed that my social Instagram
+ID is habibaminhas.official… its correction is mandatory."* Raised before the edit, per
+`AGENTS.md`.
+
+**Verification** (run 2026-08-09, pre-deploy):
+- `npx tsc --noEmit` → exit 0, no errors
+- Homepage metadata intact: title, description, `robots: index, follow`, canonical `https://habibaminhas.com/` all present
+- Homepage JSON-LD still emits: `Organization`, `WebSite`, `Person`, `FAQPage`, `SearchAction`, `ContactPoint`, `Question`×5, `Answer`×5
+- Product page JSON-LD still emits: `Product`, `Offer`, `Brand`, `AggregateRating`, `BreadcrumbList`, `ListItem`×3
+- Sitemap: **158 URLs** (up from the 134 baseline of 2026-08-01 — nothing dropped; `/product/` 54→67, `/journal/` 37→46, all other sections held or grew)
+- Change is one string inside a JSON-LD array: no route, slug, heading, metadata, canonical, or sitemap impact
+
+**Post-deploy re-check required**: confirm production emits `.official` —
+`curl -s https://habibaminhas.com/ | grep -o 'instagram\.com/[A-Za-z0-9._]*' | sort | uniq -c`
+(pre-deploy it returns 3× `.official`, 2× `.pk`; after deploy it should be 5× `.official`, 0× `.pk`).
+
+**Status**: ✅ Complete (pending deploy + the re-check above)
+
+---
 
 ### June 5, 2026 - PHASE 1 IMPLEMENTATION COMPLETE (80%)
 

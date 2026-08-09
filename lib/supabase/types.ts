@@ -641,6 +641,164 @@ export type Database = {
         }
         Relationships: []
       }
+      social_accounts: {
+        Row: {
+          account_label: string
+          created_at: string
+          credentials: Json
+          enabled: boolean
+          external_id: string
+          id: string
+          meta: Json
+          platform: string
+          updated_at: string
+        }
+        Insert: {
+          account_label: string
+          created_at?: string
+          credentials?: Json
+          enabled?: boolean
+          external_id: string
+          id?: string
+          meta?: Json
+          platform: string
+          updated_at?: string
+        }
+        Update: {
+          account_label?: string
+          created_at?: string
+          credentials?: Json
+          enabled?: boolean
+          external_id?: string
+          id?: string
+          meta?: Json
+          platform?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      social_post_log: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          created_at: string
+          error: Json | null
+          error_message: string | null
+          external_post_id: string | null
+          hashtags: string[] | null
+          id: string
+          image_urls: string[] | null
+          permalink: string | null
+          platform: string
+          posted_at: string | null
+          product_id: string | null
+          product_slug: string | null
+          product_title: string | null
+          rotation_cycle: number
+          slot: string | null
+          status: string
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          error?: Json | null
+          error_message?: string | null
+          external_post_id?: string | null
+          hashtags?: string[] | null
+          id?: string
+          image_urls?: string[] | null
+          permalink?: string | null
+          platform: string
+          posted_at?: string | null
+          product_id?: string | null
+          product_slug?: string | null
+          product_title?: string | null
+          rotation_cycle?: number
+          slot?: string | null
+          status: string
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          error?: Json | null
+          error_message?: string | null
+          external_post_id?: string | null
+          hashtags?: string[] | null
+          id?: string
+          image_urls?: string[] | null
+          permalink?: string | null
+          platform?: string
+          posted_at?: string | null
+          product_id?: string | null
+          product_slug?: string | null
+          product_title?: string | null
+          rotation_cycle?: number
+          slot?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_settings: {
+        Row: {
+          approval_required: boolean
+          categories: string[]
+          enabled: boolean
+          id: number
+          max_posts_per_day: number
+          min_images: number
+          period: string
+          platforms: string[]
+          posts_per_period: number
+          products_per_post: number
+          require_in_stock: boolean
+          slot_times: string[]
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          approval_required?: boolean
+          categories?: string[]
+          enabled?: boolean
+          id?: number
+          max_posts_per_day?: number
+          min_images?: number
+          period?: string
+          platforms?: string[]
+          posts_per_period?: number
+          products_per_post?: number
+          require_in_stock?: boolean
+          slot_times?: string[]
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          approval_required?: boolean
+          categories?: string[]
+          enabled?: boolean
+          id?: number
+          max_posts_per_day?: number
+          min_images?: number
+          period?: string
+          platforms?: string[]
+          posts_per_period?: number
+          products_per_post?: number
+          require_in_stock?: boolean
+          slot_times?: string[]
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
