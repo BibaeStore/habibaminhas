@@ -1,8 +1,28 @@
 # TRACKER — Social Automation
 
-**Last updated:** 2026-08-09 (third update — Phase 1 BUILT)
-**Status:** 🟡 **Phase 1 implemented on branch `feat/social-automation`.** Not deployed,
-not enabled, nothing has posted. Awaiting deploy + first test post.
+**Last updated:** 2026-08-09 (fourth update — FIRST POST IS LIVE)
+**Status:** ✅ **Phase 1 built and proven end to end. The first real post published on
+2026-08-09.** Automation itself is still paused (`social_settings.enabled = false`, cron
+job inactive) — the first post was published manually through the review queue.
+
+### 🚀 First post — 2026-08-09
+
+Product: **Apricot Weave – 2-Piece Cross-Stitch Embroidered Suit with Printed Trousers**
+
+| Platform | Post ID | Permalink |
+|---|---|---|
+| Instagram | `18090519251398160` | https://www.instagram.com/p/Db0zSoBFZ9o/ (HTTP 200) |
+| Facebook | `1065982543267666_122128733630776991` | https://www.facebook.com/1065982543267666_122128733630776991 |
+
+3-image carousel, 638-char IG caption, 11 hashtags. IG publishing quota moved 0 → 1,
+confirming the publish was counted. Rotation advanced to **cycle 1 · 1 of 20**, and the
+posted product correctly dropped out of the queue (Midnight Gold is now next).
+
+**Both previously-open questions are now closed:**
+1. ✅ Standard Access genuinely carries `instagram_content_publish` — **App Review was
+   never needed**, as researched.
+2. ✅ A System User token *is* accepted despite the Page's 2FA requirement — the
+   undocumented combination works.
 
 > 🔴 **Major correction, 2026-08-09:** **App Review is NOT required for this project.**
 > Meta's App Review page for the Instagram API states it explicitly: *"My app is only for a
