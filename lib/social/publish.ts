@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   getMetaCredentials,
@@ -127,6 +128,11 @@ async function processProduct(
 ): Promise<unknown> {
   const sb = createAdminClient();
 
+  // One logical post, however many platforms it fans out to. Every row this run creates
+  // for this product shares the id, so the admin history shows one entry with an icon per
+  // platform rather than the same post repeated.
+  const groupId = randomUUID();
+
   let imageUrls: string[];
   try {
     imageUrls = await prepareImages(product.images, product.palette?.[0]);
@@ -141,6 +147,7 @@ async function processProduct(
       status: "failed",
       error_message: `Image preparation failed: ${(e as Error).message}`,
       slot,
+      group_id: groupId,
     });
     return { product: product.slug, ok: false, reason: "image_prep_failed" };
   }
@@ -165,6 +172,7 @@ async function processProduct(
       image_urls: imageUrls,
       alt_text: p.altText,
       slot,
+      group_id: groupId,
     }));
     const { error } = await sb.from("social_post_log").insert(rows);
     if (error) return { product: product.slug, ok: false, reason: "queue_insert_failed", message: error.message };
@@ -185,6 +193,7 @@ async function processProduct(
         imageUrls,
         altText: p.altText,
         slot,
+        groupId,
       }),
     );
   }
@@ -202,6 +211,8 @@ type PublishInput = {
   imageUrls: string[];
   altText: string | null;
   slot: string | null;
+  /** Shared across every platform row of one logical post. Only used on the insert path. */
+  groupId?: string;
 };
 
 /**
@@ -245,9 +256,12 @@ async function publishOne(creds: MetaCredentials, input: PublishInput): Promise<
     };
 
     if (input.logId) {
+      // Update path: never touch group_id — the row already belongs to a group.
       await sb.from("social_post_log").update(row).eq("id", input.logId);
     } else {
-      await sb.from("social_post_log").insert(row);
+      await sb
+        .from("social_post_log")
+        .insert(input.groupId ? { ...row, group_id: input.groupId } : row);
     }
 
     return { platform: input.platform, ok: true, postId: result.externalPostId, permalink: result.permalink };
@@ -273,6 +287,7 @@ async function publishOne(creds: MetaCredentials, input: PublishInput): Promise<
         image_urls: input.imageUrls,
         alt_text: input.altText,
         slot: input.slot,
+        ...(input.groupId ? { group_id: input.groupId } : {}),
         ...failure,
       });
     }

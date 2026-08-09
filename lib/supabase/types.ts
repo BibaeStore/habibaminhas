@@ -685,6 +685,7 @@ export type Database = {
           error: Json | null
           error_message: string | null
           external_post_id: string | null
+          group_id: string
           hashtags: string[] | null
           id: string
           image_urls: string[] | null
@@ -705,6 +706,7 @@ export type Database = {
           error?: Json | null
           error_message?: string | null
           external_post_id?: string | null
+          group_id?: string
           hashtags?: string[] | null
           id?: string
           image_urls?: string[] | null
@@ -725,6 +727,7 @@ export type Database = {
           error?: Json | null
           error_message?: string | null
           external_post_id?: string | null
+          group_id?: string
           hashtags?: string[] | null
           id?: string
           image_urls?: string[] | null

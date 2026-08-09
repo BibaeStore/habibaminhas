@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Calendar, Send, ClipboardCheck, RefreshCw, Check, X, AlertTriangle,
-  ExternalLink, Power, Loader2,
+  Calendar, Send, ClipboardCheck, Check, X, AlertTriangle,
+  Power, Loader2, ChevronLeft, ChevronRight,
 } from "lucide-react";
+import { PlatformIcon, platformLabel } from "@/components/admin/platform-icons";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
 import { AdminButton } from "@/components/admin/ui/button";
@@ -461,77 +462,216 @@ export default function SocialAdminPage() {
     );
     }
 
-    // ─── History ──────────────────────────────────────────────────────────────────
+// ─── History ─────────────────────────────────────────────────────────────
 
-    function HistoryTab({
-    rows, pending, onAct,
-    }: {
-    rows: SocialLogRow[];
-    pending: boolean;
-    onAct: (fn: () => Promise<unknown>, message?: string) => void;
-    }) {
-    if (rows.length === 0) {
-      return (
-        <AdminCard padded>
-          <p className="text-[14px] text-[var(--admin-text-muted)]">No posts yet.</p>
-        </AdminCard>
+/**
+ * One post fans out across several platforms, so history groups by `group_id` and renders
+ * a single row per post with one icon per platform. Each icon links to that platform's own
+ * permalink. Adding YouTube, WhatsApp or TikTok later is one entry in the icon registry —
+ * see components/admin/platform-icons.tsx.
+ */
+const POSTS_PER_PAGE = 10;
+
+type PostGroup = {
+  groupId: string;
+  title: string;
+  thumbnail: string | null;
+  when: string;
+  rows: SocialLogRow[];
+};
+
+function groupPosts(rows: SocialLogRow[]): PostGroup[] {
+  const map = new Map<string, SocialLogRow[]>();
+  for (const row of rows) {
+    const key = row.group_id ?? row.id; // rows predating group_id stand alone
+    const existing = map.get(key);
+    if (existing) existing.push(row);
+    else map.set(key, [row]);
+  }
+
+  return [...map.entries()]
+    .map(([groupId, group]) => {
+      const newest = group.reduce((a, b) =>
+        Date.parse(b.posted_at ?? b.created_at) > Date.parse(a.posted_at ?? a.created_at) ? b : a,
       );
-    }
+      return {
+        groupId,
+        title: newest.product_title ?? "\u2014",
+        thumbnail: newest.image_urls?.[0] ?? null,
+        when: newest.posted_at ?? newest.created_at,
+        rows: group,
+      };
+    })
+    .sort((a, b) => Date.parse(b.when) - Date.parse(a.when));
+}
 
+/** One platform icon, coloured by outcome and linked to that platform's own post. */
+function PlatformLink({
+  row,
+  pending,
+  onAct,
+}: {
+  row: SocialLogRow;
+  pending: boolean;
+  onAct: (fn: () => Promise<unknown>, message?: string) => void;
+}) {
+  const label = platformLabel(row.platform);
+  const base =
+    "inline-flex h-8 w-8 items-center justify-center rounded-full border transition";
+
+  if (row.status === "posted" && row.permalink) {
     return (
-      <AdminCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[14px]">
-            <thead className="border-b border-[var(--admin-border)] text-[13px] text-[var(--admin-text-muted)]">
-              <tr>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Platform</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">When</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-b border-[var(--admin-border)] last:border-0">
-                  <td className="px-4 py-3 text-[var(--admin-text)]">{row.product_title ?? "—"}</td>
-                  <td className="px-4 py-3 text-[var(--admin-text-muted)]">{row.platform}</td>
+      <a
+        href={row.permalink}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={`View on ${label}`}
+        aria-label={`View on ${label}`}
+        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100`}
+      >
+        <PlatformIcon platform={row.platform} size={15} />
+      </a>
+    );
+  }
+
+  if (row.status === "failed") {
+    return (
+      <button
+        onClick={() => onAct(() => retryFailedPost(row.id), `Retried ${label}`)}
+        disabled={pending}
+        title={`${label} failed \u2014 click to retry. ${row.error_message ?? ""}`.trim()}
+        aria-label={`Retry ${label}`}
+        className={`${base} border-red-200 bg-red-50 text-red-700 hover:bg-red-100`}
+      >
+        {pending ? <Loader2 size={14} className="animate-spin" /> : <PlatformIcon platform={row.platform} size={15} />}
+      </button>
+    );
+  }
+
+  return (
+    <span
+      title={`${label} \u2014 ${row.status}`}
+      aria-label={`${label} ${row.status}`}
+      className={`${base} border-slate-200 bg-slate-50 text-slate-400`}
+    >
+      <PlatformIcon platform={row.platform} size={15} />
+    </span>
+  );
+}
+
+function HistoryTab({
+  rows,
+  pending,
+  onAct,
+}: {
+  rows: SocialLogRow[];
+  pending: boolean;
+  onAct: (fn: () => Promise<unknown>, message?: string) => void;
+}) {
+  const [page, setPage] = useState(0);
+
+  const groups = groupPosts(rows);
+  const pageCount = Math.max(1, Math.ceil(groups.length / POSTS_PER_PAGE));
+  // Clamped rather than reset, so deleting the last item on page 3 lands on page 2
+  // instead of jumping back to the top.
+  const current = Math.min(page, pageCount - 1);
+  const visible = groups.slice(current * POSTS_PER_PAGE, current * POSTS_PER_PAGE + POSTS_PER_PAGE);
+
+  if (groups.length === 0) {
+    return (
+      <AdminCard padded>
+        <p className="text-[14px] text-[var(--admin-text-muted)]">No posts yet.</p>
+      </AdminCard>
+    );
+  }
+
+  return (
+    <AdminCard>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-[14px]">
+          <thead className="border-b border-[var(--admin-border)] text-[13px] text-[var(--admin-text-muted)]">
+            <tr>
+              <th className="px-4 py-3">Post</th>
+              <th className="px-4 py-3">Published to</th>
+              <th className="px-4 py-3">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((group) => {
+              const errors = group.rows.filter((r) => r.error_message);
+              return (
+                <tr key={group.groupId} className="border-b border-[var(--admin-border)] last:border-0">
                   <td className="px-4 py-3">
-                    {row.status === "posted" ? <Pill tone="ok">posted</Pill>
-                      : row.status === "failed" ? <Pill tone="bad">failed</Pill>
-                      : <Pill tone="muted">{row.status}</Pill>}
-                    {row.error_message && (
-                      <p className="mt-1 max-w-md text-[12px] text-red-600">{row.error_message}</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-[var(--admin-text-muted)]">
-                    {new Date(row.posted_at ?? row.created_at).toLocaleString("en-GB")}
+                    <div className="flex items-center gap-3">
+                      {group.thumbnail && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={group.thumbnail}
+                          alt=""
+                          className="h-12 w-10 shrink-0 rounded object-cover"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-[var(--admin-text)]">{group.title}</p>
+                        {errors.map((r) => (
+                          <p key={r.id} className="mt-0.5 text-[12px] text-red-600">
+                            {r.platform}: {r.error_message}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      {row.permalink && (
-                        <a href={row.permalink} target="_blank" rel="noopener noreferrer"
-                           className="text-[var(--admin-accent)]" aria-label="View post">
-                          <ExternalLink size={16} />
-                        </a>
-                      )}
-                      {row.status === "failed" && (
-                        <button
-                          onClick={() => onAct(() => retryFailedPost(row.id), "Retried")}
-                          disabled={pending}
-                          aria-label="Retry"
-                          className="text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]"
-                        >
-                          {pending ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                        </button>
-                      )}
+                      {group.rows
+                        .slice()
+                        .sort((a, b) => a.platform.localeCompare(b.platform))
+                        .map((row) => (
+                          <PlatformLink key={row.id} row={row} pending={pending} onAct={onAct} />
+                        ))}
                     </div>
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-[13px] text-[var(--admin-text-muted)]">
+                    {new Date(group.when).toLocaleString("en-GB")}
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
+
+      {pageCount > 1 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--admin-border)] px-4 py-3">
+          <p className="text-[13px] text-[var(--admin-text-muted)]">
+            {current * POSTS_PER_PAGE + 1}\u2013{current * POSTS_PER_PAGE + visible.length} of{" "}
+            {groups.length} posts
+          </p>
+          <div className="flex items-center gap-2">
+            <AdminButton
+              size="sm"
+              variant="outline"
+              disabled={current === 0}
+              onClick={() => setPage(current - 1)}
+              leadingIcon={<ChevronLeft size={15} />}
+            >
+              Previous
+            </AdminButton>
+            <span className="text-[13px] text-[var(--admin-text-muted)]">
+              {current + 1} / {pageCount}
+            </span>
+            <AdminButton
+              size="sm"
+              variant="outline"
+              disabled={current >= pageCount - 1}
+              onClick={() => setPage(current + 1)}
+              trailingIcon={<ChevronRight size={15} />}
+            >
+              Next
+            </AdminButton>
+          </div>
+        </div>
+      )}
     </AdminCard>
   );
 }

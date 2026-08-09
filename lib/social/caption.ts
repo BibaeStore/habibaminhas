@@ -52,19 +52,10 @@ function pickSpec(specs: Map<string, string>, ...candidates: string[]): string |
   return null;
 }
 
-function sizesInStock(sizes: Record<string, number> | null): string[] {
-  if (!sizes) return [];
-  const order = ["XS", "S", "M", "L", "XL", "XXL"];
-  return Object.entries(sizes)
-    .filter(([, qty]) => (qty ?? 0) > 0)
-    .map(([size]) => size)
-    .sort((a, b) => order.indexOf(a) - order.indexOf(b));
-}
-
-function totalStock(sizes: Record<string, number> | null): number {
-  if (!sizes) return 0;
-  return Object.values(sizes).reduce((sum, q) => sum + (q ?? 0), 0);
-}
+/*
+ * There is deliberately no size or stock helper here any more. Captions must not disclose
+ * inventory — see buildDetails and buildUrduLine.
+ */
 
 function formatPrice(paisaFreeInteger: number): string {
   return `Rs. ${paisaFreeInteger.toLocaleString("en-PK")}`;
@@ -146,15 +137,16 @@ function buildDetails(product: ProductCandidate, specs: Map<string, string>): st
   if (stitching) lines.push(`• ${stitching}`);
   if (embroidery) lines.push(`• ${embroidery}`);
 
-  const sizes = sizesInStock(product.sizes_stock);
-  if (sizes.length > 0) {
-    lines.push(`• ${formatPrice(product.price)} · Sizes ${sizes.join(", ")}`);
-  } else {
-    lines.push(`• ${formatPrice(product.price)}`);
-  }
-
-  lines.push("• Made in our Karachi studio, small runs only");
-  return lines.slice(0, 6);
+  /*
+   * Price only — no sizes, no stock counts, no studio/production line.
+   *
+   * Owner instruction 2026-08-09: captions must never disclose which sizes are left, how
+   * many pieces remain, or where the garment is made. Inventory detail belongs on the
+   * product page, where it is always current; a caption is permanent and goes stale the
+   * moment something sells.
+   */
+  lines.push(`• ${formatPrice(product.price)}`);
+  return lines.slice(0, 5);
 }
 
 /**
@@ -165,13 +157,17 @@ function buildDetails(product: ProductCandidate, specs: Map<string, string>): st
  * hand-written line, chosen by what is actually true of the stock.
  */
 function buildUrduLine(product: ProductCandidate): string {
-  const sizes = sizesInStock(product.sizes_stock);
-  const total = totalStock(product.sizes_stock);
-
-  if (total === 1 && sizes.length === 1) return `Sirf aik piece available — ${sizes[0]}.`;
-  if (sizes.length === 1) return `Sirf ${sizes[0]} size available.`;
-  if (total > 0 && total <= 3) return "Limited pieces — jaldi order karein.";
-  return "Abhi order karein, nationwide delivery.";
+  /*
+   * Deliberately stock-free. Earlier versions varied this line by how many pieces were
+   * left ("Sirf aik piece available — M."), which the owner ruled out: captions must not
+   * disclose inventory. Variety now comes from the slug hash instead of from stock.
+   */
+  const lines = [
+    "Abhi order karein, nationwide delivery.",
+    "Ghar baithay order karein — poore Pakistan mein delivery.",
+    "Online order karein, delivery aap ke ghar tak.",
+  ];
+  return lines[stableIndex(product.slug, lines.length)];
 }
 
 /**
@@ -292,10 +288,12 @@ export function buildCaption(
   const hashtags = buildHashtags(product, specs);
   const name = shortName(product.title);
 
+  // Instagram captions are not clickable, so the CTA points at the bio and names the
+  // product so site search finds it. It must not mention sizing or availability.
   const cta =
     platform === "facebook"
       ? `Shop ${name} → ${productUrl(product.category, product.slug, platform)}`
-      : `Full details and sizing on the site — link in bio 🔗\nSearch “${name}” on habibaminhas.com`;
+      : `Shop “${name}” — link in bio 🔗`;
 
   const body = [hook, "", details.join("\n"), "", urdu, "", cta].join("\n");
   const caption = clampCaption(body, hashtags);

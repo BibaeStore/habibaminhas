@@ -48,7 +48,7 @@ export function createFacebookAdapter(creds: MetaCredentials): PlatformAdapter {
 
       return {
         externalPostId: postId,
-        permalink: `https://www.facebook.com/${postId}`,
+        permalink: await fetchPermalink(pageCreds, postId),
       };
     },
   };
@@ -89,6 +89,34 @@ async function getPageAccessToken(creds: MetaCredentials): Promise<string> {
   const token = res.access_token ?? creds.token;
   cachedPageToken = { pageId: creds.pageId, token, at: now };
   return token;
+}
+
+/**
+ * Asks the API for the post's real permalink.
+ *
+ * Do NOT build this by hand as `facebook.com/{page-id}_{post-id}`. Facebook has migrated
+ * Pages to new-style actor IDs, so the legacy composite form no longer resolves — it
+ * redirects to `permalink.php?story_fbid=pfbid…` and renders "This content isn't available
+ * right now" even for a perfectly public, published post. The real shape is
+ * `facebook.com/{new-actor-id}/posts/{post-id}`, and only the API knows the actor id.
+ *
+ * Best-effort: a missing permalink must never fail a post that already published.
+ */
+async function fetchPermalink(
+  creds: MetaCredentials,
+  postId: string,
+): Promise<string | undefined> {
+  try {
+    const res = await graphRequest<{ permalink_url?: string }>(
+      creds,
+      `/${postId}`,
+      { fields: "permalink_url" },
+      "GET",
+    );
+    return res.permalink_url;
+  } catch {
+    return undefined;
+  }
 }
 
 async function publishSinglePhoto(
