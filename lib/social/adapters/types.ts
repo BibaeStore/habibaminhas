@@ -66,7 +66,17 @@ export class MetaApiError extends Error {
 
   /** Worth retrying within the same run — transient server-side or upload hiccups. */
   get isTransient(): boolean {
-    const transientSubcodes = [2207001, 2207003, 2207008, 2207032, 2207053];
+    const transientSubcodes = [
+      2207001, // Instagram server error
+      2207003, // timed out downloading the media
+      2207008, // media builder expired
+      2207032, // create media failed
+      2207053, // unknown upload error
+      // 2207052 — "could not fetch the media from this uri". Usually our CDN not having
+      // propagated a just-uploaded derivative to the edge Meta happens to hit. Retrying
+      // fixes that; a genuinely dead URL just fails a few seconds later instead.
+      2207052,
+    ];
     if (this.subcode !== null && transientSubcodes.includes(this.subcode)) return true;
     return this.httpStatus >= 500;
   }
