@@ -22,6 +22,7 @@ Pinterest, LinkedIn, X and the rest slot in later without a rewrite.
 | 01 | [Setup Checklist](./01-SETUP-CHECKLIST.md) | **Start here.** Exactly what the owner must do and hand over |
 | 02 | [Architecture](./02-ARCHITECTURE.md) | Database tables, rotation logic, cron, platform adapters |
 | 03 | [Content & Schedule](./03-CONTENT-AND-SCHEDULE.md) | Captions, hashtags, social SEO/AEO, posting times |
+| 04 | [Collaborators, Music & Post Control](./04-COLLABORATORS-MUSIC-CONTROL.md) | Tagging a second account, trending audio, delete/repost. **Plan only** |
 | — | [TRACKER](./TRACKER.md) | What is done vs not |
 
 ---
