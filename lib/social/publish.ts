@@ -3,16 +3,18 @@ import { createAdminClient } from "@/lib/supabase/server";
 import {
   getMetaCredentials,
   getSocialSettings,
+  getActivePlatforms,
+  getEnabledCollaborators,
   findDueSlot,
   startOfLocalDayUtc,
   type MetaCredentials,
   type SocialSettings,
 } from "./config";
-import { selectNextProducts, type ProductCandidate } from "./select";
+import { selectNextProducts, clearManualOrder, type ProductCandidate } from "./select";
 import { buildCaption } from "./caption";
 import { prepareImages } from "./images";
-import { createInstagramAdapter } from "./adapters/instagram";
-import { createFacebookAdapter } from "./adapters/facebook";
+import { createInstagramAdapter, deleteInstagramMedia } from "./adapters/instagram";
+import { createFacebookAdapter, deleteFacebookPost } from "./adapters/facebook";
 import { MetaApiError, type PlatformAdapter } from "./adapters/types";
 
 /**
@@ -152,12 +154,26 @@ async function processProduct(
     return { product: product.slug, ok: false, reason: "image_prep_failed" };
   }
 
-  const perPlatform = settings.platforms
-    .filter((p): p is PlatformName => p === "instagram" || p === "facebook")
-    .map((platform) => {
-      const { caption, hashtags, altText } = buildCaption(product, platform);
-      return { platform, caption, hashtags, altText };
-    });
+  // Targets come from the platform registry (supported AND enabled), falling back to the
+  // legacy settings column if the registry is empty for any reason.
+  const registry = await getActivePlatforms();
+  const targets = (registry.length > 0 ? registry : settings.platforms).filter(
+    (p): p is PlatformName => p === "instagram" || p === "facebook",
+  );
+
+  const collaborators = await getEnabledCollaborators("instagram");
+
+  const perPlatform = targets.map((platform) => {
+    const { caption, hashtags, altText } = buildCaption(product, platform);
+    return {
+      platform,
+      caption,
+      hashtags,
+      altText,
+      // Facebook has no collaborator concept — the adapter ignores an empty list.
+      collaborators: platform === "instagram" ? collaborators : [],
+    };
+  });
 
   // Review queue on: write pending rows and stop. Nothing reaches Meta until approved.
   if (settings.approval_required) {
@@ -176,6 +192,8 @@ async function processProduct(
     }));
     const { error } = await sb.from("social_post_log").insert(rows);
     if (error) return { product: product.slug, ok: false, reason: "queue_insert_failed", message: error.message };
+    // The pin has done its job — the product is queued, so let the rotation resume.
+    await clearManualOrder(product.id);
     return { product: product.slug, ok: true, queued: rows.length };
   }
 
@@ -194,9 +212,11 @@ async function processProduct(
         altText: p.altText,
         slot,
         groupId,
+        collaborators: p.collaborators,
       }),
     );
   }
+  await clearManualOrder(product.id);
   return { product: product.slug, ok: true, outcomes };
 }
 
@@ -213,6 +233,8 @@ type PublishInput = {
   slot: string | null;
   /** Shared across every platform row of one logical post. Only used on the insert path. */
   groupId?: string;
+  /** Instagram co-author usernames. Ignored by platforms without the concept. */
+  collaborators?: string[];
 };
 
 /**
@@ -235,6 +257,7 @@ async function publishOne(creds: MetaCredentials, input: PublishInput): Promise<
       imageUrls: input.imageUrls,
       caption: input.caption,
       altText: input.altText ?? undefined,
+      collaborators: input.collaborators,
     });
 
     const row = {
@@ -364,6 +387,165 @@ export async function publishLogEntry(logId: string): Promise<unknown> {
     altText: row.alt_text as string | null,
     slot: row.slot as string | null,
   });
+}
+
+/**
+ * Removes a post from the chosen platforms, then archives the row.
+ *
+ * Archive rather than delete, because the owner explicitly wants a removed post to be
+ * recoverable later. The row keeps its caption, images and group so it can be reposted;
+ * `deleted_from` records which platforms it was pulled from.
+ *
+ * Per-platform selection matters: a post can be wrong on Instagram and fine on Facebook,
+ * and there is no reason to lose the Facebook engagement to fix the Instagram caption.
+ */
+export async function deletePostFromPlatforms(
+  groupId: string,
+  platforms: string[],
+): Promise<{ ok: boolean; results: unknown[] }> {
+  const creds = getMetaCredentials();
+  if (!creds) return { ok: false, results: [{ reason: "credentials_missing" }] };
+
+  const sb = createAdminClient();
+  const { data: rows } = await sb
+    .from("social_post_log")
+    .select("*")
+    .eq("group_id", groupId)
+    .in("platform", platforms);
+
+  const results: unknown[] = [];
+
+  for (const row of rows ?? []) {
+    const externalId = row.external_post_id as string | null;
+
+    // Nothing was ever published for this row — archive it and move on.
+    if (!externalId) {
+      await sb
+        .from("social_post_log")
+        .update({ status: "archived", archived_at: new Date().toISOString() })
+        .eq("id", row.id);
+      results.push({ platform: row.platform, ok: true, note: "not_published_archived" });
+      continue;
+    }
+
+    try {
+      if (row.platform === "instagram") {
+        await deleteInstagramMedia(creds, externalId);
+      } else if (row.platform === "facebook") {
+        await deleteFacebookPost(creds, externalId);
+      } else {
+        results.push({ platform: row.platform, ok: false, reason: "no_adapter" });
+        continue;
+      }
+
+      await sb
+        .from("social_post_log")
+        .update({
+          status: "archived",
+          archived_at: new Date().toISOString(),
+          deleted_from: [...((row.deleted_from as string[]) ?? []), row.platform],
+        })
+        .eq("id", row.id);
+
+      results.push({ platform: row.platform, ok: true });
+    } catch (e) {
+      const isMeta = e instanceof MetaApiError;
+      results.push({
+        platform: row.platform,
+        ok: false,
+        message: (e as Error).message,
+        code: isMeta ? e.code : null,
+        subcode: isMeta ? e.subcode : null,
+      });
+    }
+  }
+
+  return { ok: results.every((r) => (r as { ok?: boolean }).ok), results };
+}
+
+/**
+ * Deletes a post and republishes it with a freshly generated caption.
+ *
+ * This is the only way to correct a live Instagram caption — Meta's media endpoint accepts
+ * `comment_enabled` and nothing else, so an edit is genuinely impossible. Facebook could be
+ * edited in place, but going through the same path keeps the two platforms consistent.
+ *
+ * The caption is rebuilt from current product data, so a repost also picks up any content
+ * rule changes since the original went out.
+ */
+export async function repostWithFreshCaption(
+  groupId: string,
+): Promise<{ ok: boolean; detail: unknown }> {
+  const creds = getMetaCredentials();
+  if (!creds) return { ok: false, detail: "credentials_missing" };
+
+  const sb = createAdminClient();
+  const { data: rows } = await sb
+    .from("social_post_log")
+    .select("*")
+    .eq("group_id", groupId);
+
+  if (!rows?.length) return { ok: false, detail: "group_not_found" };
+
+  const productId = rows[0].product_id as string | null;
+  if (!productId) return { ok: false, detail: "product_deleted_cannot_rebuild" };
+
+  const { data: product } = await sb
+    .from("products")
+    .select(
+      "id, slug, title, short_description, description, price, category, subcategory, sku, images, palette, sizes_stock, seo_keywords, faqs, created_at",
+    )
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (!product) return { ok: false, detail: "product_not_found" };
+
+  const platforms = rows.map((r) => r.platform as string);
+  const removal = await deletePostFromPlatforms(groupId, platforms);
+
+  const candidate = product as unknown as ProductCandidate;
+  const imageUrls = await prepareImages(candidate.images, candidate.palette?.[0]);
+  const collaborators = await getEnabledCollaborators("instagram");
+  const newGroupId = randomUUID();
+
+  const outcomes: unknown[] = [];
+  for (const platform of platforms) {
+    if (platform !== "instagram" && platform !== "facebook") continue;
+    const { caption, hashtags, altText } = buildCaption(candidate, platform);
+    outcomes.push(
+      await publishOne(creds, {
+        productId: candidate.id,
+        productSlug: candidate.slug,
+        productTitle: candidate.title,
+        platform,
+        caption,
+        hashtags,
+        imageUrls,
+        altText,
+        slot: "repost",
+        groupId: newGroupId,
+        collaborators: platform === "instagram" ? collaborators : [],
+      }),
+    );
+  }
+
+  return { ok: true, detail: { removed: removal.results, republished: outcomes } };
+}
+
+/** Restores an archived post to the review queue so it can be published again. */
+export async function restoreArchivedPost(groupId: string): Promise<void> {
+  const sb = createAdminClient();
+  await sb
+    .from("social_post_log")
+    .update({
+      status: "pending",
+      archived_at: null,
+      external_post_id: null,
+      permalink: null,
+      posted_at: null,
+    })
+    .eq("group_id", groupId)
+    .eq("status", "archived");
 }
 
 /** Posts already published in the current local day, against the hard ceiling. */

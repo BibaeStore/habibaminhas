@@ -77,6 +77,50 @@ export async function getSocialSettings(): Promise<SocialSettings | null> {
 }
 
 /**
+ * Platforms the pipeline should actually post to.
+ *
+ * A platform must be both `supported` (an adapter exists) and `enabled` (the owner wants
+ * it). Reading this from the registry rather than `social_settings.platforms` means
+ * enabling TikTok later is a row update, and the owner can never enable a platform we
+ * cannot yet publish to.
+ */
+export async function getActivePlatforms(): Promise<string[]> {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("social_platforms")
+    .select("key")
+    .eq("supported", true)
+    .eq("enabled", true)
+    .order("sort_order");
+
+  if (error || !data) return [];
+  return data.map((r) => r.key);
+}
+
+/**
+ * Usernames to tag as co-authors on new Instagram posts.
+ *
+ * Capped at Meta's limit here rather than in the database so the owner can keep more than
+ * three on file and switch between them with the enabled checkbox.
+ */
+export async function getEnabledCollaborators(
+  platform = "instagram",
+  max = 3,
+): Promise<string[]> {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("social_collaborators")
+    .select("username")
+    .eq("platform", platform)
+    .eq("enabled", true)
+    .order("created_at")
+    .limit(max);
+
+  if (error || !data) return [];
+  return data.map((r) => r.username);
+}
+
+/**
  * Public URL for a product page, with UTM parameters so GA4 can attribute the session.
  *
  * `utm_content` carries the slug, which is what makes it possible to see *which products*

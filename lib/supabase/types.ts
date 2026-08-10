@@ -677,11 +677,111 @@ export type Database = {
         }
         Relationships: []
       }
+      social_collaborators: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          enabled: boolean
+          id: string
+          notes: string | null
+          platform: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          enabled?: boolean
+          id?: string
+          notes?: string | null
+          platform?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          enabled?: boolean
+          id?: string
+          notes?: string | null
+          platform?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      social_platforms: {
+        Row: {
+          created_at: string
+          description: string
+          enabled: boolean
+          handle: string | null
+          key: string
+          name: string
+          profile_url: string | null
+          sort_order: number
+          supported: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          enabled?: boolean
+          handle?: string | null
+          key: string
+          name: string
+          profile_url?: string | null
+          sort_order?: number
+          supported?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          enabled?: boolean
+          handle?: string | null
+          key?: string
+          name?: string
+          profile_url?: string | null
+          sort_order?: number
+          supported?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      social_queue_order: {
+        Row: {
+          position: number
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          position: number
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          position?: number
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_queue_order_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_post_log: {
         Row: {
           alt_text: string | null
           caption: string | null
+          archived_at: string | null
           created_at: string
+          deleted_from: string[]
           error: Json | null
           error_message: string | null
           external_post_id: string | null
@@ -702,7 +802,9 @@ export type Database = {
         Insert: {
           alt_text?: string | null
           caption?: string | null
+          archived_at?: string | null
           created_at?: string
+          deleted_from?: string[]
           error?: Json | null
           error_message?: string | null
           external_post_id?: string | null
@@ -723,7 +825,9 @@ export type Database = {
         Update: {
           alt_text?: string | null
           caption?: string | null
+          archived_at?: string | null
           created_at?: string
+          deleted_from?: string[]
           error?: Json | null
           error_message?: string | null
           external_post_id?: string | null

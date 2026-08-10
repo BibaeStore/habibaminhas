@@ -92,6 +92,20 @@ async function getPageAccessToken(creds: MetaCredentials): Promise<string> {
 }
 
 /**
+ * Deletes a published Page post.
+ *
+ * Meta's constraint: an app can only modify or delete a Page post that **that same app**
+ * created. Everything we publish qualifies; anything posted by hand from the Page does not.
+ */
+export async function deleteFacebookPost(
+  creds: MetaCredentials,
+  postId: string,
+): Promise<void> {
+  const pageToken = await getPageAccessToken(creds);
+  await graphRequest({ ...creds, token: pageToken }, `/${postId}`, {}, "DELETE");
+}
+
+/**
  * Asks the API for the post's real permalink.
  *
  * Do NOT build this by hand as `facebook.com/{page-id}_{post-id}`. Facebook has migrated

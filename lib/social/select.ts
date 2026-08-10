@@ -103,20 +103,30 @@ export async function selectNextProducts(
    */
   const selectable = eligible.filter((p) => !history.inFlight.has(p.id));
 
+  // Manual drag-and-drop overrides from the admin "Up next" list.
+  const pinned = await loadManualOrder();
+
   const ranked = [...selectable].sort((a, b) => {
+    // 1. Anything the owner dragged into place wins, in the order they chose.
+    const aPin = pinned.get(a.id);
+    const bPin = pinned.get(b.id);
+    if (aPin !== undefined && bPin !== undefined) return aPin - bPin;
+    if (aPin !== undefined) return -1;
+    if (bPin !== undefined) return 1;
+
     const aLast = history.lastPosted.get(a.id) ?? null;
     const bLast = history.lastPosted.get(b.id) ?? null;
 
-    // Never-posted first.
+    // 2. Never-posted next.
     if (aLast === null && bLast !== null) return -1;
     if (aLast !== null && bLast === null) return 1;
 
-    // Both never posted: newest product first, so fresh stock leads.
+    // 3. Both never posted: newest product first, so fresh stock leads.
     if (aLast === null && bLast === null) {
       return Date.parse(b.created_at) - Date.parse(a.created_at);
     }
 
-    // Both posted: least recently posted first.
+    // 4. Both posted: least recently posted first.
     return Date.parse(aLast!) - Date.parse(bLast!);
   });
 
@@ -124,6 +134,32 @@ export async function selectNextProducts(
     products: ranked.slice(0, Math.max(1, limit)),
     status: buildStatus(eligible, history),
   };
+}
+
+/**
+ * Manual ordering set by dragging rows in the admin "Up next" list.
+ *
+ * A pin is a one-shot instruction, not a permanent rank: `clearManualOrder` drops the row
+ * once the product posts, so the catalogue returns to even rotation instead of the pinned
+ * product monopolising the queue forever.
+ */
+async function loadManualOrder(): Promise<Map<string, number>> {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("social_queue_order")
+    .select("product_id, position")
+    .order("position");
+
+  const map = new Map<string, number>();
+  if (error || !data) return map;
+  for (const row of data) map.set(row.product_id, row.position);
+  return map;
+}
+
+/** Removes a product's manual pin — called once it has actually been posted. */
+export async function clearManualOrder(productId: string): Promise<void> {
+  const sb = createAdminClient();
+  await sb.from("social_queue_order").delete().eq("product_id", productId);
 }
 
 type History = {

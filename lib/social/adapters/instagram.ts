@@ -28,6 +28,13 @@ import {
 const CAROUSEL_MIN = 2;
 const CAROUSEL_MAX = 10;
 
+/**
+ * Meta's create-media parameter documents "up to 3 instagram usernames"; the
+ * /collaborators edge reference says up to 5 accounts. The docs disagree, so we take the
+ * lower, safer number — exceeding it would fail the whole publish.
+ */
+export const MAX_COLLABORATORS = 3;
+
 export function createInstagramAdapter(creds: MetaCredentials): PlatformAdapter {
   return {
     platform: "instagram",
@@ -46,10 +53,18 @@ export function createInstagramAdapter(creds: MetaCredentials): PlatformAdapter 
       const images = input.imageUrls.slice(0, CAROUSEL_MAX);
       if (images.length === 0) throw new Error("Instagram: no images supplied");
 
+      const collaborators = (input.collaborators ?? []).slice(0, MAX_COLLABORATORS);
+
       const containerId =
         images.length >= CAROUSEL_MIN
-          ? await createCarouselContainer(creds, images, input.caption)
-          : await createSingleContainer(creds, images[0], input.caption, input.altText);
+          ? await createCarouselContainer(creds, images, input.caption, collaborators)
+          : await createSingleContainer(
+              creds,
+              images[0],
+              input.caption,
+              input.altText,
+              collaborators,
+            );
 
       const published = await publishContainer(creds, containerId);
       return {
@@ -65,9 +80,11 @@ async function createSingleContainer(
   imageUrl: string,
   caption: string,
   altText?: string,
+  collaborators: string[] = [],
 ): Promise<string> {
   const params: Record<string, string> = { image_url: imageUrl, caption };
   if (altText) params.alt_text = altText;
+  if (collaborators.length > 0) params.collaborators = JSON.stringify(collaborators);
 
   const res = await withRetry(() =>
     graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media`, params),
@@ -79,6 +96,7 @@ async function createCarouselContainer(
   creds: MetaCredentials,
   imageUrls: string[],
   caption: string,
+  collaborators: string[] = [],
 ): Promise<string> {
   // Children are created sequentially rather than in parallel: Meta fetches each URL
   // server-side, and firing ten simultaneous requests is a reliable way to trip rate
@@ -94,12 +112,16 @@ async function createCarouselContainer(
     childIds.push(child.id);
   }
 
+  // Collaborators and the caption go on the parent only — children are just slides.
+  const parentParams: Record<string, string> = {
+    media_type: "CAROUSEL",
+    children: childIds.join(","),
+    caption,
+  };
+  if (collaborators.length > 0) parentParams.collaborators = JSON.stringify(collaborators);
+
   const parent = await withRetry(() =>
-    graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media`, {
-      media_type: "CAROUSEL",
-      children: childIds.join(","),
-      caption,
-    }),
+    graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media`, parentParams),
   );
   return parent.id;
 }
@@ -169,6 +191,50 @@ async function fetchPermalink(
     return res.permalink;
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * Deletes a published Instagram post.
+ *
+ * Requires `instagram_manage_contents`, which the System User token already carries.
+ * Facebook Login only, which is our path.
+ *
+ * For a carousel this must be the **parent** media id — Meta does not support removing an
+ * individual slide, and passing a child id returns subcode 2207073.
+ *
+ * This exists because Instagram captions cannot be edited: `POST /{ig-media-id}` accepts
+ * only `comment_enabled`. Delete-and-repost is the sole way to correct a live post.
+ */
+export async function deleteInstagramMedia(
+  creds: MetaCredentials,
+  mediaId: string,
+): Promise<void> {
+  await graphRequest(creds, `/${mediaId}`, {}, "DELETE");
+}
+
+/**
+ * Collaborator invite status for a published post.
+ *
+ * `invite_status` is `Pending` until the tagged account accepts in the Instagram app, so
+ * the admin UI can show "awaiting acceptance" rather than looking like nothing happened.
+ * Best-effort — never fail a post over a status read.
+ */
+export async function getCollaboratorStatus(
+  creds: MetaCredentials,
+  mediaId: string,
+): Promise<Array<{ username: string; invite_status: string }>> {
+  try {
+    const res = await graphRequest<{
+      data?: Array<{ username?: string; invite_status?: string }>;
+    }>(creds, `/${mediaId}/collaborators`, {}, "GET");
+
+    return (res.data ?? []).map((c) => ({
+      username: c.username ?? "",
+      invite_status: c.invite_status ?? "Unknown",
+    }));
+  } catch {
+    return [];
   }
 }
 

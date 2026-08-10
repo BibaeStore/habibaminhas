@@ -19,6 +19,12 @@ export type PublishImagePostInput = {
   caption: string;
   /** Instagram only — indexed, and almost nobody uses it. */
   altText?: string;
+  /**
+   * Instagram only — up to 3 usernames invited as co-authors. The post then appears on
+   * each collaborator's profile too, sharing one engagement count. Silently ignored by
+   * platforms that have no equivalent (Facebook has none).
+   */
+  collaborators?: string[];
 };
 
 export type PlatformLimits = {
@@ -121,7 +127,7 @@ export async function graphRequest<T = unknown>(
   creds: MetaCredentials,
   path: string,
   params: Record<string, string>,
-  method: "GET" | "POST" = "POST",
+  method: "GET" | "POST" | "DELETE" = "POST",
 ): Promise<T> {
   const body = new URLSearchParams({ ...params, access_token: creds.token });
 
@@ -132,8 +138,9 @@ export async function graphRequest<T = unknown>(
     );
   }
 
+  // GET and DELETE carry everything in the query string; only POST gets a body.
   const url =
-    method === "GET" ? `${GRAPH_BASE}${path}?${body.toString()}` : `${GRAPH_BASE}${path}`;
+    method === "POST" ? `${GRAPH_BASE}${path}` : `${GRAPH_BASE}${path}?${body.toString()}`;
 
   const res = await fetch(url, {
     method,

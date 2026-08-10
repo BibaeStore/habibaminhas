@@ -5,8 +5,15 @@ import { createAdminClient } from "@/lib/supabase/server";
 import type { Tables, TablesUpdate } from "@/lib/supabase/types";
 import { getSocialSettings, getMetaCredentials } from "@/lib/social/config";
 import { selectNextProducts, type RotationStatus } from "@/lib/social/select";
-import { publishLogEntry, runScheduledPost } from "@/lib/social/publish";
+import {
+  publishLogEntry,
+  runScheduledPost,
+  deletePostFromPlatforms,
+  repostWithFreshCaption,
+  restoreArchivedPost,
+} from "@/lib/social/publish";
 import { getPublishingQuota } from "@/lib/social/adapters/instagram";
+import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
 
 /**
  * Server actions for /admin/social.
@@ -18,6 +25,8 @@ import { getPublishingQuota } from "@/lib/social/adapters/instagram";
 
 export type SocialLogRow = Tables<"social_post_log">;
 export type SocialSettingsRow = Tables<"social_settings">;
+export type SocialPlatformRow = Tables<"social_platforms">;
+export type SocialCollaboratorRow = Tables<"social_collaborators">;
 
 export async function fetchSocialSettings(): Promise<SocialSettingsRow> {
   const sb = createAdminClient();
@@ -59,12 +68,12 @@ export async function fetchUpNext(limit = 5): Promise<
   return products.map((p) => ({ id: p.id, slug: p.slug, title: p.title, images: p.images }));
 }
 
-export async function fetchPostHistory(limit = 50): Promise<SocialLogRow[]> {
+export async function fetchPostHistory(limit = 200): Promise<SocialLogRow[]> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("social_post_log")
     .select("*")
-    .in("status", ["posted", "failed", "skipped"])
+    .in("status", ["posted", "failed", "skipped", "archived"])
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw new Error(error.message);
@@ -131,6 +140,222 @@ export async function triggerPostNow(productId?: string): Promise<unknown> {
   const result = await runScheduledPost({ force: true, productId });
   revalidatePath("/admin/social");
   return result;
+}
+
+// ─── Platforms ────────────────────────────────────────────────────────────────
+
+export async function fetchPlatforms(): Promise<SocialPlatformRow[]> {
+  const sb = createAdminClient();
+  const { data, error } = await sb.from("social_platforms").select("*").order("sort_order");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/**
+ * Enables or disables posting to a platform.
+ *
+ * Refuses to enable one we cannot publish to — `supported` reflects whether an adapter
+ * exists, and a platform toggled on without one would fail silently every run.
+ */
+export async function setPlatformEnabled(key: string, enabled: boolean): Promise<void> {
+  const sb = createAdminClient();
+
+  if (enabled) {
+    const { data } = await sb
+      .from("social_platforms")
+      .select("supported, name")
+      .eq("key", key)
+      .maybeSingle();
+    if (!data?.supported) {
+      throw new Error(`${data?.name ?? key} has no adapter yet, so it cannot be enabled.`);
+    }
+  }
+
+  const { error } = await sb
+    .from("social_platforms")
+    .update({ enabled, updated_at: new Date().toISOString() })
+    .eq("key", key);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+// ─── Collaborators ────────────────────────────────────────────────────────────
+
+export async function fetchCollaborators(): Promise<SocialCollaboratorRow[]> {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("social_collaborators")
+    .select("*")
+    .order("created_at");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function addCollaborator(input: {
+  username: string;
+  displayName?: string;
+  notes?: string;
+  platform?: string;
+}): Promise<void> {
+  // Accept a pasted profile URL or an @handle and reduce it to the bare username, which
+  // is what Meta's `collaborators` parameter expects.
+  const username = input.username
+    .trim()
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+    .replace(/^@/, "")
+    .replace(/\/.*$/, "")
+    .trim();
+
+  if (!username) throw new Error("Username is required.");
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(username)) {
+    throw new Error("That does not look like a valid Instagram username.");
+  }
+
+  const sb = createAdminClient();
+  const { error } = await sb.from("social_collaborators").insert({
+    platform: input.platform ?? "instagram",
+    username,
+    display_name: input.displayName?.trim() || null,
+    notes: input.notes?.trim() || null,
+    // New entries start disabled so adding someone never silently changes the next post.
+    enabled: false,
+  });
+  if (error) {
+    throw new Error(
+      error.code === "23505" ? `${username} is already in the list.` : error.message,
+    );
+  }
+  revalidatePath("/admin/social");
+}
+
+export async function updateCollaborator(
+  id: string,
+  patch: { displayName?: string; notes?: string },
+): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb
+    .from("social_collaborators")
+    .update({
+      display_name: patch.displayName?.trim() || null,
+      notes: patch.notes?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+/** Toggles whether a collaborator is attached to new posts, enforcing Meta's cap of 3. */
+export async function setCollaboratorEnabled(id: string, enabled: boolean): Promise<void> {
+  const sb = createAdminClient();
+
+  if (enabled) {
+    const { count } = await sb
+      .from("social_collaborators")
+      .select("id", { count: "exact", head: true })
+      .eq("enabled", true);
+    if ((count ?? 0) >= MAX_ENABLED_COLLABORATORS) {
+      throw new Error(
+        `Instagram allows ${MAX_ENABLED_COLLABORATORS} collaborators per post. Turn one off first.`,
+      );
+    }
+  }
+
+  const { error } = await sb
+    .from("social_collaborators")
+    .update({ enabled, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+export async function deleteCollaborator(id: string): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb.from("social_collaborators").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+// ─── Categories ───────────────────────────────────────────────────────────────
+
+/**
+ * Categories that can actually be posted from, with live product counts.
+ *
+ * Only `main` categories are offered: products store the main slug in `category` and use
+ * `subcategory` as an array of tags, so filtering the rotation by a sub-slug would match
+ * nothing.
+ */
+export async function fetchPostableCategories(): Promise<
+  Array<{ slug: string; name: string; liveProducts: number }>
+> {
+  const sb = createAdminClient();
+
+  const [{ data: cats }, { data: products }] = await Promise.all([
+    sb.from("categories").select("slug, name").eq("type", "main").eq("status", "active").order("sort_order"),
+    sb.from("products").select("category").eq("status", "active").gt("stock", 0),
+  ]);
+
+  const counts = new Map<string, number>();
+  for (const p of products ?? []) {
+    counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
+  }
+
+  return (cats ?? []).map((c) => ({
+    slug: c.slug,
+    name: c.name,
+    liveProducts: counts.get(c.slug) ?? 0,
+  }));
+}
+
+// ─── Queue ordering ───────────────────────────────────────────────────────────
+
+/**
+ * Persists a drag-and-drop reorder of the "Up next" list.
+ *
+ * Positions are rewritten wholesale rather than patched, so the stored order always
+ * matches exactly what the owner sees. Pins are cleared automatically once a product
+ * posts, so this nudges the queue rather than permanently reranking the catalogue.
+ */
+export async function saveQueueOrder(productIds: string[]): Promise<void> {
+  const sb = createAdminClient();
+  await sb.from("social_queue_order").delete().neq("product_id", "00000000-0000-0000-0000-000000000000");
+
+  if (productIds.length === 0) {
+    revalidatePath("/admin/social");
+    return;
+  }
+
+  const { error } = await sb.from("social_queue_order").insert(
+    productIds.map((product_id, i) => ({ product_id, position: i })),
+  );
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+/** Drops all manual pins and returns to pure automatic rotation. */
+export async function clearQueueOrder(): Promise<void> {
+  const sb = createAdminClient();
+  await sb.from("social_queue_order").delete().neq("product_id", "00000000-0000-0000-0000-000000000000");
+  revalidatePath("/admin/social");
+}
+
+// ─── Post removal and repost ──────────────────────────────────────────────────
+
+export async function deletePost(groupId: string, platforms: string[]): Promise<unknown> {
+  const result = await deletePostFromPlatforms(groupId, platforms);
+  revalidatePath("/admin/social");
+  return result;
+}
+
+export async function repostPost(groupId: string): Promise<unknown> {
+  const result = await repostWithFreshCaption(groupId);
+  revalidatePath("/admin/social");
+  return result;
+}
+
+export async function restorePost(groupId: string): Promise<void> {
+  await restoreArchivedPost(groupId);
+  revalidatePath("/admin/social");
 }
 
 /** Connection health for the dashboard banner. */
