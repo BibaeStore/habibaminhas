@@ -5,6 +5,48 @@
 2026-08-09.** Automation itself is still paused (`social_settings.enabled = false`, cron
 job inactive) — the first post was published manually through the review queue.
 
+### ✅ App published to Live mode — 2026-08-10
+
+`app_status: live_mode`, `is_live: true`.
+
+**Why this mattered.** Posts published while the app was in Development mode were visible
+only to *role users* — the owner saw them, nobody else did. Meta's App Modes doc:
+
+> "Any data generated while an app is in Development mode, such as test posts, can only be
+> seen by role users. However, that data will be visible to non-role users once the app is
+> switched to Live mode."
+
+Confirmed after publishing: a logged-out fetch of the Facebook post now returns the caption
+text, where before it rendered "This content isn't available right now".
+
+**The Live-mode caveat was unfounded.** Meta's App Review tutorial hints that Live mode
+restricts an app to App-Review-approved permissions, which would have broken Standard
+Access. It does not. Preflight re-run immediately after publishing reached `FINISHED` on a
+real carousel container. **Standard Access keeps working in Live mode for a System User.**
+
+Settings required to publish (all now set): app icon 1024×1024, privacy policy URL,
+category `BUSINESS`. Business verification was already passing.
+
+> ⚠️ Two placeholders still point at `facebook.com` and should be corrected:
+> **Terms of Service URL** → `https://habibaminhas.com/legal/terms/` and
+> **User data deletion** → `https://habibaminhas.com/contact/`.
+> Contact email `ummstyle989@gmail.com` is also still unverified.
+
+### ❌ App Review — not needed, submission abandoned 2026-08-10
+
+A draft submission requested `pages_show_list`, `business_management` and `public_profile`.
+**None of those publish anything** — publishing uses `instagram_content_publish` and
+`pages_manage_posts`, neither of which was in the submission, and both of which already
+work on Standard Access.
+
+It also could not have passed. Meta requires the screencast to "capture the entire login
+flow, from logged-out to logged-in", and this app has **no login flow by design** — it
+authenticates with a System User token, server-to-server. Meta's own guidance is that apps
+with no login may only request `instagram_basic` and `instagram_manage_comments`.
+
+Do not revive this unless publishing actually starts failing with a concrete permissions
+error — which would make a far stronger submission than a speculative one.
+
 ### 🚀 First post — 2026-08-09
 
 Product: **Apricot Weave – 2-Piece Cross-Stitch Embroidered Suit with Printed Trousers**
