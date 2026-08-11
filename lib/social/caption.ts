@@ -435,3 +435,65 @@ function clampCaption(body: string, hashtags: string[]): string {
   }
   return caption;
 }
+
+/**
+ * A ready-to-use caption for a video the owner uploaded themselves.
+ *
+ * An uploaded reel has no product behind it, so nothing can be derived — but leaving the
+ * box empty means it goes out bare, which has already happened once. The owner's stated
+ * habit is to accept whatever is offered and only occasionally edit, so this has to be
+ * publishable as written rather than a prompt to write something.
+ *
+ * Built to the same rules as the product captions: a concrete opening rather than a brand
+ * adjective, one Roman-Urdu line near the call to action, keywords in a real sentence
+ * because Instagram indexes caption text and not only hashtags, and no inventory detail —
+ * a reel is permanent and stock goes stale the moment something sells.
+ *
+ * Varied by the day so consecutive uploads do not read identically, which is itself a spam
+ * signal.
+ */
+export function buildUploadCaption(seed = new Date().toISOString().slice(0, 10)): GeneratedCaption {
+  const hooks = [
+    "New in — hand-finished, ready to wear.",
+    "Fresh off the rail at the Karachi studio.",
+    "The kind of stitching you only see up close.",
+    "Made in small runs, worn every day.",
+  ];
+  const hook = hooks[stableIndex(seed, hooks.length)];
+
+  const urdu = [
+    "Abhi order karein, nationwide delivery.",
+    "Ghar baithay order karein — poore Pakistan mein delivery.",
+    "Online order karein, delivery aap ke ghar tak.",
+  ][stableIndex(seed, 3)];
+
+  const hashtags = [
+    "#PakistaniFashion",
+    "#PakistaniSuits",
+    "#StitchedSuits",
+    "#ReadyToWearPakistan",
+    "#KarachiFashion",
+    "#OnlineShoppingPakistan",
+    "#PakistanOnlineStore",
+    "#EasternWear",
+    "#DesiFashion",
+    "#HabibaMinhas",
+    "#HabibaMinhasStudio",
+  ];
+
+  const body = [
+    hook,
+    "",
+    "Pakistani stitched suits — cotton, lawn and chiffon, cut and finished in our Karachi studio and delivered across Pakistan.",
+    "",
+    urdu,
+    "",
+    "Shop the full collection — link in bio 🔗",
+  ].join("\n");
+
+  return {
+    caption: clampCaption(body, hashtags),
+    hashtags,
+    altText: "Habiba Minhas — Pakistani stitched suits, made in Karachi.",
+  };
+}

@@ -24,7 +24,7 @@ import {
   approveReel, discardReel, restoreReel, generateReel, rebuildReel,
   approveAndPublishReel, publishReelNow,
   updateReelCaption, saveReelQueueOrder, clearReelQueueOrder,
-  createReelUploadUrl, registerUploadedReel,
+  createReelUploadUrl, registerUploadedReel, suggestUploadCaption,
   fetchReelRotation, canGenerateReels,
   type SocialLogRow, type SocialSettingsRow, type SocialReelRow,
   type SocialPlatformRow, type SocialCollaboratorRow,
@@ -541,6 +541,7 @@ export default function SocialAdminPage() {
             upNext={reelUpNext}
             titles={reelTitles}
             rotation={reelRotation}
+            targets={platforms.filter((p) => p.enabled && p.supported).map((p) => p.key)}
             canGenerate={canGenerate}
             pending={pending}
             onAct={act}
@@ -1497,7 +1498,7 @@ function DeleteModal({
 
 // ─── Reels ────────────────────────────────────────────────────────────────────
 
-type ReelView = "review" | "published" | "upload";
+type ReelView = "review" | "published" | "upload" | "discarded";
 
 /**
  * Reels desk.
@@ -1511,11 +1512,13 @@ type ReelView = "review" | "published" | "upload";
  * reinforcement rather than repetition, and mixing the two counters would misreport both.
  */
 function ReelsTab({
-  rows, upNext, titles, rotation, canGenerate, pending, onAct,
+  rows, upNext, titles, rotation, targets, canGenerate, pending, onAct,
 }: {
   rows: SocialReelRow[];
   upNext: Array<{ id: string; slug: string; title: string; images: string[] }>;
   titles: Record<string, string>;
+  /** Platforms switched on right now — what a reel will publish to. */
+  targets: string[];
   rotation: { made: number; eligible: number; awaitingReview: number; published: number };
   canGenerate: boolean;
   pending: boolean;
@@ -1531,6 +1534,7 @@ function ReelsTab({
     { id: "review", label: "To review", count: drafts.length },
     { id: "published", label: "Published", count: live.length },
     { id: "upload", label: "Upload" },
+    { id: "discarded", label: "Discarded", count: archived.length },
   ];
 
   return (
@@ -1573,7 +1577,7 @@ function ReelsTab({
               />
             ) : (
               drafts.map((r) => (
-                <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
+                <ReelCard key={r.id} row={r} titles={titles} targets={targets} pending={pending} onAct={onAct} />
               ))
             ))}
 
@@ -1582,25 +1586,30 @@ function ReelsTab({
               <EmptyReels message="No reels published yet." hint="Approve one to send it live." />
             ) : (
               live.map((r) => (
-                <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
+                <ReelCard key={r.id} row={r} titles={titles} targets={targets} pending={pending} onAct={onAct} />
               ))
             ))}
 
-          {view === "upload" && (
-            <>
-              <UploadReelCard pending={pending} onAct={onAct} />
-              {archived.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-[14px] font-semibold text-[var(--admin-text)]">
-                    Discarded ({archived.length})
-                  </h4>
-                  {archived.map((r) => (
-                    <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+          {view === "upload" && <UploadReelCard pending={pending} onAct={onAct} />}
+
+          {view === "discarded" &&
+            (archived.length === 0 ? (
+              <EmptyReels
+                message="Nothing discarded."
+                hint="Rejected reels are kept here rather than deleted, so you can bring one back."
+              />
+            ) : (
+              archived.map((r) => (
+                <ReelCard
+                  key={r.id}
+                  row={r}
+                  titles={titles}
+                  targets={targets}
+                  pending={pending}
+                  onAct={onAct}
+                />
+              ))
+            ))}
         </div>
 
         <ReelQueueCard
@@ -1931,6 +1940,13 @@ function UploadReelCard({
             setFile(chosen);
             setDuration(null);
             readDuration(chosen);
+            // Pre-filled, not placeholder: the owner accepts the suggestion most of the
+            // time, and a placeholder accepted as-is produces an empty caption.
+            if (!caption.trim()) {
+              suggestUploadCaption()
+                .then(setCaption)
+                .catch(() => {});
+            }
           }}
         />
       </label>
@@ -1939,7 +1955,7 @@ function UploadReelCard({
         <div className="mt-4 space-y-3">
           <Field
             label="Caption"
-            hint="Instagram links are not clickable, so point at the bio. Hashtags belong here too."
+            hint="Written for you and ready to publish — edit it if you want something different."
           >
             <textarea
               rows={5}
@@ -1956,6 +1972,14 @@ function UploadReelCard({
           <div className="flex flex-wrap gap-2">
             <AdminButton size="sm" loading={progress !== null} disabled={pending} onClick={upload}>
               Upload for review
+            </AdminButton>
+            <AdminButton
+              size="sm"
+              variant="outline"
+              disabled={progress !== null}
+              onClick={() => { void suggestUploadCaption().then(setCaption); }}
+            >
+              <RefreshCw size={14} /> Suggest another
             </AdminButton>
             <AdminButton
               size="sm"
@@ -1979,12 +2003,35 @@ function UploadReelCard({
  * either can fail on its own — so one "Published" pill would hide the case that matters:
  * live on one, failed on the other.
  */
-function ReelPlatforms({ row }: { row: SocialReelRow }) {
+function ReelPlatforms({ row, targets }: { row: SocialReelRow; targets: string[] }) {
   const results = (row.platform_results ?? null) as Record<
     string,
     { ok?: boolean; permalink?: string | null; error?: string }
   > | null;
-  if (!results || Object.keys(results).length === 0) return null;
+
+  /*
+   * Before it publishes there are no results yet, so show where it is *going*. Without
+   * this the card gave no clue whether a reel would reach Facebook as well as Instagram —
+   * which mattered even more while Facebook publishing did not exist at all.
+   */
+  if (!results || Object.keys(results).length === 0) {
+    if (row.status === "posted" || targets.length === 0) return null;
+    return (
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-[12px] text-[var(--admin-text-muted)]">Will publish to</span>
+        {targets.map((platform) => (
+          <span
+            key={platform}
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-slate-300 px-2 py-0.5 text-[12px] font-medium text-[var(--admin-text)]"
+            style={{ color: platformBrand(platform) }}
+          >
+            <PlatformIcon platform={platform} size={13} />
+            {platformLabel(platform)}
+          </span>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -2018,10 +2065,11 @@ function ReelPlatforms({ row }: { row: SocialReelRow }) {
 
 /** One reel — player, caption, and the review decision. */
 function ReelCard({
-  row, titles, pending, onAct,
+  row, titles, targets, pending, onAct,
 }: {
   row: SocialReelRow;
   titles: Record<string, string>;
+  targets: string[];
   pending: boolean;
   onAct: (fn: () => Promise<unknown>, message?: string) => void;
 }) {
@@ -2066,7 +2114,7 @@ function ReelCard({
             <p className="mb-2 text-[13px] text-[var(--admin-text)]">{products.join(" · ")}</p>
           )}
 
-          <ReelPlatforms row={row} />
+          <ReelPlatforms row={row} targets={targets} />
           {row.audio_track && (
             <p className="mb-2 text-[12px] text-[var(--admin-text-muted)]">♪ {row.audio_track}</p>
           )}

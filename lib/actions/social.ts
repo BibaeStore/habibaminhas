@@ -14,6 +14,7 @@ import {
 } from "@/lib/social/publish";
 import { getPublishingQuota } from "@/lib/social/adapters/instagram";
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
+import { buildUploadCaption } from "@/lib/social/caption";
 import { buildProductReel } from "@/lib/social/reel/build";
 import { canEncodeHere } from "@/lib/social/reel/encode";
 import { publishQueuedReel } from "@/lib/social/reel/publish";
@@ -750,4 +751,15 @@ export async function rebuildReel(id: string): Promise<{ ok: boolean; detail: st
   } catch (e) {
     return { ok: false, detail: (e as Error).message };
   }
+}
+
+/**
+ * A publishable caption for an uploaded video.
+ *
+ * Offered pre-filled rather than as placeholder text: the owner's stated habit is to accept
+ * what is suggested and edit only occasionally, and a placeholder produces an empty caption
+ * when accepted.
+ */
+export async function suggestUploadCaption(): Promise<string> {
+  return buildUploadCaption().caption;
 }
