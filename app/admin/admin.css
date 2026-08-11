@@ -20,6 +20,23 @@
   --admin-primary-hover:#9a7a50;   /* darker gold */
   --admin-primary-soft: #f5ede0;   /* gold-light */
 
+  /*
+   * `--admin-accent` — interactive accent for controls (checked boxes, on-switches,
+   * selected rows, links).
+   *
+   * It is deliberately a *darker* gold than --admin-primary. --primary is decorative and
+   * sits on ivory; --accent has to work as a solid fill behind a white tick, where
+   * #b89464 manages only ~2.3:1 and the tick disappears. At #8a6d43 it clears 4.8:1
+   * against white, so filled controls read at a glance and as body text on ivory it
+   * still passes AA.
+   *
+   * This token was referenced 13 times by /admin/social before it existed anywhere — an
+   * undefined custom property makes the whole declaration invalid, so those controls
+   * rendered with no colour at all. That is what made checkboxes, switches and the tab
+   * count look blank rather than merely faint.
+   */
+  --admin-accent:       #8a6d43;   /* gold-deep — interactive states */
+
   /* ── Sidebar ───────────────────────────────── */
   --admin-sidebar-bg:   #1a1612;   /* ink — dark sidebar */
   --admin-sidebar-text: rgba(250,247,241,0.75);

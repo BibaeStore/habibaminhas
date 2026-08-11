@@ -101,6 +101,36 @@ const REGISTRY: Record<string, (p: PlatformIconProps) => React.ReactElement> = {
   twitter: XIcon,
 };
 
+/**
+ * Official brand colours, for tinting the glyph.
+ *
+ * A table of nine identical grey icons is unreadable at a glance — the eye recognises
+ * Facebook blue and YouTube red far faster than it reads the word next to them. These are
+ * the published brand hexes, each dark enough to clear 4.5:1 on the admin's cream
+ * background. Instagram is a gradient in reality; a table row is too small for one to read
+ * as anything but noise, so its dominant magenta stands in.
+ *
+ * Colour is never the *only* signal anywhere it is used — the platform name always sits
+ * beside it, so the table stays readable for colourblind users.
+ */
+const BRAND_COLOUR: Record<string, string> = {
+  facebook: "#1877F2",
+  instagram: "#C13584",
+  youtube: "#CC0000",
+  whatsapp: "#128C7E",
+  tiktok: "#010101",
+  pinterest: "#BD081C",
+  x: "#000000",
+  twitter: "#000000",
+  reddit: "#D93A00",
+  quora: "#A82400",
+};
+
+/** Brand colour for a platform, or a neutral slate when it has none. */
+export function platformBrand(platform: string): string {
+  return BRAND_COLOUR[platform.toLowerCase()] ?? "#475569";
+}
+
 /** Brand glyph for a platform, falling back to a generic share icon. */
 export function PlatformIcon({
   platform,

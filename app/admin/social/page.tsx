@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Calendar, Send, ClipboardCheck, Check, X, AlertTriangle, Power, Loader2,
-  ChevronLeft, ChevronRight, Share2, Users, Trash2, RotateCcw,
+  ChevronLeft, ChevronRight, ChevronDown, Share2, Users, Trash2, RotateCcw,
   Plus, GripVertical, Undo2, ExternalLink, Clock,
 } from "lucide-react";
-import { PlatformIcon, platformLabel } from "@/components/admin/platform-icons";
+import { PlatformIcon, platformLabel, platformBrand } from "@/components/admin/platform-icons";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
 import { AdminButton } from "@/components/admin/ui/button";
@@ -41,8 +41,13 @@ const TABS: { id: Tab; icon: typeof Calendar; label: string }[] = [
  */
 const PAGE_PADDING = "flex-1 overflow-y-auto p-4 md:p-6 lg:p-8";
 
+/**
+ * Inputs carry a visible border at rest and a ring on focus. The old single-pixel
+ * `--admin-border` on the cream background was close to invisible, so a text field and a
+ * plain label looked the same until you clicked one.
+ */
 const inputCls =
-  "w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-bg)] px-3 py-2 text-[15px] text-[var(--admin-text)] outline-none transition focus:border-[var(--admin-accent)]";
+  "w-full rounded-lg border-2 border-slate-300 bg-[var(--admin-bg)] px-3 py-2 text-[15px] text-[var(--admin-text)] outline-none transition hover:border-slate-400 focus:border-[var(--admin-accent)] focus:ring-2 focus:ring-[var(--admin-accent)]/25";
 
 const POSTS_PER_PAGE = 10;
 
@@ -59,11 +64,13 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 function Pill({ tone, children }: { tone: "ok" | "warn" | "bad" | "muted"; children: React.ReactNode }) {
+  // Text at -800 and borders at -300: the previous -700 on -50 with a -200 border sat close
+  // to the 4.5:1 floor and read as washed out on the cream admin background.
   const cls = {
-    ok: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    warn: "bg-amber-50 text-amber-700 border-amber-200",
-    bad: "bg-red-50 text-red-700 border-red-200",
-    muted: "bg-slate-50 text-slate-600 border-slate-200",
+    ok: "bg-emerald-50 text-emerald-800 border-emerald-300",
+    warn: "bg-amber-50 text-amber-900 border-amber-300",
+    bad: "bg-red-50 text-red-800 border-red-300",
+    muted: "bg-slate-100 text-slate-700 border-slate-300",
   }[tone];
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium ${cls}`}>
@@ -72,7 +79,140 @@ function Pill({ tone, children }: { tone: "ok" | "warn" | "bad" | "muted"; child
   );
 }
 
-/** Accessible on/off switch — used wherever a checkbox would look cheap. */
+/**
+ * The one checkbox visual, used everywhere a tick is shown.
+ *
+ * A 2px slate-500 border when unchecked, rather than the old 1px slate-300 which
+ * disappeared into the cream background — the reported "I can't tell if I selected it".
+ * Checked is a solid accent fill with a heavy white tick, so the two states differ in
+ * fill, border *and* glyph rather than by shade alone.
+ */
+function CheckBox({ on }: { on: boolean }) {
+  return (
+    <span
+      className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border-2 transition ${
+        on
+          ? "border-[var(--admin-accent)] bg-[var(--admin-accent)] text-white"
+          : "border-slate-500 bg-white"
+      }`}
+    >
+      {on && <Check size={13} strokeWidth={3.5} />}
+    </span>
+  );
+}
+
+/**
+ * Multi-select dropdown for post categories.
+ *
+ * Replaces a grid of inline cards that pushed the rest of the schedule down the page and
+ * whose selected state was hard to read. Closed, it states the selection in words; open,
+ * it is a single scannable column with live in-stock counts.
+ */
+function CategoryPicker({
+  categories, selected, onToggle,
+}: {
+  categories: Array<{ slug: string; name: string; liveProducts: number }>;
+  selected: string[];
+  onToggle: (slug: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const chosen = categories.filter((c) => selected.includes(c.slug));
+  const totalLive = chosen.reduce((sum, c) => sum + c.liveProducts, 0);
+
+  const summary =
+    chosen.length === 0
+      ? "No categories selected — nothing will post"
+      : chosen.length === 1
+        ? chosen[0].name
+        : `${chosen[0].name} + ${chosen.length - 1} more`;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className={`flex w-full items-center justify-between gap-3 rounded-lg border-2 bg-[var(--admin-bg)] px-3 py-2.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--admin-accent)]/40 ${
+          chosen.length === 0
+            ? "border-red-400 hover:border-red-500"
+            : "border-slate-300 hover:border-slate-400"
+        }`}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span
+            className={`truncate text-[15px] ${
+              chosen.length === 0 ? "text-red-700" : "text-[var(--admin-text)]"
+            }`}
+          >
+            {summary}
+          </span>
+          {chosen.length > 0 && (
+            <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[12px] font-semibold text-slate-700">
+              {totalLive} live
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          size={18}
+          className={`shrink-0 text-slate-600 transition ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <>
+          {/* Click-away layer. Sits under the menu but over everything else. */}
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} role="presentation" />
+          <ul
+            role="listbox"
+            aria-multiselectable="true"
+            className="absolute z-20 mt-1.5 max-h-72 w-full overflow-y-auto rounded-xl border-2 border-slate-300 bg-[var(--admin-bg)] py-1 shadow-xl"
+          >
+            {categories.map((c) => {
+              const on = selected.includes(c.slug);
+              return (
+                <li key={c.slug} role="option" aria-selected={on}>
+                  <button
+                    type="button"
+                    onClick={() => onToggle(c.slug)}
+                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-100 ${
+                      on ? "bg-[var(--admin-accent)]/8" : ""
+                    }`}
+                  >
+                    <CheckBox on={on} />
+                    <span className="flex-1 truncate text-[14px] text-[var(--admin-text)]">
+                      {c.name}
+                    </span>
+                    <span
+                      className={`shrink-0 text-[12px] font-medium ${
+                        c.liveProducts === 0 ? "text-red-700" : "text-slate-600"
+                      }`}
+                    >
+                      {c.liveProducts} live
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Accessible on/off switch.
+ *
+ * The previous version was `bg-slate-300` when off against a cream card — roughly 1.3:1,
+ * so "off" and "on" were genuinely hard to tell apart, which is exactly the complaint
+ * raised about the Collaborators tab. Now:
+ *   - a 2px border gives the track an edge at any contrast
+ *   - off is slate-500, not slate-300
+ *   - the knob carries its own ring so it reads against both track states
+ *   - an ON/OFF word means the state never depends on colour alone
+ *   - a visible focus ring, so keyboard users can see where they are
+ */
 function Toggle({
   checked, onChange, disabled, label,
 }: {
@@ -82,23 +222,34 @@ function Toggle({
   label: string;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition ${
-        checked ? "bg-[var(--admin-accent)]" : "bg-slate-300"
-      } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-    >
+    <span className="inline-flex items-center gap-2">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--admin-accent)] focus-visible:ring-offset-2 ${
+          checked
+            ? "border-[var(--admin-accent)] bg-[var(--admin-accent)]"
+            : "border-slate-600 bg-slate-500"
+        } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ring-1 ring-black/20 transition ${
+            checked ? "translate-x-5" : "translate-x-0.5"
+          }`}
+        />
+      </button>
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${
-          checked ? "translate-x-6" : "translate-x-1"
+        className={`select-none text-[11px] font-bold tracking-wide ${
+          checked ? "text-[var(--admin-accent)]" : "text-slate-600"
         }`}
-      />
-    </button>
+      >
+        {checked ? "ON" : "OFF"}
+      </span>
+    </span>
   );
 }
 
@@ -347,7 +498,9 @@ export default function SocialAdminPage() {
                 <t.icon size={16} />
                 {t.label}
                 {badge > 0 && (
-                  <span className="rounded-full bg-[var(--admin-accent)] px-1.5 text-[11px] text-white">{badge}</span>
+                  <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--admin-accent)] px-1.5 text-[11px] font-bold text-white">
+                    {badge}
+                  </span>
                 )}
               </button>
             );
@@ -463,36 +616,13 @@ function ScheduleTab({
             Live counts come straight from the catalogue. A category with no in-stock products contributes nothing.
           </p>
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            {categories.map((c) => {
-              const on = draft.categories.includes(c.slug);
-              return (
-                <button
-                  key={c.slug}
-                  onClick={() => toggleCategory(c.slug)}
-                  className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left transition ${
-                    on
-                      ? "border-[var(--admin-accent)] bg-[var(--admin-accent)]/5"
-                      : "border-[var(--admin-border)] hover:border-slate-300"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span
-                      className={`flex h-4 w-4 items-center justify-center rounded border ${
-                        on ? "border-[var(--admin-accent)] bg-[var(--admin-accent)] text-white" : "border-slate-300"
-                      }`}
-                    >
-                      {on && <Check size={11} />}
-                    </span>
-                    <span className="text-[14px] text-[var(--admin-text)]">{c.name}</span>
-                  </span>
-                  <span className="text-[12px] text-[var(--admin-text-muted)]">
-                    {c.liveProducts} live
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <Field label="Categories" hint="Only main categories are offered — products store the main slug in `category`.">
+            <CategoryPicker
+              categories={categories}
+              selected={draft.categories}
+              onToggle={toggleCategory}
+            />
+          </Field>
 
           <div className="mt-5 grid gap-4 border-t border-[var(--admin-border)] pt-4 sm:grid-cols-2">
             <Field label="Products per post" hint="1 tells a clearer story than 2.">
@@ -643,7 +773,7 @@ function UpNextCard({
                     : "border-transparent hover:border-[var(--admin-border)]"
               }`}
             >
-              <GripVertical size={14} className="shrink-0 text-slate-400" />
+              <GripVertical size={14} className="shrink-0 text-slate-500" />
               <span className="w-4 shrink-0 text-[12px] text-[var(--admin-text-muted)]">{i + 1}</span>
               {p.images[0] && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -689,16 +819,24 @@ function PlatformsTab({
       {rows.map((p) => (
         <AdminCard key={p.key} padded>
           <div className="flex items-start gap-4">
+            {/*
+              * The glyph carries its real brand colour, which is what makes a nine-row list
+              * scannable — the eye finds Facebook blue faster than it reads "Facebook".
+              * A platform with no adapter yet is drawn at reduced opacity on grey rather
+              * than in colour, so "available" and "not built" stay distinguishable without
+              * relying on the pill alone.
+              */}
             <span
-              className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
-                p.enabled
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : p.supported
-                    ? "border-[var(--admin-border)] bg-slate-50 text-slate-500"
-                    : "border-slate-200 bg-slate-50 text-slate-300"
+              className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 ${
+                p.supported ? "border-slate-300 bg-white" : "border-slate-200 bg-slate-100"
               }`}
+              style={p.supported ? { color: platformBrand(p.key) } : undefined}
             >
-              <PlatformIcon platform={p.key} size={19} />
+              <PlatformIcon
+                platform={p.key}
+                size={20}
+                className={p.supported ? "" : "text-slate-400 opacity-60"}
+              />
             </span>
 
             <div className="min-w-0 flex-1">
@@ -1023,6 +1161,24 @@ function groupPosts(rows: SocialLogRow[]): PostGroup[] {
     .sort((a, b) => Date.parse(b.when) - Date.parse(a.when));
 }
 
+/**
+ * Corner glyph marking a post's status on one platform.
+ *
+ * Status used to be carried by colour alone — a green icon versus a red icon of identical
+ * shape, which is invisible to a red-green colourblind reader (around 8% of men). A tick,
+ * a warning triangle and a clock differ in *form*, so colour reinforces the meaning
+ * instead of being the only thing that carries it.
+ */
+function StatusBadge({ tone, children }: { tone: string; children: React.ReactNode }) {
+  return (
+    <span
+      className={`absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-white ring-2 ring-[var(--admin-bg)] ${tone}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 function PlatformLink({
   row, pending, onAct,
 }: {
@@ -1031,16 +1187,19 @@ function PlatformLink({
   onAct: (fn: () => Promise<unknown>, message?: string) => void;
 }) {
   const label = platformLabel(row.platform);
-  const base = "inline-flex h-8 w-8 items-center justify-center rounded-full border transition";
+  const base =
+    "relative inline-flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white transition";
 
   if (row.status === "posted" && row.permalink) {
     return (
       <a
         href={row.permalink} target="_blank" rel="noopener noreferrer"
-        title={`View on ${label}`} aria-label={`View on ${label}`}
-        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100`}
+        title={`View on ${label}`} aria-label={`View on ${label} — posted`}
+        className={`${base} border-emerald-400 hover:bg-emerald-50`}
+        style={{ color: platformBrand(row.platform) }}
       >
         <PlatformIcon platform={row.platform} size={15} />
+        <StatusBadge tone="bg-emerald-600"><Check size={9} strokeWidth={4} /></StatusBadge>
       </a>
     );
   }
@@ -1051,10 +1210,12 @@ function PlatformLink({
         onClick={() => onAct(() => retryFailedPost(row.id), `Retried ${label}`)}
         disabled={pending}
         title={`${label} failed — click to retry. ${row.error_message ?? ""}`.trim()}
-        aria-label={`Retry ${label}`}
-        className={`${base} border-red-200 bg-red-50 text-red-700 hover:bg-red-100`}
+        aria-label={`Retry ${label} — failed`}
+        className={`${base} border-red-500 hover:bg-red-50`}
+        style={{ color: platformBrand(row.platform) }}
       >
         {pending ? <Loader2 size={14} className="animate-spin" /> : <PlatformIcon platform={row.platform} size={15} />}
+        <StatusBadge tone="bg-red-600"><AlertTriangle size={8} strokeWidth={3} /></StatusBadge>
       </button>
     );
   }
@@ -1062,9 +1223,10 @@ function PlatformLink({
   return (
     <span
       title={`${label} — ${row.status}`} aria-label={`${label} ${row.status}`}
-      className={`${base} border-slate-200 bg-slate-50 text-slate-400`}
+      className={`${base} border-slate-400 text-slate-500`}
     >
       <PlatformIcon platform={row.platform} size={15} />
+      <StatusBadge tone="bg-slate-500"><Clock size={8} strokeWidth={3} /></StatusBadge>
     </span>
   );
 }
@@ -1122,7 +1284,7 @@ function HistoryTab({
                           <p className="line-clamp-2 text-[var(--admin-text)]">{group.title}</p>
                           {group.archived && <span className="mt-0.5 inline-block"><Pill tone="muted">Archived</Pill></span>}
                           {errors.map((r) => (
-                            <p key={r.id} className="mt-0.5 text-[12px] text-red-600">
+                            <p key={r.id} className="mt-0.5 text-[12px] text-red-800">
                               {r.platform}: {r.error_message}
                             </p>
                           ))}
