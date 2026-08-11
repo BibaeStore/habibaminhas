@@ -217,28 +217,79 @@ The owner's explicit instruction: **no reel publishes without review.**
 
 ## 7. Planner tab
 
-A new tab where the owner builds the schedule instead of thinking in raw time slots.
+A new tab where the owner sets **targets** and the system works out the schedule, rather
+than the owner thinking in raw time slots.
 
-**Create · edit · view · delete named plans**, e.g. "August — Eid push".
+### Four separate ideas, deliberately not conflated
 
-A plan holds, per content type:
+| Concept | Means | Example |
+|---|---|---|
+| **Plan** | A named, saved configuration | "August — Eid push" |
+| **Target** | How much content, per week and per month | 4 photos + 2 reels per week |
+| **Schedule** | Which days and times that lands on | Mon/Wed/Fri/Sun 19:00, Tue/Sat 20:00 |
+| **Progress** | How much of the target has actually gone out | "This week: 3 of 4 photos, 1 of 2 reels" |
+
+Targets are what the owner thinks in. The schedule is derived from them. Progress is what
+tells them whether the month is on track — and it is the piece that turns a planner from a
+settings screen into something worth opening.
+
+### A plan holds
 
 | Field | Example |
 |---|---|
-| Photo posts per week | 4 |
-| Photo days + times | Mon, Wed, Fri, Sun · 19:00 |
-| Reels per week | 2 |
-| Reel days + times | Tue, Sat · 20:00 |
+| Name | "August — Eid push" |
 | Active period | 2026-08-15 → 2026-09-15 |
+| **Photos per week / per month** | 4 / ~17 |
+| Photo days + times | Mon, Wed, Fri, Sun · 19:00 |
+| **Reels per week / per month** | 2 / ~8 |
+| Reel days + times | Tue, Sat · 20:00 |
+| Notes | Free text — why this plan exists |
 
-**The view** is a week grid — days across, cards showing which product and which format is
-due, colour-coded photo vs reel, and drag a card to another day to move it. A month view
-gives the wider picture.
+Weekly and monthly targets stay in sync: setting one derives the other, and either can be
+edited. Monthly is what a campaign is usually budgeted in; weekly is what a schedule
+actually runs on.
 
-**Only one plan is active at a time.** The scheduler reads the active plan; the rest are
-saved templates. This is what makes "4 photos + 2 reels a week" a setting rather than a code
-change, and it replaces the current raw `slot_times` model without deleting it — the plan
-compiles *down* to slots, so nothing in the existing scheduler breaks.
+### Create · edit · duplicate · view · delete
+
+- The tab lists every saved plan with its target summary and an **Active** badge.
+- **Duplicate** matters more than it sounds — next month's plan is nearly always last
+  month's with two numbers changed.
+- **Only one plan is active at a time**, enforced by a partial unique index in the database
+  rather than by application code remembering.
+- Deleting the active plan is refused; another must be activated first, otherwise posting
+  silently stops.
+
+### The views
+
+**Week grid** — seven columns, cards showing which product and which format is due,
+colour-coded photo vs reel, drag a card to another day to move it.
+
+**Month grid** — the campaign view: every scheduled slot across the month, with per-week
+target-vs-actual in the margin.
+
+**Progress card** — this week and this month, target versus actual, and a plain-language
+line such as *"2 behind for August — add a slot or lower the target."*
+
+### Validation the planner must do
+
+These are the ways a plan silently fails, so the UI catches each one as it is typed:
+
+1. **Target exceeds the days chosen** — 5 photos a week across 4 selected days needs a
+   second slot on one day. Say so rather than quietly dropping one.
+2. **Target exceeds the hard daily ceiling** in `social_settings`.
+3. **Target exceeds the catalogue.** 25 eligible products at 4 photos a week is roughly a
+   six-week cycle; at 14 a week the catalogue repeats inside a fortnight. Warn with the
+   actual runway in weeks.
+4. **Reels target with no eligible products** — Format A needs 3+ images, which only 17 of
+   25 products have.
+5. **Active periods overlapping** another plan.
+
+### How it stays safe
+
+**The plan compiles *down* to the existing `slot_times` model.** The scheduler is not
+rewritten, and `runScheduledPost` keeps working exactly as it does today — the plan simply
+becomes the thing that writes those slots. If a plan is deleted or deactivated, the last
+compiled slots remain, so posting never stops unexpectedly.
 
 ---
 
@@ -254,10 +305,21 @@ social_media_queue        -- one row per generated reel
 
 social_plans              -- named schedules
   id, name, is_active, active_from, active_to,
-  photos_per_week, photo_days int[], photo_times text[],
-  reels_per_week, reel_days int[], reel_times text[],
-  created_at, updated_at
+  photos_per_week, photos_per_month, photo_days int[], photo_times text[],
+  reels_per_week,  reels_per_month,  reel_days  int[], reel_times  text[],
+  notes, created_at, updated_at
+
+social_audio_tracks       -- the one-time licensed music library
+  id, title, artist, file_url, duration_seconds,
+  mood text[],            -- 'upbeat' | 'calm' | 'elegant' | 'festive'
+  licence, licence_url,   -- what permits commercial use, kept as a record
+  source,                 -- 'youtube-audio-library' | 'pixabay' | 'uppbeat' | 'epidemic'
+  enabled, times_used, last_used_at, created_at
 ```
+
+`times_used` and `last_used_at` are what make rotation automatic: the builder picks the
+enabled track used least recently, so consecutive reels never share a track and the library
+spreads itself evenly without anyone managing it.
 
 Reels deliberately get **their own table**, not extra nullable columns on
 `social_post_log`: photo posts and reels have different lifecycles, and mixing them is how
