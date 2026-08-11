@@ -60,6 +60,11 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' widget.trustpilot.com *.supabase.co *.googletagmanager.com *.google-analytics.com js.puter.com connect.facebook.net",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
+              // Reels are served from Supabase Storage. Without an explicit media-src,
+              // <video> falls back to default-src 'self' and the browser blocks the file
+              // silently — the player renders but never loads, which made reels
+              // impossible to review in /admin/social.
+              "media-src 'self' blob: data: *.supabase.co",
               "font-src 'self' data:",
               // www.facebook.com receives the event beacons (/tr), connect.facebook.net is
               // contacted by fbevents.js after it loads. img-src is deliberately not touched

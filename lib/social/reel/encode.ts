@@ -1,9 +1,28 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import ffmpegPath from "ffmpeg-static";
 import { REEL_HEIGHT, REEL_WIDTH } from "./frames";
 
 const run = promisify(execFile);
+
+/**
+ * Resolved lazily rather than imported at module load.
+ *
+ * `ffmpeg-static` is a devDependency and its binary is not part of a serverless bundle, so
+ * a top-level import would make this module unloadable in production even for code paths
+ * that never encode anything. Resolving inside the call keeps the module importable
+ * everywhere and fails only where it actually matters.
+ */
+async function resolveFfmpeg(): Promise<string> {
+  const mod = (await import("ffmpeg-static")) as unknown as { default?: string };
+  const path = mod.default;
+  if (!path) throw new Error("ffmpeg is not available in this environment");
+  return path;
+}
+
+/** Can this process actually encode video? False on Vercel, true on the owner's machine. */
+export function canEncodeHere(): boolean {
+  return !process.env.VERCEL;
+}
 
 /**
  * Turns still frames into a reel.
@@ -72,7 +91,7 @@ function zoomFilter(index: number, frames: number, isEndCard: boolean): string {
 }
 
 export async function encodeReel(options: EncodeOptions): Promise<EncodeResult> {
-  if (!ffmpegPath) throw new Error("ffmpeg-static did not resolve a binary path");
+  const ffmpegPath = await resolveFfmpeg();
   const { framePaths, outputPath, audioPath } = options;
   if (framePaths.length < 2) throw new Error("A reel needs at least two frames");
 

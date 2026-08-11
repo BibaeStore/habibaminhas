@@ -14,6 +14,8 @@ import {
 } from "@/lib/social/publish";
 import { getPublishingQuota } from "@/lib/social/adapters/instagram";
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
+import { buildProductReel } from "@/lib/social/reel/build";
+import { canEncodeHere } from "@/lib/social/reel/encode";
 
 /**
  * Server actions for /admin/social.
@@ -571,4 +573,121 @@ export async function uploadOwnReel(form: FormData): Promise<{ ok: boolean; deta
 
   revalidatePath("/admin/social");
   return { ok: true };
+}
+
+/**
+ * Can this deployment build a reel, or must it be done on the owner's machine?
+ *
+ * Encoding needs ffmpeg and more than 60 seconds, neither of which a Vercel function on
+ * the free plan has. Running locally — which is how the admin is used today — both are
+ * available, so the button works. The UI asks this rather than assuming, so it can offer
+ * the button where it works and explain itself where it does not.
+ */
+export async function canGenerateReels(): Promise<boolean> {
+  return canEncodeHere();
+}
+
+/**
+ * Builds a reel from the admin.
+ *
+ * Same code path as the CLI. Encoding a 12-second reel takes tens of seconds, so this is a
+ * genuinely long-running action — the UI shows progress rather than appearing frozen.
+ */
+export async function generateReel(slug?: string): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const result = await buildProductReel({ slug });
+    revalidatePath("/admin/social");
+    return {
+      ok: true,
+      detail: `${result.productTitle} — ${result.durationSeconds}s, ${result.sizeMb} MB. Ready for review.`,
+    };
+  } catch (e) {
+    return { ok: false, detail: (e as Error).message };
+  }
+}
+
+/**
+ * Rebuilds the reel the owner asked to re-cut, archiving the rejected version first so the
+ * queue never shows two drafts of one product competing for approval.
+ */
+export async function rebuildReel(id: string): Promise<{ ok: boolean; detail: string }> {
+  const sb = createAdminClient();
+  const { data: row } = await sb
+    .from("social_media_queue")
+    .select("id, product_ids")
+    .eq("id", id)
+    .maybeSingle();
+
+  const productId = ((row?.product_ids as string[]) ?? [])[0];
+  if (!productId) return { ok: false, detail: "This reel has no product to rebuild from." };
+
+  const { data: product } = await sb.from("products").select("slug").eq("id", productId).maybeSingle();
+  if (!product?.slug) return { ok: false, detail: "The product no longer exists." };
+
+  try {
+    const result = await buildProductReel({ slug: product.slug as string });
+    await sb
+      .from("social_media_queue")
+      .update({ status: "archived", archived_at: new Date().toISOString(), rebuild_requested: false })
+      .eq("id", id);
+    revalidatePath("/admin/social");
+    return { ok: true, detail: `New cut ready — ${result.durationSeconds}s. The old one moved to Discarded.` };
+  } catch (e) {
+    return { ok: false, detail: (e as Error).message };
+  }
+}
+
+/** Manual order for the reel queue, saved on drop. Separate from the photo queue. */
+export async function saveReelQueueOrder(productIds: string[]): Promise<void> {
+  const sb = createAdminClient();
+  await sb.from("social_reel_queue_order").delete().neq("product_id", "00000000-0000-0000-0000-000000000000");
+  if (productIds.length === 0) return;
+  const { error } = await sb.from("social_reel_queue_order").insert(
+    productIds.map((product_id, position) => ({ product_id, position })),
+  );
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+export async function clearReelQueueOrder(): Promise<void> {
+  const sb = createAdminClient();
+  await sb.from("social_reel_queue_order").delete().neq("product_id", "00000000-0000-0000-0000-000000000000");
+  revalidatePath("/admin/social");
+}
+
+/**
+ * Where the reel rotation stands — its own counter, not the photo one.
+ *
+ * The header's "Cycle 1 · 4 of 25" counts photo posts only. Reels run on a separate track,
+ * so mixing them into one number would misreport both.
+ */
+export async function fetchReelRotation(): Promise<{
+  made: number;
+  eligible: number;
+  awaitingReview: number;
+  published: number;
+}> {
+  const sb = createAdminClient();
+  const settings = await getSocialSettings();
+
+  let query = sb.from("products").select("id, images").eq("status", "active");
+  if (settings?.categories?.length) query = query.in("category", settings.categories);
+  if (settings?.require_in_stock) query = query.gt("stock", 0);
+  const { data: rows } = await query;
+  const eligible = (rows ?? []).filter((p) => ((p.images as string[])?.length ?? 0) >= 3);
+
+  const { data: reels } = await sb
+    .from("social_media_queue")
+    .select("product_ids, status")
+    .neq("status", "archived");
+
+  const covered = new Set<string>();
+  for (const r of reels ?? []) for (const id of (r.product_ids as string[]) ?? []) covered.add(id);
+
+  return {
+    made: eligible.filter((p) => covered.has(p.id as string)).length,
+    eligible: eligible.length,
+    awaitingReview: (reels ?? []).filter((r) => r.status === "draft").length,
+    published: (reels ?? []).filter((r) => r.status === "posted").length,
+  };
 }

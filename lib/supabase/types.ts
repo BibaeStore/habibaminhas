@@ -875,6 +875,24 @@ export type Database = {
         }
         Relationships: []
       }
+      social_reel_queue_order: {
+        Row: {
+          position: number
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          position: number
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          position?: number
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       social_queue_order: {
         Row: {
           position: number

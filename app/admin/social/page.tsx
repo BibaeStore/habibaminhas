@@ -21,8 +21,9 @@ import {
   fetchPostableCategories, saveQueueOrder, clearQueueOrder,
   deletePost, repostPost, restorePost,
   fetchReels, fetchReelUpNext, fetchReelProductTitles,
-  approveReel, discardReel, restoreReel, requestReelRebuild,
-  updateReelCaption, uploadOwnReel,
+  approveReel, discardReel, restoreReel, generateReel, rebuildReel,
+  updateReelCaption, uploadOwnReel, saveReelQueueOrder, clearReelQueueOrder,
+  fetchReelRotation, canGenerateReels,
   type SocialLogRow, type SocialSettingsRow, type SocialReelRow,
   type SocialPlatformRow, type SocialCollaboratorRow,
 } from "@/lib/actions/social";
@@ -330,7 +331,7 @@ function describeRun(result: unknown): string {
 }
 
 async function loadDashboard() {
-  const [settings, rotation, upNext, queue, history, connection, platforms, collaborators, categories, reels, reelUpNext] =
+  const [settings, rotation, upNext, queue, history, connection, platforms, collaborators, categories, reels, reelUpNext, reelRotation, canGenerate] =
     await Promise.all([
       fetchSocialSettings(),
       fetchRotationStatus(),
@@ -342,12 +343,14 @@ async function loadDashboard() {
       fetchCollaborators(),
       fetchPostableCategories(),
       fetchReels(),
-      fetchReelUpNext(8),
+      fetchReelUpNext(10),
+      fetchReelRotation(),
+      canGenerateReels(),
     ]);
   const reelTitles = await fetchReelProductTitles([
     ...new Set(reels.flatMap((r) => r.product_ids ?? [])),
   ]);
-  return { settings, rotation, upNext, queue, history, connection, platforms, collaborators, categories, reels, reelUpNext, reelTitles };
+  return { settings, rotation, upNext, queue, history, connection, platforms, collaborators, categories, reels, reelUpNext, reelTitles, reelRotation, canGenerate };
 }
 
 export default function SocialAdminPage() {
@@ -396,7 +399,7 @@ export default function SocialAdminPage() {
     );
   }
 
-  const { settings, rotation, upNext, queue, history, connection, platforms, collaborators, categories, reels, reelUpNext, reelTitles } = data;
+  const { settings, rotation, upNext, queue, history, connection, platforms, collaborators, categories, reels, reelUpNext, reelTitles, reelRotation, canGenerate } = data;
   const activeCollaborators = collaborators.filter((c) => c.enabled).length;
 
   return (
@@ -531,7 +534,15 @@ export default function SocialAdminPage() {
         {tab === "collaborators" && <CollaboratorsTab rows={collaborators} pending={pending} onAct={act} />}
         {tab === "queue" && <QueueTab rows={queue} pending={pending} onAct={act} />}
         {tab === "reels" && (
-          <ReelsTab rows={reels} upNext={reelUpNext} titles={reelTitles} pending={pending} onAct={act} />
+          <ReelsTab
+            rows={reels}
+            upNext={reelUpNext}
+            titles={reelTitles}
+            rotation={reelRotation}
+            canGenerate={canGenerate}
+            pending={pending}
+            onAct={act}
+          />
         )}
         {tab === "history" && <HistoryTab rows={history} platforms={platforms} pending={pending} onAct={act} />}
       </div>
@@ -1484,187 +1495,380 @@ function DeleteModal({
 
 // ─── Reels ────────────────────────────────────────────────────────────────────
 
+type ReelView = "review" | "published" | "upload";
+
 /**
- * Reels review desk.
+ * Reels desk.
  *
- * Every reel lands here as a draft and **cannot publish without an explicit approval** —
- * that is a hard requirement rather than a default, so this tab is the only route out of
- * the queue. Reels also keep their own rotation, separate from photo posts, which is why
- * "Up next" here shows a different order from the Schedule tab.
+ * Laid out as review-first: the decisions that need making are the whole left column, and
+ * the queue sits beside them rather than above, so opening the tab shows work rather than
+ * settings. On narrow screens the columns stack, review still first.
+ *
+ * Reels are a separate track from photo posts throughout — their own rotation, their own
+ * counter, their own manual order. A garment shown as a carousel and again as a reel is
+ * reinforcement rather than repetition, and mixing the two counters would misreport both.
  */
 function ReelsTab({
-  rows, upNext, titles, pending, onAct,
+  rows, upNext, titles, rotation, canGenerate, pending, onAct,
 }: {
   rows: SocialReelRow[];
   upNext: Array<{ id: string; slug: string; title: string; images: string[] }>;
   titles: Record<string, string>;
+  rotation: { made: number; eligible: number; awaitingReview: number; published: number };
+  canGenerate: boolean;
   pending: boolean;
   onAct: (fn: () => Promise<unknown>, message?: string) => void;
 }) {
+  const [view, setView] = useState<ReelView>("review");
+
   const drafts = rows.filter((r) => r.status === "draft");
-  const done = rows.filter((r) => r.status !== "draft" && r.status !== "archived");
+  const live = rows.filter((r) => r.status === "approved" || r.status === "posted" || r.status === "failed");
   const archived = rows.filter((r) => r.status === "archived");
+
+  const views: { id: ReelView; label: string; count?: number }[] = [
+    { id: "review", label: "To review", count: drafts.length },
+    { id: "published", label: "Published", count: live.length },
+    { id: "upload", label: "Upload" },
+  ];
 
   return (
     <div className="space-y-4">
-      <NewReelCard upNext={upNext} pending={pending} onAct={onAct} />
+      <ReelStats rotation={rotation} />
 
-      <div>
-        <h3 className="mb-2 text-[15px] font-semibold text-[var(--admin-text)]">
-          Awaiting your review{drafts.length > 0 ? ` (${drafts.length})` : ""}
-        </h3>
-        {drafts.length === 0 ? (
-          <AdminCard padded>
-            <p className="text-[14px] text-[var(--admin-text-muted)]">
-              No reels waiting. Generate one with the command above.
-            </p>
-          </AdminCard>
-        ) : (
-          <div className="space-y-3">
-            {drafts.map((r) => (
-              <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Review first — the column that carries the work. */}
+        <div className="min-w-0 space-y-4">
+          <div className="flex flex-wrap gap-1.5">
+            {views.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => setView(v.id)}
+                className={`inline-flex items-center gap-2 rounded-full border-2 px-3.5 py-1.5 text-[13px] font-medium transition ${
+                  view === v.id
+                    ? "border-[var(--admin-accent)] bg-[var(--admin-accent)] text-white"
+                    : "border-slate-300 text-[var(--admin-text)] hover:border-slate-400"
+                }`}
+              >
+                {v.label}
+                {v.count !== undefined && v.count > 0 && (
+                  <span
+                    className={`inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[11px] font-bold ${
+                      view === v.id ? "bg-white/25 text-white" : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {v.count}
+                  </span>
+                )}
+              </button>
             ))}
           </div>
-        )}
-      </div>
 
-      {done.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-[15px] font-semibold text-[var(--admin-text)]">
-            Approved and published
-          </h3>
-          <div className="space-y-3">
-            {done.map((r) => (
-              <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
+          {view === "review" &&
+            (drafts.length === 0 ? (
+              <EmptyReels
+                message="Nothing waiting for review."
+                hint="Generate one from the queue on the right."
+              />
+            ) : (
+              drafts.map((r) => (
+                <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
+              ))
             ))}
-          </div>
+
+          {view === "published" &&
+            (live.length === 0 ? (
+              <EmptyReels message="No reels published yet." hint="Approve one to send it live." />
+            ) : (
+              live.map((r) => (
+                <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
+              ))
+            ))}
+
+          {view === "upload" && (
+            <>
+              <UploadReelCard pending={pending} onAct={onAct} />
+              {archived.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-[14px] font-semibold text-[var(--admin-text)]">
+                    Discarded ({archived.length})
+                  </h4>
+                  {archived.map((r) => (
+                    <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
-      )}
 
-      {archived.length > 0 && (
-        <details>
-          <summary className="cursor-pointer text-[14px] font-medium text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]">
-            Discarded ({archived.length})
-          </summary>
-          <div className="mt-3 space-y-3">
-            {archived.map((r) => (
-              <ReelCard key={r.id} row={r} titles={titles} pending={pending} onAct={onAct} />
-            ))}
-          </div>
-        </details>
-      )}
+        <ReelQueueCard
+          items={upNext}
+          canGenerate={canGenerate}
+          pending={pending}
+          onAct={onAct}
+        />
+      </div>
     </div>
   );
 }
 
-const BUILD_COMMAND = "npx tsx --env-file=.env.local scripts/build-reel.ts";
+function EmptyReels({ message, hint }: { message: string; hint: string }) {
+  return (
+    <AdminCard padded>
+      <p className="text-[14px] text-[var(--admin-text)]">{message}</p>
+      <p className="mt-1 text-[13px] text-[var(--admin-text-muted)]">{hint}</p>
+    </AdminCard>
+  );
+}
 
 /**
- * Making a new reel — the generator command, and uploading one made elsewhere.
+ * The reel counter — deliberately its own, not the header's.
  *
- * The command is shown rather than a button because encoding runs locally: Vercel's free
- * plan caps a function at 60s and the ffmpeg binary is ~80MB. A button here would have to
- * either lie or fail, so the honest interface is a command you can copy.
+ * The page header reports the *photo* rotation ("Cycle 1 · 4 of 25"). Reels run on a
+ * separate track, so they get a separate count; sharing one number would misreport both.
  */
-function NewReelCard({
-  upNext, pending, onAct,
+function ReelStats({
+  rotation,
 }: {
-  upNext: Array<{ id: string; slug: string; title: string; images: string[] }>;
+  rotation: { made: number; eligible: number; awaitingReview: number; published: number };
+}) {
+  const stats = [
+    { label: "Reels made", value: `${rotation.made} of ${rotation.eligible}`, hint: "products with 3+ images" },
+    { label: "Awaiting review", value: String(rotation.awaitingReview) },
+    { label: "Published", value: String(rotation.published) },
+  ];
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      {stats.map((s) => (
+        <AdminCard key={s.label} padded>
+          <p className="text-[13px] text-[var(--admin-text-muted)]">{s.label}</p>
+          <p className="mt-1 text-[20px] font-semibold text-[var(--admin-text)]">{s.value}</p>
+          {s.hint && <p className="mt-0.5 text-[12px] text-[var(--admin-text-muted)]">{s.hint}</p>}
+        </AdminCard>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The reel queue — drag to reorder, and generate the next one.
+ *
+ * Its own order table, separate from the photo queue: a reel pin must never be able to
+ * reorder photo posts. Saves on drop, like the photo queue does, because a drag is an
+ * instruction rather than a draft.
+ */
+function ReelQueueCard({
+  items, canGenerate, pending, onAct,
+}: {
+  items: Array<{ id: string; slug: string; title: string; images: string[] }>;
+  canGenerate: boolean;
   pending: boolean;
   onAct: (fn: () => Promise<unknown>, message?: string) => void;
 }) {
-  const [copied, setCopied] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [order, setOrder] = useState(items);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [building, setBuilding] = useState<string | null>(null);
 
-  function copy(text: string) {
-    navigator.clipboard?.writeText(text);
-    setCopied(text);
-    setTimeout(() => setCopied(null), 1500);
+  const incomingIds = items.map((i) => i.id).join();
+  const [syncedIds, setSyncedIds] = useState(incomingIds);
+  if (!saving && dragIndex === null && incomingIds !== syncedIds) {
+    setOrder(items);
+    setSyncedIds(incomingIds);
+  }
+
+  function persist(next: typeof items) {
+    setSaving(true);
+    onAct(async () => {
+      try {
+        await saveReelQueueOrder(next.map((o) => o.id));
+      } finally {
+        setSaving(false);
+      }
+    }, "Reel order saved");
+  }
+
+  function onDrop(target: number) {
+    if (dragIndex === null || dragIndex === target) {
+      setDragIndex(null);
+      setOverIndex(null);
+      return;
+    }
+    const next = [...order];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(target, 0, moved);
+    setOrder(next);
+    setDragIndex(null);
+    setOverIndex(null);
+    persist(next);
+  }
+
+  function generate(slug?: string, label?: string) {
+    setBuilding(slug ?? "next");
+    onAct(async () => {
+      try {
+        const res = await generateReel(slug);
+        if (!res.ok) throw new Error(res.detail);
+        return res;
+      } finally {
+        setBuilding(null);
+      }
+    }, label ?? "Reel ready — it is waiting in To review");
   }
 
   return (
     <AdminCard padded>
-      <h3 className="mb-1 text-[16px] font-semibold text-[var(--admin-text)]">Make a reel</h3>
-      <p className="mb-4 text-[13px] text-[var(--admin-text-muted)]">
-        Reels are encoded on your own machine — Vercel&apos;s free plan cannot run ffmpeg.
-        Run the command, then the reel appears below for review.
+      <h3 className="mb-1 text-[15px] font-semibold text-[var(--admin-text)]">Reel queue</h3>
+      <p className="mb-3 text-[12px] text-[var(--admin-text-muted)]">
+        Separate from the photo rotation. Drag to reorder — saved automatically.
+        {saving && <span className="ml-1 text-[var(--admin-accent)]">Saving…</span>}
       </p>
 
-      <button
-        onClick={() => copy(BUILD_COMMAND)}
-        className="mb-5 flex w-full items-center justify-between gap-3 rounded-lg border-2 border-slate-300 bg-slate-50 px-3 py-2.5 text-left transition hover:border-slate-400"
-      >
-        <code className="truncate text-[13px] text-[var(--admin-text)]">{BUILD_COMMAND}</code>
-        <span className="shrink-0 text-[12px] font-semibold text-[var(--admin-accent)]">
-          {copied === BUILD_COMMAND ? "Copied" : "Copy"}
-        </span>
-      </button>
+      {canGenerate ? (
+        <AdminButton
+          size="sm"
+          className="mb-4 w-full"
+          loading={building === "next"}
+          disabled={pending || building !== null || order.length === 0}
+          onClick={() => generate(undefined)}
+        >
+          {building === "next" ? "Making the reel…" : "Generate next reel"}
+        </AdminButton>
+      ) : (
+        <div className="mb-4 rounded-lg border-2 border-amber-300 bg-amber-50 p-2.5">
+          <p className="text-[12px] text-amber-900">
+            Reels are built on your own computer. Open this page there to generate one.
+          </p>
+        </div>
+      )}
 
-      <p className="mb-2 text-[13px] font-semibold text-[var(--admin-text)]">
-        Up next for reels
-        <span className="ml-1.5 font-normal text-[var(--admin-text-muted)]">
-          — a separate rotation from photo posts
-        </span>
-      </p>
-      <ol className="mb-5 space-y-1.5">
-        {upNext.length === 0 && (
-          <li className="text-[13px] text-[var(--admin-text-muted)]">
-            No product has the 3+ images a reel needs.
-          </li>
-        )}
-        {upNext.slice(0, 5).map((p, i) => (
-          <li key={p.id} className="flex items-center gap-2.5">
-            <span className="w-4 shrink-0 text-[12px] text-[var(--admin-text-muted)]">{i + 1}</span>
-            {p.images[0] && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.images[0]} alt="" className="h-10 w-8 shrink-0 rounded object-cover" />
-            )}
-            <span className="line-clamp-1 flex-1 text-[13px] text-[var(--admin-text)]">{p.title}</span>
-            <button
-              onClick={() => copy(`${BUILD_COMMAND} ${p.slug}`)}
-              className="shrink-0 text-[12px] font-medium text-[var(--admin-accent)] hover:underline"
+      {building && (
+        <p className="mb-3 text-[12px] text-[var(--admin-text-muted)]">
+          This takes about a minute — rendering, encoding, then uploading.
+        </p>
+      )}
+
+      {order.length === 0 ? (
+        <p className="text-[13px] text-[var(--admin-text-muted)]">
+          No product has the 3 or more images a reel needs.
+        </p>
+      ) : (
+        <ol className="space-y-1.5">
+          {order.map((p, i) => (
+            <li
+              key={p.id}
+              draggable
+              onDragStart={() => setDragIndex(i)}
+              onDragOver={(e) => { e.preventDefault(); setOverIndex(i); }}
+              onDragLeave={() => setOverIndex((v) => (v === i ? null : v))}
+              onDrop={() => onDrop(i)}
+              onDragEnd={() => { setDragIndex(null); setOverIndex(null); }}
+              className={`flex cursor-grab items-center gap-2 rounded-lg border-2 p-1.5 transition active:cursor-grabbing ${
+                overIndex === i && dragIndex !== i
+                  ? "border-[var(--admin-accent)] bg-[var(--admin-accent)]/10"
+                  : dragIndex === i
+                    ? "border-slate-300 opacity-40"
+                    : "border-transparent hover:border-slate-300"
+              }`}
             >
-              {copied === `${BUILD_COMMAND} ${p.slug}` ? "Copied" : "Copy command"}
-            </button>
-          </li>
-        ))}
-      </ol>
+              <GripVertical size={14} className="shrink-0 text-slate-500" />
+              <span className="w-3 shrink-0 text-[11px] text-[var(--admin-text-muted)]">{i + 1}</span>
+              {p.images[0] && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.images[0]} alt="" className="h-9 w-7 shrink-0 rounded object-cover" />
+              )}
+              <span className="line-clamp-2 min-w-0 flex-1 text-[12px] text-[var(--admin-text)]">
+                {p.title}
+              </span>
+              {canGenerate && (
+                <button
+                  onClick={() => generate(p.slug, `Reel ready for ${p.title.split(/[–—-]/)[0].trim()}`)}
+                  disabled={pending || building !== null}
+                  title="Make a reel from this product now"
+                  aria-label={`Make a reel from ${p.title}`}
+                  className="shrink-0 rounded p-1 text-[var(--admin-text-muted)] transition hover:bg-slate-100 hover:text-[var(--admin-accent)] disabled:opacity-40"
+                >
+                  {building === p.slug ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Clapperboard size={14} />
+                  )}
+                </button>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
 
-      <div className="border-t border-[var(--admin-border)] pt-4">
-        <p className="mb-2 text-[13px] font-semibold text-[var(--admin-text)]">
-          Or upload a video you made yourself
-        </p>
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border-2 border-slate-300 px-3 py-2 text-[14px] text-[var(--admin-text)] transition hover:border-slate-400">
-          {busy ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
-          {busy ? "Uploading…" : "Choose MP4 or MOV"}
-          <input
-            type="file"
-            accept="video/mp4,video/quicktime"
-            className="hidden"
-            disabled={busy || pending}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const form = new FormData();
-              form.set("file", file);
-              e.target.value = "";
-              setBusy(true);
-              onAct(async () => {
-                try {
-                  const res = await uploadOwnReel(form);
-                  if (!res.ok) throw new Error(res.detail ?? "Upload failed");
-                  return res;
-                } finally {
-                  setBusy(false);
-                }
-              }, "Uploaded — it is waiting for review below");
-            }}
-          />
-        </label>
-        <p className="mt-1.5 text-[12px] text-[var(--admin-text-muted)]">
-          Up to 100MB. It joins the same review queue.
-        </p>
-      </div>
+      {order.length > 0 && (
+        <button
+          onClick={() => onAct(() => clearReelQueueOrder(), "Back to automatic reel rotation")}
+          disabled={pending}
+          className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]"
+        >
+          <Undo2 size={13} /> Clear manual order
+        </button>
+      )}
+    </AdminCard>
+  );
+}
+
+/** Uploading a video made elsewhere — no encoding involved, so this works anywhere. */
+function UploadReelCard({
+  pending, onAct,
+}: {
+  pending: boolean;
+  onAct: (fn: () => Promise<unknown>, message?: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <AdminCard padded>
+      <h3 className="mb-1 text-[15px] font-semibold text-[var(--admin-text)]">
+        Upload your own video
+      </h3>
+      <p className="mb-4 text-[13px] text-[var(--admin-text-muted)]">
+        Shot something yourself? It joins the same review queue — nothing publishes without
+        your approval.
+      </p>
+
+      <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-400 px-4 py-8 text-center transition hover:border-[var(--admin-accent)] hover:bg-[var(--admin-accent)]/5">
+        {busy ? (
+          <Loader2 size={22} className="animate-spin text-[var(--admin-accent)]" />
+        ) : (
+          <Upload size={22} className="text-slate-500" />
+        )}
+        <span className="text-[14px] font-medium text-[var(--admin-text)]">
+          {busy ? "Uploading…" : "Choose a video"}
+        </span>
+        <span className="text-[12px] text-[var(--admin-text-muted)]">
+          MP4 or MOV, up to 100MB. Portrait 9:16 works best.
+        </span>
+        <input
+          type="file"
+          accept="video/mp4,video/quicktime"
+          className="hidden"
+          disabled={busy || pending}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const form = new FormData();
+            form.set("file", file);
+            e.target.value = "";
+            setBusy(true);
+            onAct(async () => {
+              try {
+                const res = await uploadOwnReel(form);
+                if (!res.ok) throw new Error(res.detail ?? "Upload failed");
+                return res;
+              } finally {
+                setBusy(false);
+              }
+            }, "Uploaded — it is waiting in To review");
+          }}
+        />
+      </label>
     </AdminCard>
   );
 }
@@ -1679,8 +1883,7 @@ function ReelCard({
   onAct: (fn: () => Promise<unknown>, message?: string) => void;
 }) {
   const [caption, setCaption] = useState(row.caption ?? "");
-  const [note, setNote] = useState("");
-  const [asking, setAsking] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
   const isDraft = row.status === "draft";
   const products = (row.product_ids ?? []).map((id) => titles[id]).filter(Boolean);
 
@@ -1694,16 +1897,16 @@ function ReelCard({
             controls
             playsInline
             preload="metadata"
-            className="h-[380px] w-full shrink-0 rounded-xl bg-black object-contain sm:w-[214px]"
+            className="aspect-[9/16] w-full shrink-0 rounded-xl bg-black object-contain sm:w-[190px]"
           />
         ) : (
-          <div className="flex h-[380px] w-full shrink-0 items-center justify-center rounded-xl bg-slate-100 sm:w-[214px]">
-            <Clapperboard size={28} className="text-slate-400" />
+          <div className="flex aspect-[9/16] w-full shrink-0 items-center justify-center rounded-xl bg-slate-100 sm:w-[190px]">
+            <Clapperboard size={26} className="text-slate-400" />
           </div>
         )}
 
         <div className="min-w-0 flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
             {row.status === "draft" && <Pill tone="warn">Awaiting review</Pill>}
             {row.status === "approved" && <Pill tone="ok"><Check size={11} /> Approved</Pill>}
             {row.status === "posted" && <Pill tone="ok"><Check size={11} /> Published</Pill>}
@@ -1713,9 +1916,6 @@ function ReelCard({
             {row.duration_seconds !== null && (
               <Pill tone="muted">{Number(row.duration_seconds).toFixed(0)}s</Pill>
             )}
-            {row.rebuild_requested && (
-              <Pill tone="warn"><RefreshCw size={11} /> Rebuild requested</Pill>
-            )}
           </div>
 
           {products.length > 0 && (
@@ -1724,18 +1924,13 @@ function ReelCard({
           {row.audio_track && (
             <p className="mb-2 text-[12px] text-[var(--admin-text-muted)]">♪ {row.audio_track}</p>
           )}
-          {row.rebuild_note && (
-            <p className="mb-2 text-[12px] text-amber-900">Asked for: {row.rebuild_note}</p>
-          )}
-          {row.error_message && (
-            <p className="mb-2 text-[12px] text-red-800">{row.error_message}</p>
-          )}
+          {row.error_message && <p className="mb-2 text-[12px] text-red-800">{row.error_message}</p>}
 
           <textarea
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             readOnly={!isDraft}
-            rows={6}
+            rows={5}
             aria-label="Reel caption"
             className={`${inputCls} text-[13px] leading-relaxed ${isDraft ? "" : "opacity-70"}`}
           />
@@ -1747,7 +1942,7 @@ function ReelCard({
             <div className="mt-3 flex flex-wrap gap-2">
               <AdminButton
                 size="sm"
-                loading={pending}
+                loading={pending && !rebuilding}
                 onClick={() =>
                   onAct(async () => {
                     if (caption !== row.caption) await updateReelCaption(row.id, caption);
@@ -1757,13 +1952,30 @@ function ReelCard({
               >
                 <Check size={14} /> Approve
               </AdminButton>
-              <AdminButton size="sm" variant="outline" onClick={() => setAsking((v) => !v)}>
-                <RefreshCw size={14} /> Ask for a different cut
+              <AdminButton
+                size="sm"
+                variant="outline"
+                loading={rebuilding}
+                disabled={pending}
+                onClick={() => {
+                  setRebuilding(true);
+                  onAct(async () => {
+                    try {
+                      const res = await rebuildReel(row.id);
+                      if (!res.ok) throw new Error(res.detail);
+                      return res;
+                    } finally {
+                      setRebuilding(false);
+                    }
+                  }, "New cut ready");
+                }}
+              >
+                <RefreshCw size={14} /> Make another cut
               </AdminButton>
               <AdminButton
                 size="sm"
                 variant="ghost"
-                onClick={() => onAct(() => discardReel(row.id), "Discarded — recoverable below")}
+                onClick={() => onAct(() => discardReel(row.id), "Discarded — recoverable under Upload")}
               >
                 <Trash2 size={14} /> Discard
               </AdminButton>
@@ -1776,39 +1988,6 @@ function ReelCard({
                   Save caption
                 </AdminButton>
               )}
-            </div>
-          )}
-
-          {isDraft && asking && (
-            <div className="mt-3 rounded-lg border-2 border-slate-300 p-3">
-              <Field
-                label="What should change?"
-                hint="Kept with the reel so the next build has your note beside it."
-              >
-                <input
-                  className={inputCls}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Too fast · start on the dupatta shot · different order"
-                />
-              </Field>
-              <div className="mt-2 flex gap-2">
-                <AdminButton
-                  size="sm"
-                  loading={pending}
-                  onClick={() =>
-                    onAct(async () => {
-                      await requestReelRebuild(row.id, note);
-                      setAsking(false);
-                    }, "Noted — re-run the build command to make a new cut")
-                  }
-                >
-                  Request rebuild
-                </AdminButton>
-                <AdminButton size="sm" variant="ghost" onClick={() => setAsking(false)}>
-                  Cancel
-                </AdminButton>
-              </div>
             </div>
           )}
 

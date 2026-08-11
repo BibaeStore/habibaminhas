@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import sharp from "sharp";
 
 /**
@@ -154,6 +155,29 @@ export async function buildEndCard(input: {
   const fg = dark ? "#faf7f1" : INK;
   const rule = dark ? "rgba(250,247,241,0.35)" : "rgba(26,22,18,0.25)";
 
+  /*
+   * The brand logo, centred and large.
+   *
+   * The artwork is black on transparent, so it is inverted when the product's palette is
+   * dark — otherwise it would be a black mark on a near-black card. `negate` with
+   * `alpha: false` flips the ink while leaving the transparency intact, so the lockup keeps
+   * its shape either way.
+   */
+  const logoWidth = Math.round(RENDER_WIDTH * 0.62);
+  let logo: Buffer | null = null;
+  let logoHeight = 0;
+  try {
+    const raw = sharp(join(process.cwd(), "public", "logo", "habiba-minhas-logo-t.png")).resize({
+      width: logoWidth,
+      withoutEnlargement: false,
+    });
+    logo = await (dark ? raw.negate({ alpha: false }) : raw).png().toBuffer();
+    logoHeight = (await sharp(logo).metadata()).height ?? 0;
+  } catch {
+    // A missing logo must not cost the whole reel — the card still reads without it.
+    logo = null;
+  }
+
   // Wrap the title by words — SVG has no text wrapping of its own.
   const words = input.title.split(/\s+/);
   const lines: string[] = [];
@@ -169,8 +193,14 @@ export async function buildEndCard(input: {
   if (line.trim()) lines.push(line.trim());
   const titleLines = lines.slice(0, 3);
 
-  const centre = RENDER_HEIGHT / 2;
-  const titleStart = centre - (titleLines.length - 1) * 48 - 60;
+  /*
+   * The logo is the hero, so the text block is positioned relative to it rather than to the
+   * centre of the frame. That keeps the spacing between mark and price constant whatever
+   * the product name wraps to.
+   */
+  const logoTop = Math.round(RENDER_HEIGHT / 2 - logoHeight - 190);
+  const textStart = logoTop + logoHeight + 210;
+  const afterTitle = textStart + titleLines.length * 96;
 
   const svg = `
 <svg width="${RENDER_WIDTH}" height="${RENDER_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -179,26 +209,28 @@ export async function buildEndCard(input: {
     ${titleLines
       .map(
         (text, i) =>
-          `<text x="${RENDER_WIDTH / 2}" y="${titleStart + i * 96}" font-size="72">${escapeXml(text)}</text>`,
+          `<text x="${RENDER_WIDTH / 2}" y="${textStart + i * 96}" font-size="66">${escapeXml(text)}</text>`,
       )
       .join("\n    ")}
-    <line x1="${RENDER_WIDTH / 2 - 120}" y1="${titleStart + titleLines.length * 96 + 20}"
-          x2="${RENDER_WIDTH / 2 + 120}" y2="${titleStart + titleLines.length * 96 + 20}"
+    <line x1="${RENDER_WIDTH / 2 - 120}" y1="${afterTitle + 20}"
+          x2="${RENDER_WIDTH / 2 + 120}" y2="${afterTitle + 20}"
           stroke="${rule}" stroke-width="3"/>
-    <text x="${RENDER_WIDTH / 2}" y="${titleStart + titleLines.length * 96 + 130}"
-          font-size="82" letter-spacing="2">${escapeXml(input.price)}</text>
-    <text x="${RENDER_WIDTH / 2}" y="${titleStart + titleLines.length * 96 + 250}"
+    <text x="${RENDER_WIDTH / 2}" y="${afterTitle + 140}"
+          font-size="90" letter-spacing="2">${escapeXml(input.price)}</text>
+    <text x="${RENDER_WIDTH / 2}" y="${afterTitle + 262}"
           font-size="44" font-family="Helvetica, Arial, sans-serif"
           letter-spacing="6" opacity="0.75">${escapeXml((input.cta ?? "LINK IN BIO").toUpperCase())}</text>
-    <text x="${RENDER_WIDTH / 2}" y="${RENDER_HEIGHT - 180}"
-          font-size="40" font-family="Helvetica, Arial, sans-serif"
-          letter-spacing="10" opacity="0.6">HABIBA MINHAS</text>
   </g>
 </svg>`;
 
-  return sharp(Buffer.from(svg))
-    .jpeg({ quality: 92, mozjpeg: true })
-    .toBuffer();
+  const card = sharp(Buffer.from(svg));
+  const composed = logo
+    ? card.composite([
+        { input: logo, top: Math.max(40, logoTop), left: Math.round((RENDER_WIDTH - logoWidth) / 2) },
+      ])
+    : card;
+
+  return composed.jpeg({ quality: 92, mozjpeg: true }).toBuffer();
 }
 
 /** Downloads a product image. Fails loudly — a missing slide must abort the whole reel. */
