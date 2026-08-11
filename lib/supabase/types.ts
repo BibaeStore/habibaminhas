@@ -749,6 +749,132 @@ export type Database = {
         }
         Relationships: []
       }
+      social_media_queue: {
+        Row: {
+          archived_at: string | null
+          approved_at: string | null
+          audio_track: string | null
+          caption: string | null
+          created_at: string
+          duration_seconds: number | null
+          error: Json | null
+          error_message: string | null
+          external_post_id: string | null
+          group_id: string | null
+          hashtags: string[] | null
+          id: string
+          kind: string
+          permalink: string | null
+          platform: string
+          posted_at: string | null
+          product_ids: string[]
+          rebuild_note: string | null
+          rebuild_requested: boolean
+          status: string
+          thumbnail_url: string | null
+          video_url: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          approved_at?: string | null
+          audio_track?: string | null
+          caption?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error?: Json | null
+          error_message?: string | null
+          external_post_id?: string | null
+          group_id?: string | null
+          hashtags?: string[] | null
+          id?: string
+          kind: string
+          permalink?: string | null
+          platform?: string
+          posted_at?: string | null
+          product_ids?: string[]
+          rebuild_note?: string | null
+          rebuild_requested?: boolean
+          status?: string
+          thumbnail_url?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          approved_at?: string | null
+          audio_track?: string | null
+          caption?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error?: Json | null
+          error_message?: string | null
+          external_post_id?: string | null
+          group_id?: string | null
+          hashtags?: string[] | null
+          id?: string
+          kind?: string
+          permalink?: string | null
+          platform?: string
+          posted_at?: string | null
+          product_ids?: string[]
+          rebuild_note?: string | null
+          rebuild_requested?: boolean
+          status?: string
+          thumbnail_url?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      social_plans: {
+        Row: {
+          active_from: string | null
+          active_to: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          photo_days: number[]
+          photo_times: string[]
+          photos_per_week: number
+          reel_days: number[]
+          reel_times: string[]
+          reels_per_week: number
+          updated_at: string
+        }
+        Insert: {
+          active_from?: string | null
+          active_to?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          photo_days?: number[]
+          photo_times?: string[]
+          photos_per_week?: number
+          reel_days?: number[]
+          reel_times?: string[]
+          reels_per_week?: number
+          updated_at?: string
+        }
+        Update: {
+          active_from?: string | null
+          active_to?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          photo_days?: number[]
+          photo_times?: string[]
+          photos_per_week?: number
+          reel_days?: number[]
+          reel_times?: string[]
+          reels_per_week?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       social_queue_order: {
         Row: {
           position: number

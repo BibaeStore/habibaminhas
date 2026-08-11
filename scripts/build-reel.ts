@@ -81,10 +81,63 @@ async function pickProduct(slug?: string): Promise<ProductCandidate> {
   return eligible[0];
 }
 
+/**
+ * Products the owner asked to be re-cut from the Reels tab.
+ *
+ * The admin cannot re-encode on demand — ffmpeg runs here, not on Vercel — so "Ask for a
+ * different cut" raises a flag instead of pretending to do the work. This is where that
+ * flag is honoured. The old draft is archived rather than deleted so a rejected cut stays
+ * recoverable, and any note the owner left is printed so it is in front of you while the
+ * new one builds.
+ */
+async function pendingRebuilds(): Promise<Array<{ slug: string; note: string | null; id: string }>> {
+  const sb = createAdminClient();
+  const { data } = await sb
+    .from("social_media_queue")
+    .select("id, product_ids, rebuild_note")
+    .eq("rebuild_requested", true)
+    .eq("status", "draft");
+
+  const out: Array<{ slug: string; note: string | null; id: string }> = [];
+  for (const row of data ?? []) {
+    const ids = (row.product_ids as string[]) ?? [];
+    if (ids.length === 0) continue;
+    const { data: product } = await sb
+      .from("products")
+      .select("slug")
+      .eq("id", ids[0])
+      .maybeSingle();
+    if (product?.slug) {
+      out.push({ slug: product.slug as string, note: row.rebuild_note as string | null, id: row.id as string });
+    }
+  }
+  return out;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const framesOnly = args.includes("--frames-only");
-  const slug = args.find((a) => !a.startsWith("--"));
+  let slug = args.find((a) => !a.startsWith("--"));
+
+  if (args.includes("--pending")) {
+    const queued = await pendingRebuilds();
+    if (queued.length === 0) {
+      console.log("Nothing to rebuild — no reel has a pending request.");
+      return;
+    }
+    const next = queued[0];
+    console.log(`Rebuilding ${next.slug}${next.note ? `\n  note: "${next.note}"` : ""}`);
+    if (queued.length > 1) console.log(`  (${queued.length - 1} more queued — re-run to continue)`);
+
+    // Archive the rejected cut before building its replacement, so the tab never shows two
+    // drafts of the same product competing for approval.
+    const sb = createAdminClient();
+    await sb
+      .from("social_media_queue")
+      .update({ status: "archived", archived_at: new Date().toISOString(), rebuild_requested: false })
+      .eq("id", next.id);
+    slug = next.slug;
+  }
 
   const product = await pickProduct(slug);
   const images = product.images.slice(0, MAX_IMAGES);

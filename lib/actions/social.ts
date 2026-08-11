@@ -385,3 +385,190 @@ export async function fetchConnectionStatus(): Promise<{
     return { configured: true, missing: [], error: (e as Error).message };
   }
 }
+
+// ─── Reels ────────────────────────────────────────────────────────────────────
+
+/**
+ * Reels are a separate track from photo posts, by design.
+ *
+ * They keep their own queue, their own rotation and their own review step. A garment shown
+ * as a carousel and again as a reel is reinforcement rather than repetition, and with only
+ * ~25 eligible products a shared queue would roughly halve photo coverage.
+ *
+ * Every reel is reviewed before it publishes, regardless of `social_settings.approval_required`
+ * — that setting governs photo posts only. A bad photo caption is embarrassing; a bad reel
+ * is twelve seconds of it.
+ */
+
+export type SocialReelRow = Tables<"social_media_queue">;
+
+export async function fetchReels(limit = 100): Promise<SocialReelRow[]> {
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("social_media_queue")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/** Titles for the products a reel features, so the review card names them. */
+export async function fetchReelProductTitles(
+  ids: string[],
+): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+  const sb = createAdminClient();
+  const { data } = await sb.from("products").select("id, title").in("id", ids);
+  const out: Record<string, string> = {};
+  for (const row of data ?? []) out[row.id as string] = row.title as string;
+  return out;
+}
+
+/**
+ * Which products are next in the **reel** rotation.
+ *
+ * Format A needs at least 3 images to be worth watching, which only some of the catalogue
+ * has — those are excluded here rather than failing later in the builder.
+ */
+export async function fetchReelUpNext(limit = 8): Promise<
+  Array<{ id: string; slug: string; title: string; images: string[] }>
+> {
+  const sb = createAdminClient();
+  const settings = await getSocialSettings();
+
+  let query = sb
+    .from("products")
+    .select("id, slug, title, images")
+    .eq("status", "active");
+  if (settings?.categories?.length) query = query.in("category", settings.categories);
+  if (settings?.require_in_stock) query = query.gt("stock", 0);
+
+  const { data: rows } = await query;
+  const eligible = (rows ?? []).filter((p) => ((p.images as string[])?.length ?? 0) >= 3);
+
+  const { data: used } = await sb
+    .from("social_media_queue")
+    .select("product_ids, created_at")
+    .neq("status", "archived");
+
+  const lastUsed = new Map<string, number>();
+  for (const row of used ?? []) {
+    for (const id of (row.product_ids as string[]) ?? []) {
+      const at = Date.parse(row.created_at as string);
+      if (!lastUsed.has(id) || at > lastUsed.get(id)!) lastUsed.set(id, at);
+    }
+  }
+
+  return eligible
+    .sort((a, b) => (lastUsed.get(a.id as string) ?? 0) - (lastUsed.get(b.id as string) ?? 0))
+    .slice(0, limit)
+    .map((p) => ({
+      id: p.id as string,
+      slug: p.slug as string,
+      title: p.title as string,
+      images: (p.images as string[]) ?? [],
+    }));
+}
+
+/** Marks a reel ready to publish. Publishing itself lands in Phase 3. */
+export async function approveReel(id: string): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb
+    .from("social_media_queue")
+    .update({ status: "approved", approved_at: new Date().toISOString(), rebuild_requested: false })
+    .eq("id", id)
+    .eq("status", "draft");
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+/** Archives rather than deletes — a rejected reel stays recoverable, like removed posts. */
+export async function discardReel(id: string): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb
+    .from("social_media_queue")
+    .update({ status: "archived", archived_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+export async function restoreReel(id: string): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb
+    .from("social_media_queue")
+    .update({ status: "draft", archived_at: null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+/**
+ * Asks for a different cut of the same reel.
+ *
+ * This raises a flag rather than re-encoding. ffmpeg runs locally — Vercel's free plan
+ * caps a function at 60s and the binary is ~80MB — so the server genuinely cannot rebuild
+ * on demand. The flag is picked up by `scripts/build-reel.ts --pending`, which keeps the
+ * button honest instead of pretending to do work that never happens.
+ */
+export async function requestReelRebuild(id: string, note?: string): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb
+    .from("social_media_queue")
+    .update({ rebuild_requested: true, rebuild_note: note?.trim() || null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+export async function updateReelCaption(id: string, caption: string): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb.from("social_media_queue").update({ caption }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
+/**
+ * Stores a video the owner shot themselves.
+ *
+ * Uploading needs no ffmpeg, so unlike generation this genuinely can run on the server. It
+ * joins the same review queue as a generated reel — only its origin differs.
+ */
+export async function uploadOwnReel(form: FormData): Promise<{ ok: boolean; detail?: string }> {
+  const file = form.get("file");
+  const caption = String(form.get("caption") ?? "").trim();
+  if (!(file instanceof File) || file.size === 0) return { ok: false, detail: "No file received" };
+
+  const allowed = ["video/mp4", "video/quicktime"];
+  if (!allowed.includes(file.type)) {
+    return { ok: false, detail: `Unsupported type ${file.type}. Instagram needs MP4 or MOV.` };
+  }
+  // Bucket ceiling is 100MB; refuse here so the failure names the reason.
+  if (file.size > 100 * 1024 * 1024) {
+    return { ok: false, detail: `File is ${(file.size / 1024 / 1024).toFixed(0)}MB — the limit is 100MB.` };
+  }
+
+  const sb = createAdminClient();
+  const ext = file.type === "video/quicktime" ? "mov" : "mp4";
+  const key = `reels/upload-${Date.now().toString(36)}.${ext}`;
+
+  const { error: uploadError } = await sb.storage
+    .from("social-media")
+    .upload(key, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: false });
+  if (uploadError) return { ok: false, detail: uploadError.message };
+
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
+  const { error } = await sb.from("social_media_queue").insert({
+    kind: "upload",
+    product_ids: [],
+    video_url: `${base}/storage/v1/object/public/social-media/${key}`,
+    caption: caption || null,
+    status: "draft",
+    platform: "instagram",
+  });
+  if (error) return { ok: false, detail: error.message };
+
+  revalidatePath("/admin/social");
+  return { ok: true };
+}
