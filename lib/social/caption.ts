@@ -87,9 +87,32 @@ function stableIndex(seed: string, buckets: number): number {
  * brand adjective. "Deep emerald green, cotton, gold at the cuffs" stops a scroll;
  * "Elevate your wardrobe with timeless elegance" does not.
  */
+/**
+ * Strips parentheticals and tidies the punctuation they leave behind.
+ *
+ * "Chiffon (Frock), Net (Dupatta)" → "Chiffon, Net". Without the comma repair the hook
+ * rendered as "chiffon , net", which is exactly the kind of small tell that makes a caption
+ * read as machine-written.
+ */
+function clean(value: string): string {
+  return value
+    .replace(/\s*\(.*?\)\s*/g, " ")
+    .replace(/\s+([,;])/g, "$1")
+    .replace(/[,;]\s*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** "shalwar kameez" → "ShalwarKameez", for hashtag assembly. */
+function titleCase(value: string): string {
+  return value
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ""))
+    .join("");
+}
+
 function buildHook(product: ProductCandidate, specs: Map<string, string>): string {
   const name = shortName(product.title);
-  const clean = (v: string) => v.replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
 
   const colour = pickSpec(specs, "colour", "color");
   const fabric = pickSpec(specs, "fabric");
@@ -149,6 +172,63 @@ function buildDetails(product: ProductCandidate, specs: Map<string, string>): st
   return lines.slice(0, 5);
 }
 
+/** Garment nouns people actually search for, longest first so "shalwar kameez" wins over "kameez". */
+const GARMENT_NOUNS = [
+  "shalwar kameez", "shirt and trousers", "frock", "kurta", "kameez", "lehenga",
+  "saree", "abaya", "maxi", "gown", "suit",
+];
+
+/** The garment word from the title — "…Chiffon Frock with Net Dupatta" → "frock". */
+function garmentNoun(title: string): string {
+  const lower = title.toLowerCase();
+  return GARMENT_NOUNS.find((n) => lower.includes(n)) ?? "suit";
+}
+
+/** "…– 3-Piece Stitched Cotton Suit…" → "3-piece". */
+function pieceLabel(title: string, specs: Map<string, string>): string | null {
+  const source = `${title} ${pickSpec(specs, "pieces") ?? ""}`;
+  const match = source.match(/(\d)\s*[-–]?\s*piece/i);
+  return match ? `${match[1]}-piece` : null;
+}
+
+/** A single fabric word from "Chiffon (Frock), Net (Dupatta)" → "chiffon". */
+function primaryFabric(specs: Map<string, string>): string | null {
+  const fabric = pickSpec(specs, "fabric");
+  if (!fabric) return null;
+  const known = [
+    "cotton", "lawn", "chiffon", "silk", "linen", "khaddar", "organza",
+    "velvet", "georgette", "net", "jacquard", "cambric", "viscose",
+  ];
+  return known.find((f) => new RegExp(`\\b${f}\\b`, "i").test(fabric)) ?? null;
+}
+
+/**
+ * One natural-language line carrying the words people actually type.
+ *
+ * Hashtags alone leave most of the discovery surface unused: **Instagram now indexes
+ * caption text for keyword search**, not only hashtags, and Facebook post text is indexed
+ * outright. A post whose only searchable terms are in the tag block is invisible to both.
+ *
+ * Written as a real sentence rather than a keyword dump. Stuffing reads as spam to the
+ * ranking systems and to the reader, and this line sits mid-caption where a human sees it.
+ */
+function buildKeywordLine(product: ProductCandidate, specs: Map<string, string>): string {
+  const garment = garmentNoun(product.title);
+  const pieces = pieceLabel(product.title, specs);
+  const fabric = primaryFabric(specs);
+  const colour = pickSpec(specs, "colour", "color");
+
+  // "Pakistani 3-piece cotton suit" — built from whatever is actually known.
+  const noun = ["Pakistani", pieces, fabric, garment].filter(Boolean).join(" ");
+
+  // Primary colour only. "Off-White / Ivory with Black Print" is a spec, not something a
+  // person says — and the full string already appears in the hook, so nothing is lost.
+  const primaryColour = colour ? clean(colour).split(/[/,]|\bwith\b/)[0].trim() : "";
+  const inColour = primaryColour ? ` in ${primaryColour.toLowerCase()}` : "";
+
+  return `${noun}${inColour} — stitched and ready to wear, delivered across Pakistan.`;
+}
+
 /**
  * One Roman-Urdu line near the CTA.
  *
@@ -182,7 +262,12 @@ function buildHashtags(product: ProductCandidate, specs: Map<string, string>): s
 
   const add = (raw: string) => {
     const tag = "#" + raw.replace(/[^a-zA-Z0-9]/g, "");
-    const key = tag.toLowerCase();
+    /*
+     * Singular and plural count as the same tag. "#2PieceSuit #2PieceSuits" side by side
+     * reads as padding rather than as two searches, and padding is the signal that gets a
+     * small account's reach throttled.
+     */
+    const key = tag.toLowerCase().replace(/s$/, "");
     if (tag.length > 1 && !seen.has(key) && tags.length < HASHTAG_MAX) {
       seen.add(key);
       tags.push(tag);
@@ -197,15 +282,19 @@ function buildHashtags(product: ProductCandidate, specs: Map<string, string>): s
   //
   // The fabric tag must name the actual fabric, not whatever word happens to come first:
   // "Soft Breathable Cotton" has to yield #CottonSuitPakistan, never #SoftSuitPakistan.
-  const fabric = pickSpec(specs, "fabric");
+  const fabric = primaryFabric(specs);
   if (fabric) {
-    const known = [
-      "cotton", "lawn", "chiffon", "silk", "linen", "khaddar", "organza",
-      "velvet", "georgette", "net", "jacquard", "cambric", "viscose", "denim",
-    ];
-    const match = known.find((f) => new RegExp(`\\b${f}\\b`, "i").test(fabric));
-    if (match) add(`${match[0].toUpperCase()}${match.slice(1)}SuitPakistan`);
+    const Fabric = `${fabric[0].toUpperCase()}${fabric.slice(1)}`;
+    add(`${Fabric}SuitPakistan`);
+    // The fabric paired with the actual garment word — "#ChiffonFrock" is a far more
+    // winnable search than "#Chiffon", which is global and dominated by fabric wholesalers.
+    add(`${Fabric}${titleCase(garmentNoun(product.title))}`);
   }
+
+  // Garment + piece count — high-intent, and what people type when they know what they want.
+  const pieces = pieceLabel(product.title, specs);
+  if (pieces) add(`${pieces.replace("-piece", "")}PieceSuit`);
+  add(`Stitched${titleCase(garmentNoun(product.title))}`);
 
   // Subcategories, minus the ones too generic to rank for.
   const genericSubcategories = new Set(["casual", "formal", "new", "sale", "featured", "regular", "basic"]);
@@ -231,6 +320,7 @@ function buildHashtags(product: ProductCandidate, specs: Map<string, string>): s
   add("KarachiFashion");
   add("OnlineShoppingPakistan");
   add("PakistanOnlineStore");
+  add("ReadyToWearPakistan");
 
   // Occasion — only when the product copy actually says so.
   const haystack = `${product.title} ${product.seo_keywords ?? ""}`.toLowerCase();
@@ -260,12 +350,30 @@ function buildHashtags(product: ProductCandidate, specs: Map<string, string>): s
  * Text baked into a picture is not indexed; this is.
  */
 function buildAltText(product: ProductCandidate, specs: Map<string, string>): string {
-  const bits = [
-    product.title,
-    pickSpec(specs, "colour", "color"),
-    pickSpec(specs, "fabric"),
-  ].filter(Boolean);
-  return bits.join(" — ").slice(0, 950);
+  /*
+   * A sentence, not a joined spec list. Alt text is read aloud by screen readers, where
+   * "Title — Colour — Fabric (Frock), Net (Dupatta)" is close to unusable, and a natural
+   * description also carries more searchable meaning than the same words with dashes.
+   */
+  const colour = pickSpec(specs, "colour", "color");
+  const fabric = primaryFabric(specs);
+  const garment = garmentNoun(product.title);
+  const pieces = pieceLabel(product.title, specs);
+  const embroidery = pickSpec(specs, "embroidery", "work", "technique");
+
+  const subject = [colour ? clean(colour) : null, pieces, fabric, garment]
+    .filter(Boolean)
+    .join(" ");
+
+  const sentence = [
+    `${subject.charAt(0).toUpperCase()}${subject.slice(1)} by Habiba Minhas.`,
+    embroidery ? `${clean(embroidery)}.` : null,
+    `Photographed on a model against a plain backdrop.`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return sentence.slice(0, 950);
 }
 
 /**
@@ -284,6 +392,7 @@ export function buildCaption(
 
   const hook = buildHook(product, specs);
   const details = buildDetails(product, specs);
+  const keywords = buildKeywordLine(product, specs);
   const urdu = buildUrduLine(product);
   const hashtags = buildHashtags(product, specs);
   const name = shortName(product.title);
@@ -295,7 +404,12 @@ export function buildCaption(
       ? `Shop ${name} → ${productUrl(product.category, product.slug, platform)}`
       : `Shop “${name}” — link in bio 🔗`;
 
-  const body = [hook, "", details.join("\n"), "", urdu, "", cta].join("\n");
+  /*
+   * Order matters. The hook owns the first ~125 characters Instagram shows before "…more";
+   * the searchable keyword line sits after the specs, where it reads as a caption rather
+   * than as SEO, and still lands well above the hashtag block.
+   */
+  const body = [hook, "", details.join("\n"), "", keywords, "", urdu, "", cta].join("\n");
   const caption = clampCaption(body, hashtags);
 
   return { caption, hashtags, altText: buildAltText(product, specs) };
