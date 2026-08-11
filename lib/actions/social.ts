@@ -15,7 +15,7 @@ import {
 import { getPublishingQuota } from "@/lib/social/adapters/instagram";
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
 import { buildUploadCaption } from "@/lib/social/caption";
-import { buildProductReel } from "@/lib/social/reel/build";
+import { buildProductReel, buildCollectionReel } from "@/lib/social/reel/build";
 import { canEncodeHere } from "@/lib/social/reel/encode";
 import { publishQueuedReel } from "@/lib/social/reel/publish";
 
@@ -762,4 +762,26 @@ export async function rebuildReel(id: string): Promise<{ ok: boolean; detail: st
  */
 export async function suggestUploadCaption(): Promise<string> {
   return buildUploadCaption().caption;
+}
+
+/**
+ * Builds a collection reel — one photograph from each of several products.
+ *
+ * The more reliable of the two formats: it needs one image per product rather than three
+ * of the same garment, so the whole active catalogue qualifies.
+ */
+export async function generateCollectionReel(
+  headline?: string,
+  count = 4,
+): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const result = await buildCollectionReel({ headline, count });
+    revalidatePath("/admin/social");
+    return {
+      ok: true,
+      detail: `${result.productTitle} — ${result.durationSeconds}s. Ready for review.`,
+    };
+  } catch (e) {
+    return { ok: false, detail: (e as Error).message };
+  }
 }

@@ -21,7 +21,7 @@ import {
   fetchPostableCategories, saveQueueOrder, clearQueueOrder,
   deletePost, repostPost, restorePost,
   fetchReels, fetchReelUpNext, fetchReelProductTitles,
-  approveReel, discardReel, restoreReel, generateReel, rebuildReel,
+  approveReel, discardReel, restoreReel, generateReel, rebuildReel, generateCollectionReel,
   approveAndPublishReel, publishReelNow,
   updateReelCaption, saveReelQueueOrder, clearReelQueueOrder,
   createReelUploadUrl, registerUploadedReel, suggestUploadCaption,
@@ -1681,6 +1681,7 @@ function ReelQueueCard({
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [building, setBuilding] = useState<string | null>(null);
+  const [headline, setHeadline] = useState("New arrivals");
 
   const incomingIds = items.map((i) => i.id).join();
   const [syncedIds, setSyncedIds] = useState(incomingIds);
@@ -1751,6 +1752,45 @@ function ReelQueueCard({
           <p className="text-[12px] text-amber-900">
             Reels are built on your own computer. Open this page there to generate one.
           </p>
+        </div>
+      )}
+
+      {canGenerate && (
+        <div className="mb-4 rounded-lg border-2 border-slate-300 p-2.5">
+          <p className="mb-2 text-[12px] font-semibold text-[var(--admin-text)]">
+            Collection reel
+            <span className="ml-1 font-normal text-[var(--admin-text-muted)]">
+              — one shot each from the next 4
+            </span>
+          </p>
+          <input
+            className={`${inputCls} mb-2 py-1.5 text-[13px]`}
+            value={headline}
+            onChange={(e) => setHeadline(e.target.value)}
+            placeholder="New arrivals"
+            aria-label="Collection reel headline"
+          />
+          <AdminButton
+            size="sm"
+            variant="outline"
+            className="w-full"
+            loading={building === "collection"}
+            disabled={pending || building !== null}
+            onClick={() => {
+              setBuilding("collection");
+              onAct(async () => {
+                try {
+                  const res = await generateCollectionReel(headline || undefined, 4);
+                  if (!res.ok) throw new Error(res.detail);
+                  return res;
+                } finally {
+                  setBuilding(null);
+                }
+              }, "Collection reel ready — waiting in To review");
+            }}
+          >
+            {building === "collection" ? "Making the reel…" : "Make collection reel"}
+          </AdminButton>
         </div>
       )}
 

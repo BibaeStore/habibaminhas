@@ -146,7 +146,8 @@ export async function buildSlideFrame(
  */
 export async function buildEndCard(input: {
   title: string;
-  price: string;
+  /** Omitted on collection reels, where four garments have four different prices. */
+  price?: string;
   background?: string;
   cta?: string;
 }): Promise<Buffer> {
@@ -215,9 +216,10 @@ export async function buildEndCard(input: {
     <line x1="${RENDER_WIDTH / 2 - 120}" y1="${afterTitle + 20}"
           x2="${RENDER_WIDTH / 2 + 120}" y2="${afterTitle + 20}"
           stroke="${rule}" stroke-width="3"/>
-    <text x="${RENDER_WIDTH / 2}" y="${afterTitle + 140}"
-          font-size="90" letter-spacing="2">${escapeXml(input.price)}</text>
-    <text x="${RENDER_WIDTH / 2}" y="${afterTitle + 262}"
+    ${input.price
+      ? `<text x="${RENDER_WIDTH / 2}" y="${afterTitle + 140}" font-size="90" letter-spacing="2">${escapeXml(input.price)}</text>`
+      : ""}
+    <text x="${RENDER_WIDTH / 2}" y="${afterTitle + (input.price ? 262 : 150)}"
           font-size="44" font-family="Helvetica, Arial, sans-serif"
           letter-spacing="6" opacity="0.75">${escapeXml((input.cta ?? "LINK IN BIO").toUpperCase())}</text>
   </g>
@@ -238,4 +240,66 @@ export async function fetchImage(url: string): Promise<Buffer> {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Image fetch failed (${res.status}): ${url}`);
   return Buffer.from(await res.arrayBuffer());
+}
+
+/**
+ * Opening frame for a collection reel.
+ *
+ * A collection reel cuts between four unrelated garments, so without an opening statement
+ * it reads as a jumble rather than an edit. One line of intent — "New arrivals", "Cotton
+ * suits under Rs. 5,000" — is what turns four photographs into a reason to keep watching.
+ *
+ * The logo sits above the line rather than at the end alone, because the first frame is
+ * the one that appears as the cover in the grid.
+ */
+export async function buildTitleCard(input: {
+  title: string;
+  subtitle?: string;
+  background?: string;
+}): Promise<Buffer> {
+  const bg = safeColour(input.background);
+  const dark = isDark(bg);
+  const fg = dark ? "#faf7f1" : INK;
+  const rule = dark ? "rgba(250,247,241,0.35)" : "rgba(26,22,18,0.25)";
+
+  const logoWidth = Math.round(RENDER_WIDTH * 0.52);
+  let logo: Buffer | null = null;
+  let logoHeight = 0;
+  try {
+    const raw = sharp(join(process.cwd(), "public", "logo", "habiba-minhas-logo-t.png")).resize({
+      width: logoWidth,
+      withoutEnlargement: false,
+    });
+    logo = await (dark ? raw.negate({ alpha: false }) : raw).png().toBuffer();
+    logoHeight = (await sharp(logo).metadata()).height ?? 0;
+  } catch {
+    logo = null;
+  }
+
+  const logoTop = Math.round(RENDER_HEIGHT / 2 - logoHeight - 170);
+  const titleY = logoTop + logoHeight + 230;
+
+  const svg = `
+<svg width="${RENDER_WIDTH}" height="${RENDER_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="${bg}"/>
+  <g fill="${fg}" text-anchor="middle">
+    <text x="${RENDER_WIDTH / 2}" y="${titleY}"
+          font-family="Georgia, 'Times New Roman', serif" font-size="96">${escapeXml(input.title)}</text>
+    <line x1="${RENDER_WIDTH / 2 - 140}" y1="${titleY + 60}"
+          x2="${RENDER_WIDTH / 2 + 140}" y2="${titleY + 60}"
+          stroke="${rule}" stroke-width="3"/>
+    ${input.subtitle
+      ? `<text x="${RENDER_WIDTH / 2}" y="${titleY + 160}" font-family="Helvetica, Arial, sans-serif" font-size="46" letter-spacing="4" opacity="0.75">${escapeXml(input.subtitle.toUpperCase())}</text>`
+      : ""}
+  </g>
+</svg>`;
+
+  const card = sharp(Buffer.from(svg));
+  const composed = logo
+    ? card.composite([
+        { input: logo, top: Math.max(40, logoTop), left: Math.round((RENDER_WIDTH - logoWidth) / 2) },
+      ])
+    : card;
+
+  return composed.jpeg({ quality: 92, mozjpeg: true }).toBuffer();
 }

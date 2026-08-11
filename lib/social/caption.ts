@@ -497,3 +497,63 @@ export function buildUploadCaption(seed = new Date().toISOString().slice(0, 10))
     altText: "Habiba Minhas — Pakistani stitched suits, made in Karachi.",
   };
 }
+
+/**
+ * Caption for a collection reel — four garments in one video.
+ *
+ * A product caption leads with one garment's concrete facts. That cannot work here, so the
+ * hook leads with the *range* instead, and the pieces are listed by name so each is
+ * searchable and recognisable when a viewer comes back looking for "the green one".
+ *
+ * Price appears as a from-figure rather than four separate numbers: four prices in a
+ * caption reads as a price list, and the individual price is on each product page anyway.
+ */
+export function buildCollectionCaption(
+  products: Array<{ title: string; price: number }>,
+  headline = "New arrivals",
+): GeneratedCaption {
+  const names = products.map((p) => shortName(p.title));
+  const cheapest = Math.min(...products.map((p) => p.price));
+  const seed = names.join("|");
+
+  const hooks = [
+    `${products.length} new pieces, just in.`,
+    `${headline} — ${products.length} pieces, one rail.`,
+    `Swipe through ${products.length} of this week's arrivals.`,
+  ];
+
+  const hashtags = [
+    "#PakistaniFashion",
+    "#PakistaniSuits",
+    "#NewArrivals",
+    "#StitchedSuits",
+    "#ReadyToWearPakistan",
+    "#KarachiFashion",
+    "#OnlineShoppingPakistan",
+    "#PakistanOnlineStore",
+    "#EasternWear",
+    "#DesiFashion",
+    "#HabibaMinhas",
+    "#HabibaMinhasStudio",
+  ];
+
+  const body = [
+    hooks[stableIndex(seed, hooks.length)],
+    "",
+    names.map((n) => `• ${n}`).join("\n"),
+    "",
+    `Pakistani stitched suits from ${formatPrice(cheapest)} — cotton, lawn and chiffon, cut and finished in our Karachi studio and delivered nationwide.`,
+    "",
+    ["Abhi order karein, nationwide delivery.", "Ghar baithay order karein — poore Pakistan mein delivery."][
+      stableIndex(seed, 2)
+    ],
+    "",
+    "Shop all four — link in bio 🔗",
+  ].join("\n");
+
+  return {
+    caption: clampCaption(body, hashtags),
+    hashtags,
+    altText: `Four Pakistani stitched suits by Habiba Minhas: ${names.join(", ")}.`,
+  };
+}
