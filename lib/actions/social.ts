@@ -533,40 +533,58 @@ export async function updateReelCaption(id: string, caption: string): Promise<vo
 }
 
 /**
- * Stores a video the owner shot themselves.
+ * Hands the browser a one-time URL to upload a video straight into Storage.
  *
- * Uploading needs no ffmpeg, so unlike generation this genuinely can run on the server. It
- * joins the same review queue as a generated reel — only its origin differs.
+ * The file never touches the Next.js server. It previously did, and that capped uploads at
+ * the server-action body limit — 20MB here, and about 4.5MB on Vercel — while the bucket
+ * and the UI both advertised 100MB. Anything in between failed with an opaque framework
+ * error rather than a message naming the size.
+ *
+ * A signed upload URL is valid once, for this exact object key, so nothing is exposed
+ * beyond the single write it authorises.
  */
-export async function uploadOwnReel(form: FormData): Promise<{ ok: boolean; detail?: string }> {
-  const file = form.get("file");
-  const caption = String(form.get("caption") ?? "").trim();
-  if (!(file instanceof File) || file.size === 0) return { ok: false, detail: "No file received" };
-
+export async function createReelUploadUrl(
+  contentType: string,
+): Promise<{ ok: boolean; detail?: string; signedUrl?: string; path?: string; publicUrl?: string }> {
   const allowed = ["video/mp4", "video/quicktime"];
-  if (!allowed.includes(file.type)) {
-    return { ok: false, detail: `Unsupported type ${file.type}. Instagram needs MP4 or MOV.` };
-  }
-  // Bucket ceiling is 100MB; refuse here so the failure names the reason.
-  if (file.size > 100 * 1024 * 1024) {
-    return { ok: false, detail: `File is ${(file.size / 1024 / 1024).toFixed(0)}MB — the limit is 100MB.` };
+  if (!allowed.includes(contentType)) {
+    return { ok: false, detail: `Unsupported type ${contentType}. Instagram needs MP4 or MOV.` };
   }
 
   const sb = createAdminClient();
-  const ext = file.type === "video/quicktime" ? "mov" : "mp4";
-  const key = `reels/upload-${Date.now().toString(36)}.${ext}`;
+  const ext = contentType === "video/quicktime" ? "mov" : "mp4";
+  const path = `reels/upload-${Date.now().toString(36)}.${ext}`;
 
-  const { error: uploadError } = await sb.storage
-    .from("social-media")
-    .upload(key, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: false });
-  if (uploadError) return { ok: false, detail: uploadError.message };
+  const { data, error } = await sb.storage.from("social-media").createSignedUploadUrl(path);
+  if (error || !data) return { ok: false, detail: error?.message ?? "Could not start the upload" };
 
   const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
+  return {
+    ok: true,
+    signedUrl: data.signedUrl,
+    path,
+    publicUrl: `${base}/storage/v1/object/public/social-media/${path}`,
+  };
+}
+
+/**
+ * Records a video the owner uploaded, once the file is safely in Storage.
+ *
+ * It joins the same review queue as a generated reel — only its origin differs — and
+ * nothing publishes without approval.
+ */
+export async function registerUploadedReel(input: {
+  publicUrl: string;
+  caption: string;
+  durationSeconds?: number;
+}): Promise<{ ok: boolean; detail?: string }> {
+  const sb = createAdminClient();
   const { error } = await sb.from("social_media_queue").insert({
     kind: "upload",
     product_ids: [],
-    video_url: `${base}/storage/v1/object/public/social-media/${key}`,
-    caption: caption || null,
+    video_url: input.publicUrl,
+    caption: input.caption.trim() || null,
+    duration_seconds: input.durationSeconds ?? null,
     status: "draft",
     platform: "instagram",
   });
@@ -574,68 +592,6 @@ export async function uploadOwnReel(form: FormData): Promise<{ ok: boolean; deta
 
   revalidatePath("/admin/social");
   return { ok: true };
-}
-
-/**
- * Can this deployment build a reel, or must it be done on the owner's machine?
- *
- * Encoding needs ffmpeg and more than 60 seconds, neither of which a Vercel function on
- * the free plan has. Running locally — which is how the admin is used today — both are
- * available, so the button works. The UI asks this rather than assuming, so it can offer
- * the button where it works and explain itself where it does not.
- */
-export async function canGenerateReels(): Promise<boolean> {
-  return canEncodeHere();
-}
-
-/**
- * Builds a reel from the admin.
- *
- * Same code path as the CLI. Encoding a 12-second reel takes tens of seconds, so this is a
- * genuinely long-running action — the UI shows progress rather than appearing frozen.
- */
-export async function generateReel(slug?: string): Promise<{ ok: boolean; detail: string }> {
-  try {
-    const result = await buildProductReel({ slug });
-    revalidatePath("/admin/social");
-    return {
-      ok: true,
-      detail: `${result.productTitle} — ${result.durationSeconds}s, ${result.sizeMb} MB. Ready for review.`,
-    };
-  } catch (e) {
-    return { ok: false, detail: (e as Error).message };
-  }
-}
-
-/**
- * Rebuilds the reel the owner asked to re-cut, archiving the rejected version first so the
- * queue never shows two drafts of one product competing for approval.
- */
-export async function rebuildReel(id: string): Promise<{ ok: boolean; detail: string }> {
-  const sb = createAdminClient();
-  const { data: row } = await sb
-    .from("social_media_queue")
-    .select("id, product_ids")
-    .eq("id", id)
-    .maybeSingle();
-
-  const productId = ((row?.product_ids as string[]) ?? [])[0];
-  if (!productId) return { ok: false, detail: "This reel has no product to rebuild from." };
-
-  const { data: product } = await sb.from("products").select("slug").eq("id", productId).maybeSingle();
-  if (!product?.slug) return { ok: false, detail: "The product no longer exists." };
-
-  try {
-    const result = await buildProductReel({ slug: product.slug as string });
-    await sb
-      .from("social_media_queue")
-      .update({ status: "archived", archived_at: new Date().toISOString(), rebuild_requested: false })
-      .eq("id", id);
-    revalidatePath("/admin/social");
-    return { ok: true, detail: `New cut ready — ${result.durationSeconds}s. The old one moved to Discarded.` };
-  } catch (e) {
-    return { ok: false, detail: (e as Error).message };
-  }
 }
 
 /** Manual order for the reel queue, saved on drop. Separate from the photo queue. */
@@ -732,4 +688,66 @@ export async function approveAndPublishReel(
   const result = await publishQueuedReel(id);
   revalidatePath("/admin/social");
   return { ok: result.ok, detail: result.detail };
+}
+
+/**
+ * Can this deployment build a reel, or must it be done on the owner's machine?
+ *
+ * Encoding needs ffmpeg and more than 60 seconds, neither of which a Vercel function on the
+ * free plan has. Running locally — which is how the admin is used today — both are
+ * available, so the button works. The UI asks rather than assuming, so it can offer the
+ * button where it works and explain itself where it does not.
+ */
+export async function canGenerateReels(): Promise<boolean> {
+  return canEncodeHere();
+}
+
+/**
+ * Builds a reel from the admin. Same code path as the CLI.
+ *
+ * Encoding a 12-second reel takes tens of seconds, so this is a genuinely long-running
+ * action — the UI shows progress rather than appearing frozen.
+ */
+export async function generateReel(slug?: string): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const result = await buildProductReel({ slug });
+    revalidatePath("/admin/social");
+    return {
+      ok: true,
+      detail: `${result.productTitle} — ${result.durationSeconds}s, ${result.sizeMb} MB. Ready for review.`,
+    };
+  } catch (e) {
+    return { ok: false, detail: (e as Error).message };
+  }
+}
+
+/**
+ * Rebuilds the reel the owner asked to re-cut, archiving the rejected version first so the
+ * queue never shows two drafts of one product competing for approval.
+ */
+export async function rebuildReel(id: string): Promise<{ ok: boolean; detail: string }> {
+  const sb = createAdminClient();
+  const { data: row } = await sb
+    .from("social_media_queue")
+    .select("id, product_ids")
+    .eq("id", id)
+    .maybeSingle();
+
+  const productId = ((row?.product_ids as string[]) ?? [])[0];
+  if (!productId) return { ok: false, detail: "This reel has no product to rebuild from." };
+
+  const { data: product } = await sb.from("products").select("slug").eq("id", productId).maybeSingle();
+  if (!product?.slug) return { ok: false, detail: "The product no longer exists." };
+
+  try {
+    const result = await buildProductReel({ slug: product.slug as string });
+    await sb
+      .from("social_media_queue")
+      .update({ status: "archived", archived_at: new Date().toISOString(), rebuild_requested: false })
+      .eq("id", id);
+    revalidatePath("/admin/social");
+    return { ok: true, detail: `New cut ready — ${result.durationSeconds}s. The old one moved to Discarded.` };
+  } catch (e) {
+    return { ok: false, detail: (e as Error).message };
+  }
 }

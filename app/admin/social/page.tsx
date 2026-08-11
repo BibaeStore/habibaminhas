@@ -23,7 +23,8 @@ import {
   fetchReels, fetchReelUpNext, fetchReelProductTitles,
   approveReel, discardReel, restoreReel, generateReel, rebuildReel,
   approveAndPublishReel, publishReelNow,
-  updateReelCaption, uploadOwnReel, saveReelQueueOrder, clearReelQueueOrder,
+  updateReelCaption, saveReelQueueOrder, clearReelQueueOrder,
+  createReelUploadUrl, registerUploadedReel,
   fetchReelRotation, canGenerateReels,
   type SocialLogRow, type SocialSettingsRow, type SocialReelRow,
   type SocialPlatformRow, type SocialCollaboratorRow,
@@ -1815,14 +1816,76 @@ function ReelQueueCard({
   );
 }
 
-/** Uploading a video made elsewhere — no encoding involved, so this works anywhere. */
+/**
+ * Uploading a video made elsewhere.
+ *
+ * The file goes **straight from the browser into Storage** using a one-time signed URL,
+ * never through the Next.js server. Routing it through a server action capped uploads at
+ * the body limit — 20MB here, ~4.5MB on Vercel — while the bucket and this card both
+ * advertised 100MB, so anything in between failed with an opaque framework error.
+ *
+ * A caption is collected here rather than left for later: an uploaded reel published with
+ * an empty caption carries no hashtags, no call to action and no link, which has already
+ * happened once.
+ */
 function UploadReelCard({
   pending, onAct,
 }: {
   pending: boolean;
   onAct: (fn: () => Promise<unknown>, message?: string) => void;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [caption, setCaption] = useState("");
+  const [duration, setDuration] = useState<number | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
+
+  /** Reads the real duration in the browser so the review card can show it. */
+  function readDuration(f: File) {
+    const url = URL.createObjectURL(f);
+    const probe = document.createElement("video");
+    probe.preload = "metadata";
+    probe.onloadedmetadata = () => {
+      setDuration(Number.isFinite(probe.duration) ? Number(probe.duration.toFixed(2)) : null);
+      URL.revokeObjectURL(url);
+    };
+    probe.src = url;
+  }
+
+  function upload() {
+    if (!file) return;
+    setProgress("Preparing…");
+    onAct(async () => {
+      try {
+        const slot = await createReelUploadUrl(file.type);
+        if (!slot.ok || !slot.signedUrl || !slot.publicUrl) {
+          throw new Error(slot.detail ?? "Could not start the upload");
+        }
+
+        setProgress(`Uploading ${(file.size / 1024 / 1024).toFixed(1)} MB…`);
+        const res = await fetch(slot.signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+
+        setProgress("Saving…");
+        const saved = await registerUploadedReel({
+          publicUrl: slot.publicUrl,
+          caption,
+          durationSeconds: duration ?? undefined,
+        });
+        if (!saved.ok) throw new Error(saved.detail ?? "Could not save the reel");
+
+        setFile(null);
+        setCaption("");
+        setDuration(null);
+        return saved;
+      } finally {
+        setProgress(null);
+      }
+    }, "Uploaded — it is waiting in To review");
+  }
 
   return (
     <AdminCard padded>
@@ -1835,42 +1898,121 @@ function UploadReelCard({
       </p>
 
       <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-400 px-4 py-8 text-center transition hover:border-[var(--admin-accent)] hover:bg-[var(--admin-accent)]/5">
-        {busy ? (
+        {progress ? (
           <Loader2 size={22} className="animate-spin text-[var(--admin-accent)]" />
         ) : (
           <Upload size={22} className="text-slate-500" />
         )}
         <span className="text-[14px] font-medium text-[var(--admin-text)]">
-          {busy ? "Uploading…" : "Choose a video"}
+          {progress ?? (file ? file.name : "Choose a video")}
         </span>
         <span className="text-[12px] text-[var(--admin-text-muted)]">
-          MP4 or MOV, up to 100MB. Portrait 9:16 works best.
+          {file
+            ? `${(file.size / 1024 / 1024).toFixed(1)} MB${duration ? ` · ${duration.toFixed(0)}s` : ""}`
+            : "MP4 or MOV, up to 100MB. Portrait 9:16 works best."}
         </span>
         <input
           type="file"
           accept="video/mp4,video/quicktime"
           className="hidden"
-          disabled={busy || pending}
+          disabled={pending || progress !== null}
           onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const form = new FormData();
-            form.set("file", file);
+            const chosen = e.target.files?.[0] ?? null;
             e.target.value = "";
-            setBusy(true);
-            onAct(async () => {
-              try {
-                const res = await uploadOwnReel(form);
-                if (!res.ok) throw new Error(res.detail ?? "Upload failed");
-                return res;
-              } finally {
-                setBusy(false);
-              }
-            }, "Uploaded — it is waiting in To review");
+            if (!chosen) return;
+            if (chosen.size > 100 * 1024 * 1024) {
+              onAct(async () => {
+                throw new Error(
+                  `That file is ${(chosen.size / 1024 / 1024).toFixed(0)}MB — the limit is 100MB.`,
+                );
+              });
+              return;
+            }
+            setFile(chosen);
+            setDuration(null);
+            readDuration(chosen);
           }}
         />
       </label>
+
+      {file && (
+        <div className="mt-4 space-y-3">
+          <Field
+            label="Caption"
+            hint="Instagram links are not clickable, so point at the bio. Hashtags belong here too."
+          >
+            <textarea
+              rows={5}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder={
+                "New in — soft cotton, fully stitched." +
+                "\n\nShop the piece — link in bio 🔗" +
+                "\n\n#PakistaniFashion #PakistaniSuits"
+              }
+              className={`${inputCls} text-[13px] leading-relaxed`}
+            />
+          </Field>
+          <div className="flex flex-wrap gap-2">
+            <AdminButton size="sm" loading={progress !== null} disabled={pending} onClick={upload}>
+              Upload for review
+            </AdminButton>
+            <AdminButton
+              size="sm"
+              variant="ghost"
+              disabled={progress !== null}
+              onClick={() => { setFile(null); setCaption(""); setDuration(null); }}
+            >
+              Cancel
+            </AdminButton>
+          </div>
+        </div>
+      )}
     </AdminCard>
+  );
+}
+
+/**
+ * Where this reel actually landed, per platform.
+ *
+ * A reel is reviewed once but publishes to Instagram and the Facebook Page separately, and
+ * either can fail on its own — so one "Published" pill would hide the case that matters:
+ * live on one, failed on the other.
+ */
+function ReelPlatforms({ row }: { row: SocialReelRow }) {
+  const results = (row.platform_results ?? null) as Record<
+    string,
+    { ok?: boolean; permalink?: string | null; error?: string }
+  > | null;
+  if (!results || Object.keys(results).length === 0) return null;
+
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2">
+      {Object.entries(results).map(([platform, result]) => {
+        const label = platformLabel(platform);
+        const body = (
+          <>
+            <PlatformIcon platform={platform} size={13} />
+            {label}
+            {result.ok ? <Check size={11} strokeWidth={3} /> : <AlertTriangle size={11} />}
+          </>
+        );
+        const cls = `inline-flex items-center gap-1.5 rounded-full border-2 px-2 py-0.5 text-[12px] font-medium ${
+          result.ok
+            ? "border-emerald-400 bg-emerald-50 text-emerald-800"
+            : "border-red-400 bg-red-50 text-red-800"
+        }`;
+        return result.ok && result.permalink ? (
+          <a key={platform} href={result.permalink} target="_blank" rel="noopener noreferrer" className={cls}>
+            {body}
+          </a>
+        ) : (
+          <span key={platform} className={cls} title={result.error ?? undefined}>
+            {body}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1923,6 +2065,8 @@ function ReelCard({
           {products.length > 0 && (
             <p className="mb-2 text-[13px] text-[var(--admin-text)]">{products.join(" · ")}</p>
           )}
+
+          <ReelPlatforms row={row} />
           {row.audio_track && (
             <p className="mb-2 text-[12px] text-[var(--admin-text-muted)]">♪ {row.audio_track}</p>
           )}

@@ -766,6 +766,7 @@ export type Database = {
           kind: string
           permalink: string | null
           platform: string
+          platform_results: Json | null
           posted_at: string | null
           product_ids: string[]
           rebuild_note: string | null
@@ -790,6 +791,7 @@ export type Database = {
           kind: string
           permalink?: string | null
           platform?: string
+          platform_results?: Json | null
           posted_at?: string | null
           product_ids?: string[]
           rebuild_note?: string | null
@@ -814,6 +816,7 @@ export type Database = {
           kind?: string
           permalink?: string | null
           platform?: string
+          platform_results?: Json | null
           posted_at?: string | null
           product_ids?: string[]
           rebuild_note?: string | null
