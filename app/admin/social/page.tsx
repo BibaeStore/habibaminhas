@@ -22,6 +22,7 @@ import {
   deletePost, repostPost, restorePost,
   fetchReels, fetchReelUpNext, fetchReelProductTitles,
   approveReel, discardReel, restoreReel, generateReel, rebuildReel,
+  approveAndPublishReel, publishReelNow,
   updateReelCaption, uploadOwnReel, saveReelQueueOrder, clearReelQueueOrder,
   fetchReelRotation, canGenerateReels,
   type SocialLogRow, type SocialSettingsRow, type SocialReelRow,
@@ -1884,6 +1885,7 @@ function ReelCard({
 }) {
   const [caption, setCaption] = useState(row.caption ?? "");
   const [rebuilding, setRebuilding] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const isDraft = row.status === "draft";
   const products = (row.product_ids ?? []).map((id) => titles[id]).filter(Boolean);
 
@@ -1942,15 +1944,38 @@ function ReelCard({
             <div className="mt-3 flex flex-wrap gap-2">
               <AdminButton
                 size="sm"
-                loading={pending && !rebuilding}
+                loading={publishing}
+                disabled={pending || rebuilding}
+                onClick={() => {
+                  setPublishing(true);
+                  onAct(async () => {
+                    try {
+                      const res = await approveAndPublishReel(
+                        row.id,
+                        caption !== row.caption ? caption : undefined,
+                      );
+                      if (!res.ok) throw new Error(res.detail);
+                      return res;
+                    } finally {
+                      setPublishing(false);
+                    }
+                  }, "Published to Instagram");
+                }}
+              >
+                <Check size={14} /> {publishing ? "Publishing…" : "Approve & publish"}
+              </AdminButton>
+              <AdminButton
+                size="sm"
+                variant="outline"
+                disabled={pending || publishing || rebuilding}
                 onClick={() =>
                   onAct(async () => {
                     if (caption !== row.caption) await updateReelCaption(row.id, caption);
                     await approveReel(row.id);
-                  }, "Approved — it will publish on the next run")
+                  }, "Approved — publish it when you are ready")
                 }
               >
-                <Check size={14} /> Approve
+                Approve only
               </AdminButton>
               <AdminButton
                 size="sm"
@@ -1989,6 +2014,47 @@ function ReelCard({
                 </AdminButton>
               )}
             </div>
+          )}
+
+          {(row.status === "approved" || row.status === "failed") && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <AdminButton
+                size="sm"
+                loading={publishing}
+                disabled={pending}
+                onClick={() => {
+                  setPublishing(true);
+                  onAct(async () => {
+                    try {
+                      const res = await publishReelNow(row.id);
+                      if (!res.ok) throw new Error(res.detail);
+                      return res;
+                    } finally {
+                      setPublishing(false);
+                    }
+                  }, "Published to Instagram");
+                }}
+              >
+                {publishing
+                  ? "Publishing…"
+                  : row.status === "failed"
+                    ? "Try publishing again"
+                    : "Publish now"}
+              </AdminButton>
+              <AdminButton
+                size="sm"
+                variant="ghost"
+                onClick={() => onAct(() => discardReel(row.id), "Discarded")}
+              >
+                <Trash2 size={14} /> Discard
+              </AdminButton>
+            </div>
+          )}
+
+          {publishing && (
+            <p className="mt-2 text-[12px] text-[var(--admin-text-muted)]">
+              Meta transcodes the video before it goes live — this can take a couple of minutes.
+            </p>
           )}
 
           {row.status === "archived" && (

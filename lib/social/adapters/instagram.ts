@@ -176,6 +176,59 @@ async function waitForContainer(
   throw new Error(`Container ${containerId} still processing after ${maxAttempts} checks`);
 }
 
+/**
+ * Publishes a Reel.
+ *
+ * Deliberately a separate path from `publishImagePost` rather than a widened version of
+ * it. Reels differ in three ways that matter:
+ *
+ * 1. **Processing is genuinely slow.** Meta transcodes the video server-side, which takes
+ *    tens of seconds to minutes, where an image container is usually `FINISHED` on the
+ *    first poll. The wait window here is minutes, not seconds.
+ * 2. **`share_to_feed` decides whether it also appears on the profile grid**, not only in
+ *    the Reels tab. For a shop that is always wanted — the grid is the shopfront.
+ * 3. **No `alt_text`.** Meta does not accept it on Reels, so passing it errors rather than
+ *    being ignored.
+ *
+ * Collaborators work exactly as they do on carousels: the parameter is supported on Feed
+ * images, Reels and Carousels alike.
+ */
+export async function publishReel(
+  creds: MetaCredentials,
+  input: { videoUrl: string; caption: string; collaborators?: string[] },
+): Promise<{ externalPostId: string; permalink?: string }> {
+  const collaborators = (input.collaborators ?? []).slice(0, MAX_COLLABORATORS);
+
+  const container = await withRetry(() => {
+    const params: Record<string, string> = {
+      media_type: "REELS",
+      // Same cache-busting as images: Meta negative-caches a URL it once failed to fetch,
+      // and a single propagation miss would otherwise poison this video permanently.
+      video_url: uncachedUrl(input.videoUrl),
+      caption: input.caption,
+      share_to_feed: "true",
+    };
+    if (collaborators.length > 0) params.collaborators = JSON.stringify(collaborators);
+    return graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media`, params);
+  });
+
+  // Up to ~5 minutes. Meta's own guidance for Reels is to poll roughly once a minute and
+  // give up after five; this polls a little faster so a quick transcode is not left
+  // waiting, while still covering the slow case.
+  await waitForContainer(creds, container.id, 30, 10000);
+
+  const published = await withRetry(() =>
+    graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media_publish`, {
+      creation_id: container.id,
+    }),
+  );
+
+  return {
+    externalPostId: published.id,
+    permalink: await fetchPermalink(creds, published.id),
+  };
+}
+
 /** Best-effort: a missing permalink must never fail a post that already published. */
 async function fetchPermalink(
   creds: MetaCredentials,

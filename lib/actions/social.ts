@@ -16,6 +16,7 @@ import { getPublishingQuota } from "@/lib/social/adapters/instagram";
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
 import { buildProductReel } from "@/lib/social/reel/build";
 import { canEncodeHere } from "@/lib/social/reel/encode";
+import { publishQueuedReel } from "@/lib/social/reel/publish";
 
 /**
  * Server actions for /admin/social.
@@ -690,4 +691,45 @@ export async function fetchReelRotation(): Promise<{
     awaitingReview: (reels ?? []).filter((r) => r.status === "draft").length,
     published: (reels ?? []).filter((r) => r.status === "posted").length,
   };
+}
+
+/**
+ * Publishes an approved reel to Instagram.
+ *
+ * Meta transcodes the video server-side, so this can take a couple of minutes on a longer
+ * clip — the UI shows that rather than appearing stuck.
+ */
+export async function publishReelNow(id: string): Promise<{ ok: boolean; detail: string }> {
+  const result = await publishQueuedReel(id);
+  revalidatePath("/admin/social");
+  return { ok: result.ok, detail: result.detail };
+}
+
+/**
+ * Approve and publish in one step.
+ *
+ * The owner's stated flow is "review, approve, then it publishes" — so the two are one
+ * button. The states stay separate underneath: if publishing fails the reel is left
+ * `failed` with the full error rather than silently reverting, and it can be retried
+ * without regenerating the video.
+ */
+export async function approveAndPublishReel(
+  id: string,
+  caption?: string,
+): Promise<{ ok: boolean; detail: string }> {
+  const sb = createAdminClient();
+  if (caption !== undefined) {
+    await sb.from("social_media_queue").update({ caption }).eq("id", id);
+  }
+
+  const { error } = await sb
+    .from("social_media_queue")
+    .update({ status: "approved", approved_at: new Date().toISOString(), rebuild_requested: false })
+    .eq("id", id)
+    .eq("status", "draft");
+  if (error) return { ok: false, detail: error.message };
+
+  const result = await publishQueuedReel(id);
+  revalidatePath("/admin/social");
+  return { ok: result.ok, detail: result.detail };
 }
