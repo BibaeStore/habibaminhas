@@ -170,10 +170,31 @@ export async function graphRequest<T = unknown>(
   return parsed as T;
 }
 
+/**
+ * A URL Meta has not seen before, pointing at exactly the same file.
+ *
+ * Meta **negative-caches a media URL it once failed to fetch**. A single transient miss —
+ * our CDN not yet having propagated a just-uploaded derivative to the edge Meta happens to
+ * hit — poisons that exact URL, and every later attempt returns `9004 / 2207052` no matter
+ * how long you wait or how many times you retry.
+ *
+ * Proven on 2026-08-11: Emerald Grace's derivative returned 400 on the bare URL and 200 on
+ * the same file with `?v=` appended, minutes apart, with the file itself verified byte-wise
+ * identical in format, dimensions and ratio to a derivative that published fine.
+ *
+ * So every attempt gets a distinct query string. Supabase Storage ignores unknown query
+ * parameters and serves the same object, while Meta treats it as a new resource. Call this
+ * *inside* the retried function so a retry escapes the poisoned URL instead of replaying it.
+ */
+export function uncachedUrl(url: string): string {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
 /** Small helper so transient failures do not lose a day's post to one bad second. */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  attempts = 3,
+  attempts = 4,
   delayMs = 2000,
 ): Promise<T> {
   let lastError: unknown;
@@ -182,9 +203,20 @@ export async function withRetry<T>(
       return await fn();
     } catch (e) {
       lastError = e;
-      const retryable = e instanceof MetaApiError ? e.isTransient : false;
-      if (!retryable || i === attempts - 1) throw e;
-      await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
+      const meta = e instanceof MetaApiError ? e : null;
+      if (!meta?.isTransient || i === attempts - 1) throw e;
+
+      /*
+       * A CDN-propagation miss needs materially longer than a server blip.
+       *
+       * `waitUntilFetchable` in images.ts already HEADs each derivative before publishing,
+       * but that proves *our* edge has the object — Meta fetches from its own
+       * infrastructure and can hit an edge that does not yet. On 2026-08-11 Emerald Grace
+       * failed on Instagram with 2207052 while Facebook published the same four URLs
+       * twenty seconds later. The old 2s + 4s budget gave up after six.
+       */
+      const base = meta.subcode === 2207052 ? 5000 : delayMs;
+      await new Promise((r) => setTimeout(r, base * (i + 1)));
     }
   }
   throw lastError;

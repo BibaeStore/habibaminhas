@@ -233,8 +233,15 @@ type PublishInput = {
   slot: string | null;
   /** Shared across every platform row of one logical post. Only used on the insert path. */
   groupId?: string;
-  /** Instagram co-author usernames. Ignored by platforms without the concept. */
-  collaborators?: string[];
+  /**
+   * Instagram co-author usernames. Ignored by platforms without the concept.
+   *
+   * Deliberately required, not optional. When it was optional every queue-publish path
+   * omitted it silently and the collaborator feature never fired once — Meta reports no
+   * error for a missing `collaborators` param, so nothing surfaced. Pass `[]` to mean
+   * "none" so that omission is a compile error rather than a quiet no-op.
+   */
+  collaborators: string[];
 };
 
 /**
@@ -340,6 +347,10 @@ async function publishApproved(
     .order("created_at", { ascending: true })
     .limit(settings.max_posts_per_day * 2);
 
+  // Resolved at publish time, not at queue time: a post can sit in the review queue for
+  // days, and the collaborator list the owner wants is the one current when it goes out.
+  const collaborators = await getEnabledCollaborators("instagram");
+
   const out: unknown[] = [];
   for (const row of data ?? []) {
     out.push(
@@ -354,6 +365,7 @@ async function publishApproved(
         imageUrls: (row.image_urls as string[]) ?? [],
         altText: row.alt_text as string | null,
         slot: row.slot as string | null,
+        collaborators: row.platform === "instagram" ? collaborators : [],
       }),
     );
   }
@@ -375,17 +387,22 @@ export async function publishLogEntry(logId: string): Promise<unknown> {
   if (error || !row) return { ok: false, reason: "not_found" };
   if (row.status === "posted") return { ok: false, reason: "already_posted" };
 
+  const platform = row.platform as string;
+  const collaborators =
+    platform === "instagram" ? await getEnabledCollaborators("instagram") : [];
+
   return publishOne(creds, {
     logId,
     productId: row.product_id as string | null,
     productSlug: row.product_slug as string | null,
     productTitle: row.product_title as string | null,
-    platform: row.platform as string,
+    platform,
     caption: (row.caption as string) ?? "",
     hashtags: row.hashtags as string[] | null,
     imageUrls: (row.image_urls as string[]) ?? [],
     altText: row.alt_text as string | null,
     slot: row.slot as string | null,
+    collaborators,
   });
 }
 
@@ -548,16 +565,34 @@ export async function restoreArchivedPost(groupId: string): Promise<void> {
     .eq("status", "archived");
 }
 
-/** Posts already published in the current local day, against the hard ceiling. */
+/**
+ * Posts already made in the current local day, against the hard ceiling.
+ *
+ * Counts **logical posts, not rows**. One post to Instagram + Facebook writes two rows
+ * sharing a `group_id`. Counting rows made a ceiling of 2 mean *one* post per day, and the
+ * next run was then silently skipped as `daily_cap_reached` — which reads to the owner as
+ * "the button did nothing". The ceiling must mean the same thing however many platforms
+ * are switched on.
+ *
+ * Rows predating `group_id` have none, so each of those counts as one post.
+ */
 async function countToday(settings: SocialSettings): Promise<number> {
   const sb = createAdminClient();
   const since = startOfLocalDayUtc(settings.timezone).toISOString();
-  const { count } = await sb
+  const { data } = await sb
     .from("social_post_log")
-    .select("id", { count: "exact", head: true })
+    .select("group_id")
     .in("status", ["posted", "pending", "approved"])
     .gte("created_at", since);
-  return count ?? 0;
+
+  const groups = new Set<string>();
+  let ungrouped = 0;
+  for (const row of data ?? []) {
+    const id = row.group_id as string | null;
+    if (id) groups.add(id);
+    else ungrouped += 1;
+  }
+  return groups.size + ungrouped;
 }
 
 /** Has this named slot already produced rows today? */

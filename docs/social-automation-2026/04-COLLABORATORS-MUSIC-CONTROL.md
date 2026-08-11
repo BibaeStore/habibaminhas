@@ -1,7 +1,11 @@
 # Plan — Collaborators, Music, and Post Control
 
 **Created:** 2026-08-10
-**Status:** 📋 Plan only. **Nothing implemented.** Awaiting owner decisions.
+**Status:** ✅ **Collaborators and post control are IMPLEMENTED** (commit `6926c2d`,
+2026-08-10; collaborator publish path repaired 2026-08-11 — it had never actually fired).
+Music/Reels remains plan-only and has moved to
+[05-PLANNER-REELS-AUDIO.md](./05-PLANNER-REELS-AUDIO.md), which places it in the wider
+planner picture the owner asked about.
 **Researched against:** Meta official docs via DevTools MCP, 2026-08-10.
 
 Three capabilities the owner asked about. Each is researched against Meta's current

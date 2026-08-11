@@ -140,6 +140,40 @@ function Modal({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Turns a run result into something the owner can act on.
+ *
+ * "Post now" used to report "Run triggered" no matter what happened, including when the
+ * run was skipped — so a blocked run was indistinguishable from a successful one, and the
+ * only way to find out was to read the server logs. Every outcome now says what happened
+ * and, where it applies, what to change.
+ */
+function describeRun(result: unknown): string {
+  const run = result as { action?: string; detail?: Record<string, unknown> } | null;
+  const detail = (run?.detail ?? {}) as Record<string, unknown>;
+
+  switch (run?.action) {
+    case "queued_for_review":
+      return "Queued for review — approve it in the Review queue tab to publish.";
+    case "published":
+      return "Published.";
+    case "daily_cap_reached":
+      return `Nothing posted — the hard daily ceiling of ${detail.cap} is already used up (${detail.today} today). Raise it on the Schedule tab to post again today.`;
+    case "nothing_eligible":
+      return "Nothing eligible to post. Check the category, stock and minimum-image filters — and note a product already awaiting review is not selected again.";
+    case "no_slot_due":
+      return "No posting slot is due right now.";
+    case "slot_already_ran":
+      return "That slot has already posted today.";
+    case "skipped":
+      return `Skipped — ${String(detail ?? "no reason given")}`;
+    case "error":
+      return `Run failed — ${String(detail ?? "unknown error")}`;
+    default:
+      return "Run triggered.";
+  }
+}
+
 async function loadDashboard() {
   const [settings, rotation, upNext, queue, history, connection, platforms, collaborators, categories] =
     await Promise.all([
@@ -164,12 +198,15 @@ export default function SocialAdminPage() {
 
   const { data, error } = useQuery({ queryKey: ["social-admin"], queryFn: loadDashboard });
 
-  function act(fn: () => Promise<unknown>, message?: string) {
+  function act(
+    fn: () => Promise<unknown>,
+    message?: string | ((result: unknown) => string),
+  ) {
     startTransition(async () => {
       try {
-        await fn();
+        const result = await fn();
         await queryClient.invalidateQueries({ queryKey: ["social-admin"] });
-        if (message) setNotice(message);
+        if (message) setNotice(typeof message === "function" ? message(result) : message);
       } catch (e) {
         setNotice((e as Error).message);
       }
@@ -227,7 +264,7 @@ export default function SocialAdminPage() {
                 variant="outline"
                 leadingIcon={<Send size={16} />}
                 loading={pending}
-                onClick={() => act(() => triggerPostNow(), "Run triggered")}
+                onClick={() => act(() => triggerPostNow(), describeRun)}
               >
                 Post now
               </AdminButton>
@@ -510,8 +547,15 @@ function ScheduleTab({
  * Drag-and-drop "Up next".
  *
  * Uses native HTML5 drag events rather than pulling in a library — the list is short and
- * the interaction is simple. Dropping saves an explicit order; pins clear themselves once
- * a product posts, so this nudges the queue rather than permanently reranking it.
+ * the interaction is simple.
+ *
+ * Dropping **saves immediately**. It previously only reordered local state and waited for
+ * a separate "Save order" click, which is a trap: the list visibly reordered, so the order
+ * looked saved, but `social_queue_order` stayed empty and publishing silently fell back to
+ * automatic rotation. A drag is an instruction, not a draft — so it persists on drop.
+ *
+ * Pins still clear themselves once a product posts, so an arrangement nudges the rest of
+ * the current cycle rather than permanently reranking the catalogue.
  */
 function UpNextCard({
   items, pending, onAct,
@@ -523,7 +567,33 @@ function UpNextCard({
   const [order, setOrder] = useState(items);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
-  const dirty = order.map((o) => o.id).join() !== items.map((i) => i.id).join();
+  const [saving, setSaving] = useState(false);
+
+  const incomingIds = items.map((i) => i.id).join();
+  const [syncedIds, setSyncedIds] = useState(incomingIds);
+
+  /*
+   * Adopt the server's list when it changes underneath us — a product posted, stock moved,
+   * filters changed. Adjusting state during render (React's documented pattern) rather
+   * than in an effect keeps the rows updating in place, with no page reload and no flash
+   * of stale order. Skipped mid-drag or mid-save so the owner's arrangement is never
+   * yanked out from under them.
+   */
+  if (!saving && dragIndex === null && incomingIds !== syncedIds) {
+    setOrder(items);
+    setSyncedIds(incomingIds);
+  }
+
+  function persist(next: typeof items) {
+    setSaving(true);
+    onAct(async () => {
+      try {
+        await saveQueueOrder(next.map((o) => o.id));
+      } finally {
+        setSaving(false);
+      }
+    }, "Order saved");
+  }
 
   function onDrop(target: number) {
     if (dragIndex === null || dragIndex === target) {
@@ -534,16 +604,20 @@ function UpNextCard({
     const next = [...order];
     const [moved] = next.splice(dragIndex, 1);
     next.splice(target, 0, moved);
+    // Optimistic: the row moves under the cursor straight away, then the write follows.
     setOrder(next);
     setDragIndex(null);
     setOverIndex(null);
+    persist(next);
   }
 
   return (
     <AdminCard padded>
       <h3 className="mb-1 text-[16px] font-semibold text-[var(--admin-text)]">Up next</h3>
       <p className="mb-4 text-[13px] text-[var(--admin-text-muted)]">
-        Drag to reorder. A product you move here posts next, then the rotation resumes on its own.
+        Drag to reorder — saved automatically. Posts go out in exactly this order. Each
+        product drops its place once it has posted, then automatic rotation resumes.
+        {saving && <span className="ml-1.5 text-[var(--admin-accent)]">Saving…</span>}
       </p>
 
       {order.length === 0 ? (
@@ -581,21 +655,7 @@ function UpNextCard({
         </ol>
       )}
 
-      {dirty && (
-        <div className="mt-4 flex gap-2">
-          <AdminButton
-            size="sm"
-            loading={pending}
-            onClick={() => onAct(() => saveQueueOrder(order.map((o) => o.id)), "Order saved")}
-          >
-            Save order
-          </AdminButton>
-          <AdminButton size="sm" variant="ghost" onClick={() => setOrder(items)}>
-            Reset
-          </AdminButton>
-        </div>
-      )}
-      {!dirty && order.length > 0 && (
+      {order.length > 0 && (
         <button
           onClick={() => onAct(() => clearQueueOrder(), "Back to automatic rotation")}
           disabled={pending}

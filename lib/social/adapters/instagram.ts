@@ -2,6 +2,7 @@ import type { MetaCredentials } from "../config";
 import {
   graphRequest,
   withRetry,
+  uncachedUrl,
   MetaApiError,
   type PlatformAdapter,
   type PublishImagePostInput,
@@ -82,13 +83,12 @@ async function createSingleContainer(
   altText?: string,
   collaborators: string[] = [],
 ): Promise<string> {
-  const params: Record<string, string> = { image_url: imageUrl, caption };
-  if (altText) params.alt_text = altText;
-  if (collaborators.length > 0) params.collaborators = JSON.stringify(collaborators);
-
-  const res = await withRetry(() =>
-    graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media`, params),
-  );
+  const res = await withRetry(() => {
+    const params: Record<string, string> = { image_url: uncachedUrl(imageUrl), caption };
+    if (altText) params.alt_text = altText;
+    if (collaborators.length > 0) params.collaborators = JSON.stringify(collaborators);
+    return graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media`, params);
+  });
   return res.id;
 }
 
@@ -105,7 +105,7 @@ async function createCarouselContainer(
   for (const url of imageUrls) {
     const child = await withRetry(() =>
       graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media`, {
-        image_url: url,
+        image_url: uncachedUrl(url),
         is_carousel_item: "true",
       }),
     );

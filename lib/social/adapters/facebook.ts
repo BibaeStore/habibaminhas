@@ -2,6 +2,7 @@ import type { MetaCredentials } from "../config";
 import {
   graphRequest,
   withRetry,
+  uncachedUrl,
   type PlatformAdapter,
   type PublishImagePostInput,
   type PublishResult,
@@ -140,7 +141,7 @@ async function publishSinglePhoto(
 ): Promise<string> {
   const res = await withRetry(() =>
     graphRequest<{ id: string; post_id?: string }>(creds, `/${creds.pageId}/photos`, {
-      url: imageUrl,
+      url: uncachedUrl(imageUrl),
       caption,
       published: "true",
     }),
@@ -158,7 +159,7 @@ async function publishMultiPhoto(
   for (const url of imageUrls) {
     const res = await withRetry(() =>
       graphRequest<{ id: string }>(creds, `/${creds.pageId}/photos`, {
-        url,
+        url: uncachedUrl(url),
         published: "false",
       }),
     );
