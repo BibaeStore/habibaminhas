@@ -26,23 +26,52 @@ mandatory review step before anything publishes.**
 
 ## 1. R-0 result — the trending-audio probe ❌
 
-**Run 2026-08-11. The Instagram Audio API returns nothing for this account.**
+**Run 2026-08-11, then re-run against the official parameter list. The Instagram Audio API
+returns nothing for this account.**
+
+The first run used `q=` and `audio_type=original`, both wrong. The documented parameters are
+`search_query=` and `audio_type` ∈ {`music`, `original_sound`}. Re-run correctly, the answer
+did not change:
 
 ```
-GET /ig_audio?audio_type=music&user_id=17841447359531039   → HTTP 200, 0 tracks
-GET /ig_audio?audio_type=music&q=punjabi                   → HTTP 200, 0 tracks
-GET /ig_audio?audio_type=music&q=bollywood                 → HTTP 200, 0 tracks
+audio_type=music,          no query          → HTTP 200, 0 tracks
+audio_type=original_sound, no query          → HTTP 200, 0 tracks
+audio_type=music,          search_query=punjabi → HTTP 200, 0 tracks
+audio_type=music,          search_query=love    → HTTP 200, 0 tracks
 ```
+
+**The royalty-free Sound Collection is not a way round it.** `product=ADS` looked like a
+licensed library we could draw on, but it is gated twice: it requires
+`purpose=AUDIO_COPYRIGHT_REPLACEMENT`, which in turn requires `ig_media_id` — *an existing
+Reel that already contains copyrighted music needing replacement*. It is a remediation tool
+for ads, not a catalogue to browse when creating new content.
 
 **HTTP 200 with an empty list, not an error.** The call is valid and authorised — the token
 carries `instagram_content_publish` and `instagram_basic` — the library simply has nothing
 to give this account.
 
-That is consistent with Instagram's long-standing policy that **business accounts get a
-restricted music library**. Commercial accounts are limited to a royalty-free selection in
-most territories, precisely because using popular music to advertise a product is a
-licensing question rather than a technical one. The API additionally only exposes audio
-"authorised for third party use", which narrows it further.
+Two likely causes, both outside our control:
+
+1. **The token type.** Meta's Audio API doc requires *"a valid **User** access token"*. We
+   authenticate with a **System User** token, which has no human account behind it. Music
+   licensing is granted to a person or an account, so a System User plausibly falls outside
+   it. Testing this would need a real user login flow, which this app deliberately does not
+   have.
+2. **Business-account music restrictions.** Commercial accounts get a narrower library in
+   most territories, because using popular music to advertise a product is a licensing
+   question rather than a technical one.
+
+### The in-app library is a different library
+
+This is the owner's question — the songs Instagram offers when posting by hand. Meta states
+it plainly:
+
+> "This API returns audio that has been authorized for third party use. Note that the
+> available selection **may vary from what appears in the native app**."
+
+So the songs visible in the app are licensed to the account holder for *manual* posting.
+They are not the same set the API exposes, and they cannot be reached programmatically.
+**No API, ours or anyone's, can attach those tracks.**
 
 **Conclusion: trending audio via the API is not available to us.** Do not build P-6 as
 originally scoped. This was worth ten minutes to learn and would have been a wasted week to
@@ -71,13 +100,27 @@ matches put the account at risk. For a business whose Instagram account and sear
 | **C. Publish reels by hand from the app** | Free | **Yes** | The in-app library is wider than the API's. Costs the automation |
 | **D. Commission / buy a track** | One-off | No | A single licensed brand track reused across reels also builds recognition |
 
-**Recommended path:** build the pipeline **audio-optional**. The owner picks a handful of
-licensed tracks, they live in the `social-media` bucket as a small library, and the builder
-mixes one in. If a specific reel truly needs a trending sound, option C stays open — publish
-that one by hand.
+### ⚠️ This does NOT mean adding audio by hand to each reel
 
-This keeps every reel safe to publish and leaves the door open if Meta ever opens the
-library to business accounts.
+The owner reasonably objected that if audio is manual, the automation is pointless. It is
+not manual. **The music library is a one-time setup, exactly like the collaborator was:**
+
+1. **Once**, the owner drops a handful of licensed tracks into the `social-media` bucket
+   (or approves a set I fetch from a free commercial-use library).
+2. **From then on the pipeline is fully automatic** — the builder picks a track, mixes it
+   under the video with a fade, and rotates the choice so consecutive reels do not all
+   sound identical.
+3. Per reel, the owner does exactly what they asked for and nothing more: **watch, then
+   approve or reject.**
+
+Zero per-reel audio work. The only thing lost versus the app is *this week's chart hit* —
+and that was never available to any API, only to manual posting.
+
+**Recommended path:** build it **audio-optional**, seeded once. If one particular reel truly
+needs a trending sound, option C stays open for that reel alone.
+
+This keeps every reel safe to publish, keeps the automation intact, and leaves the door open
+if Meta ever opens the library to business accounts or if we later add a user-token login.
 
 ---
 
