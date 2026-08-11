@@ -235,8 +235,8 @@ export async function publishFacebookReel(
     throw new Error(`Facebook reel upload failed (${uploaded.status}): ${body.slice(0, 300)}`);
   }
 
-  // 3. Wait for Meta to finish processing, then publish.
-  await waitForFacebookVideo(pageCreds, started.video_id);
+  // 3. Wait only for the **upload** to land, then close the session.
+  await waitForFacebookUpload(pageCreds, started.video_id);
 
   const finished = await withRetry(() =>
     graphRequest<{ success?: boolean; post_id?: string }>(
@@ -259,41 +259,47 @@ export async function publishFacebookReel(
 }
 
 /**
- * Polls a Facebook video until it has finished uploading and processing.
+ * Waits for the **upload** to land — and deliberately not for processing.
  *
- * The status object reports each phase separately, and a failure in *processing* — the
- * resolution or codec being wrong — surfaces here rather than at publish time, where the
- * error is far less specific.
+ * This was the cause of every Facebook reel failing while Instagram succeeded. The first
+ * version waited for `processing_phase` to reach `complete` before calling
+ * `upload_phase=finish`, which deadlocks: Facebook does not begin processing until finish
+ * is called. Measured against the live API, the status sat at
+ *
+ *     video_status: "upload_complete", processing_phase: { status: "not_started" }
+ *
+ * indefinitely — still "not_started" after six minutes — and the moment `finish` was sent
+ * it returned `"Video is Processing"` with a post id. So the wait ran its full 300-second
+ * budget and then threw, every single time.
+ *
+ * Uploading is quick because Meta fetches the file itself: in practice the phase is already
+ * `complete` on the first check. Processing afterwards is Facebook's own business and
+ * happens whether or not we watch it, so the publish returns as soon as the session closes.
  */
-async function waitForFacebookVideo(
+async function waitForFacebookUpload(
   creds: MetaCredentials,
   videoId: string,
-  maxAttempts = 30,
-  intervalMs = 10000,
+  maxAttempts = 20,
+  intervalMs = 2000,
 ): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {
     const res = await graphRequest<{
       status?: {
         video_status?: string;
         uploading_phase?: { status?: string; error?: { message?: string } };
-        processing_phase?: { status?: string; error?: { message?: string } };
       };
     }>(creds, `/${videoId}`, { fields: "status" }, "GET");
 
     const status = res.status ?? {};
     const uploadError = status.uploading_phase?.error?.message;
-    const processError = status.processing_phase?.error?.message;
     if (uploadError) throw new Error(`Facebook reel upload failed: ${uploadError}`);
-    if (processError) throw new Error(`Facebook reel processing failed: ${processError}`);
-
-    if (status.video_status === "ready") return;
-    if (status.video_status === "error") throw new Error("Facebook reel processing errored");
+    if (status.video_status === "error") throw new Error("Facebook reel upload errored");
     if (status.video_status === "expired") throw new Error("Facebook reel upload session expired");
 
-    // `ready` is what we want, but a complete processing phase is enough to publish on.
-    if (status.processing_phase?.status === "complete") return;
+    if (status.uploading_phase?.status === "complete") return;
+    if (status.video_status === "upload_complete" || status.video_status === "ready") return;
 
     await new Promise((r) => setTimeout(r, intervalMs));
   }
-  throw new Error(`Facebook video ${videoId} still processing after ${maxAttempts} checks`);
+  throw new Error(`Facebook video ${videoId} did not finish uploading after ${maxAttempts} checks`);
 }

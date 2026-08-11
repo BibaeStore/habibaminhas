@@ -212,10 +212,15 @@ export async function publishReel(
     return graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media`, params);
   });
 
-  // Up to ~5 minutes. Meta's own guidance for Reels is to poll roughly once a minute and
-  // give up after five; this polls a little faster so a quick transcode is not left
-  // waiting, while still covering the slow case.
-  await waitForContainer(creds, container.id, 30, 10000);
+  /*
+   * Measured against the live API, Meta transcodes an 11-second reel in about 45 seconds,
+   * and that time is entirely Meta's — nothing here can shorten it.
+   *
+   * What the interval controls is how much is *wasted* rounding up. At the previous 10s
+   * the answer was up to ten seconds of sitting on a finished container; at 3s it is at
+   * most three. 100 attempts still covers five minutes for a slow one.
+   */
+  await waitForContainer(creds, container.id, 100, 3000);
 
   const published = await withRetry(() =>
     graphRequest<{ id: string }>(creds, `/${creds.igUserId}/media_publish`, {

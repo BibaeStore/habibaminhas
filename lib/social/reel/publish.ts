@@ -77,52 +77,73 @@ export async function publishQueuedReel(id: string): Promise<PublishReelResult> 
   const failed: string[] = [];
   let permalink: string | undefined;
 
-  for (const platform of targets) {
+  /*
+   * Platforms run **concurrently**. They share nothing, and the slow part of each is Meta
+   * transcoding on its own servers — so waiting for Instagram to finish before Facebook
+   * even starts simply added the two together. Measured: Instagram ~45s, Facebook ~5s;
+   * sequentially that is 50s of the owner watching a spinner, concurrently it is 45.
+   */
+  const attempts = targets.map(async (platform) => {
     if (previous[platform]?.ok) {
       // Already live from an earlier attempt — never publish it twice.
-      succeeded.push(platform);
-      continue;
+      return { platform, skipped: true as const };
     }
     try {
       const result =
         platform === "instagram"
           ? await publishToInstagram(creds, {
-              videoUrl: row.video_url,
+              videoUrl: row.video_url!,
               caption: row.caption ?? "",
               collaborators,
             })
           : await publishFacebookReel(creds, {
-              videoUrl: row.video_url,
+              videoUrl: row.video_url!,
               caption: row.caption ?? "",
             });
+      return { platform, result };
+    } catch (e) {
+      return { platform, error: e };
+    }
+  });
 
+  for (const outcome of await Promise.all(attempts)) {
+    const { platform } = outcome;
+
+    if ("skipped" in outcome) {
+      succeeded.push(platform);
+      continue;
+    }
+
+    if ("result" in outcome && outcome.result) {
       results[platform] = {
         ok: true,
-        id: result.externalPostId,
-        permalink: result.permalink ?? null,
+        id: outcome.result.externalPostId,
+        permalink: outcome.result.permalink ?? null,
         at: new Date().toISOString(),
       };
       succeeded.push(platform);
-      if (platform === "instagram") permalink = result.permalink;
-      else permalink = permalink ?? result.permalink;
-    } catch (e) {
-      /*
-       * The full error object is stored, not just the message. The subcode separates
-       * "retry in thirty seconds" from "stop for the day" — and for reels specifically,
-       * 2207026 (unsupported format) reads nothing like 9004/2207052, which means Meta
-       * could not fetch the file at all.
-       */
-      const meta = e instanceof MetaApiError ? e : null;
-      const message = (e as Error).message;
-      results[platform] = {
-        ok: false,
-        error: message,
-        code: meta?.code ?? null,
-        subcode: meta?.subcode ?? null,
-        fbtrace_id: meta?.fbtraceId ?? null,
-      };
-      failed.push(platform);
+      if (platform === "instagram") permalink = outcome.result.permalink;
+      else permalink = permalink ?? outcome.result.permalink;
+      continue;
     }
+
+    /*
+     * The full error object is stored, not just the message. The subcode separates
+     * "retry in thirty seconds" from "stop for the day" — and for reels specifically,
+     * 2207026 (unsupported format) reads nothing like 9004/2207052, which means Meta
+     * could not fetch the file at all.
+     */
+    const e = (outcome as { error: unknown }).error;
+    const meta = e instanceof MetaApiError ? e : null;
+    const message = (e as Error).message;
+    results[platform] = {
+      ok: false,
+      error: message,
+      code: meta?.code ?? null,
+      subcode: meta?.subcode ?? null,
+      fbtrace_id: meta?.fbtraceId ?? null,
+    };
+    failed.push(platform);
   }
 
   const anyLive = succeeded.length > 0;
