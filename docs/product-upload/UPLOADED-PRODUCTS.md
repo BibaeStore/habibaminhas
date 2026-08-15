@@ -5,6 +5,58 @@ Records what the owner specified vs. what was inferred, so any wrong inference c
 
 ---
 
+## 043 — Pink Paradise (blush pink sheer floral shirt, organza dupatta, flapper trousers)
+
+| Field | Value |
+|---|---|
+| **Uploaded** | 2026-08-15 |
+| **id** | `39f658a1-67a9-4a34-a050-231881073465` |
+| **slug** | `ld-blush-pink-floral-4-piece-suit-043` |
+| **SKU** | `BIBA-PNK-MIX-SML-043` · **Price** Rs. 7,500 · **Stock** S ×2, M ×4, L ×2 (8) |
+| **Subcategory** | `stitched-suits`, `casual` |
+| **Images** | 4 × WebP, 49.8 MB → 525 KB (−99.0%) |
+| **Source folder** | `new articles august 2026/all hb clothes/pink paradise` |
+
+**🔴 FIRST 4-PIECE PRODUCT ON THE SITE, and the most expensive at Rs. 7,500** (passes 041's
+Rs. 7,000). The fourth piece is the **inner lining**, included because the shirt fabric is sheer.
+Pieces = shirt + matching lining + organza dupatta + flapper trousers.
+
+**Owner specified:** pink shirt, "mixed cloth" (fabric name unknown), 4-piece, short shirt with
+lining, organza, flapper trousers, no description available, Rs. 7,500.
+
+### ⚠️ Two owner statements had to be resolved before inserting
+
+**1. "organs at the back" → ORGANZA.** Decoded and confirmed with the owner as *the organza
+dupatta being the 4th piece*, not an organza panel on the shirt's back. This matters because
+**none of the four photos show the back**, so an organza back panel could not have been verified.
+Add `organs` → `organza` to the transcription decode list next to `to batta` / `d'abata` → dupatta.
+
+**2. "It's already sold out" was wrong — the piece is IN STOCK.** The owner opened by saying the
+suit was sold out, then supplied "4M, 2S, 2L sizes available" in a later answer. Asked directly,
+and the live reality is **8 pieces in stock**. Had this not been checked, a sellable Rs. 7,500
+product would have shipped as an unbuyable out-of-stock page. **Always re-confirm stock when the
+owner mentions sold-out anywhere in the brief.**
+
+**Fabric deliberately never named.** The owner said outright they do not know what the cloth is.
+Extending the 041 trick: the copy describes the fabric's *behaviour* — "a sheer ground carrying an
+opaque all-over floral motif, fully lined" — which is verifiable from the photos, and sets care to
+**dry clean only**, which is correct for a sheer + beaded + organza garment whatever the fibre is.
+No fibre word appears in the title, slug, copy, or keywords. SKU fabric code is `MIX`.
+
+**Copy angles:** *"What is a 4-piece suit?"* (definitional, and nothing else on the site answers
+it), *"What are flapper trousers?"* — cut close through the hip then released into a wide flare,
+explicitly contrasted against palazzos (wide from the waist) and bootcut (flares at the ankle) —
+and *"Is the shirt see-through?"*, which turns the sheerness into the reason the lining exists
+rather than a defect.
+
+**Verified live after insert:**
+- Product URL → 200; title/description/canonical correct, `robots: index, follow`, brand not duplicated
+- Schema: `Product`, `Offer`, `Brand`, `AggregateRating`, `BreadcrumbList`; `availability: InStock`, `price: 7500`
+- Renders on `/`, `/new/`, `/ladies/`, `/ladies/casual/`, `/ladies/stitched-suits/`
+- Sitemap 165 total, 68 `/product/`. +1 `/product/` only — **no new collection page**. Nothing removed.
+
+---
+
 ## 042 — Apricot Weave (peach cross-stitch shirt + printed trousers, 2-piece)
 
 | Field | Value |
