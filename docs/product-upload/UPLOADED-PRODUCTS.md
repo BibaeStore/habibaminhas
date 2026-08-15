@@ -3,6 +3,17 @@
 One entry per product added via the [Product Upload Playbook](./PRODUCT-UPLOAD-PLAYBOOK.md).
 Records what the owner specified vs. what was inferred, so any wrong inference can be traced.
 
+**Always fill in the `Source folder` row.** It is the only way to tell which of the owner's photo
+folders are still unprocessed, which matters now that products arrive in batches:
+
+```bash
+for f in "new articles august 2026/all hb clothes"/*/; do n=$(basename "$f");
+  grep -qF "$n" docs/product-upload/UPLOADED-PRODUCTS.md || echo "NOT YET UPLOADED: $n"; done
+```
+
+As of 2026-08-15 three folders remain: `peach with pink embroidery`,
+`white chicken kaari with cut work`, `white with very wide flapper bottom`.
+
 ---
 
 ## 043 — Pink Paradise (blush pink sheer floral shirt, organza dupatta, flapper trousers)
@@ -135,6 +146,7 @@ explains which to choose, which is useful to a shopper and good internal linking
 | **Dupatta** | white net, black embroidered border | black net, ivory embroidered border |
 | **Price / stock** | Rs. 3,500 · Medium ×1 | Rs. 3,500 · Medium ×1 |
 | **Images** | 2 × WebP, 4.3 MB → 284 KB | 2 × WebP, 4.3 MB → 290 KB |
+| **Source folder** | `…/all hb clothes/white froq with white duppata` | `…/all hb clothes/white with black duppata froq` |
 
 **Owner specified (identically for both):** chiffon frock with net dupatta, 2-piece only, Medium
 only, Rs. 3,500.
