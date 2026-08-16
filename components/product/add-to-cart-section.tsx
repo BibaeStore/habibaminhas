@@ -13,7 +13,56 @@ const TryOnModal = dynamic(
   { ssr: false }
 );
 
-const SIZES = ["XS", "S", "M", "L", "XL"];
+/**
+ * Sizes are per category, because the two ranges are not interchangeable.
+ *
+ * The admin stores kids stock under age keys (`2Y`…`12Y`) while this file rendered a single
+ * adult list for everything. On a kids product that meant looking up `sizesStock["S"]` in an
+ * object keyed `2Y/4Y/…`, finding nothing, and disabling every button — so the whole
+ * kids-formal category could never be added to a bag at all.
+ *
+ * XS and XXL are deliberately absent from the ladies range (owner's decision, 2026-08-15).
+ * Both carry zero stock across the catalogue, so nothing becomes unsellable by omitting them.
+ */
+const LADIES_SIZES = ["S", "M", "L", "XL"];
+const KIDS_SIZES = ["2Y", "4Y", "6Y", "8Y", "10Y", "12Y"];
+
+function sizesForCategory(category: string): string[] {
+  return category === "kids-formal" ? KIDS_SIZES : LADIES_SIZES;
+}
+
+/**
+ * One size button, shared by the desktop panel and the mobile sticky bar.
+ *
+ * Shared so the two can never drift — the mobile path being a separate, less-exercised copy
+ * of the desktop one is the pattern behind most of the defects already found on this page.
+ */
+function SizeButton({
+  size, selected, inStock, onSelect,
+}: {
+  size: string;
+  selected: boolean;
+  inStock: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => inStock && onSelect()}
+      disabled={!inStock}
+      aria-pressed={selected}
+      className={`h-11 flex-1 border text-[12px] uppercase tracking-[0.16em] transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:line-through ${
+        selected
+          ? "border-ink bg-ink text-ivory"
+          : inStock
+            ? "border-border-soft text-ink hover:border-ink"
+            : "border-border-soft text-muted"
+      }`}
+    >
+      {size}
+    </button>
+  );
+}
 
 interface Props {
   id: string;
@@ -104,36 +153,50 @@ export function AddToCartSection({
     window.open(whatsappUrl, "_blank");
   }
 
+  const sizes = sizesForCategory(category);
+
+  /**
+   * Is this size available?
+   *
+   * **A missing `sizes_stock` means "not tracked per size", not "nothing in stock".** This
+   * previously returned false in that case, which disabled every button and left Add to Bag
+   * permanently greyed out — on 16 kids products and 2 ladies products that the page had
+   * already established were in stock, since it does not render this component at all when
+   * `stock` is zero. A shopper could do nothing but leave.
+   *
+   * So an untracked product falls back to the product-level stock the page has already
+   * checked. Per-size numbers, once entered in the admin, take over automatically.
+   */
   function isSizeInStock(size: string): boolean {
-    if (!sizesStock) return false; // If no stock data, disable all sizes
+    if (!sizesStock) return true;
     return (sizesStock[size] ?? 0) > 0;
   }
 
   return (
     <>
-      {/* Size selector — shown on both mobile and desktop */}
+      {/*
+        Size selector — desktop only.
+
+        On mobile this moved into the sticky bar. It used to sit here in the scrollable
+        column while the only prompt was a 10px line in the sticky bar reading "Please
+        select a size above" — pointing at a control that was, by the time anyone reached
+        the bottom of a long product page, several screens away. The button stayed disabled
+        and the reason was off-screen.
+
+        Laid out with flex rather than grid-cols-N: a dynamic Tailwind class never reaches
+        the stylesheet, and the two ranges differ in length (4 ladies, 6 kids).
+      */}
       {hasSizes && (
-        <div className="mt-3 grid grid-cols-5 gap-2">
-          {SIZES.map((s) => {
-            const inStock = isSizeInStock(s);
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => inStock && setSelectedSize(s)}
-                disabled={!inStock}
-                className={`h-11 border text-[12px] uppercase tracking-[0.22em] transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:line-through ${
-                  selectedSize === s
-                    ? "border-ink bg-ink text-ivory"
-                    : inStock
-                      ? "border-border-soft text-ink hover:border-ink"
-                      : "border-border-soft text-muted"
-                }`}
-              >
-                {s}
-              </button>
-            );
-          })}
+        <div className="mt-3 hidden gap-2 lg:flex">
+          {sizes.map((s) => (
+            <SizeButton
+              key={s}
+              size={s}
+              selected={selectedSize === s}
+              inStock={isSizeInStock(s)}
+              onSelect={() => setSelectedSize(s)}
+            />
+          ))}
         </div>
       )}
 
@@ -224,10 +287,39 @@ export function AddToCartSection({
       */}
       {!drawerOpen && (
       <div className="fixed bottom-0 left-0 right-0 z-[45] border-t border-border-soft bg-ivory px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_24px_rgba(26,22,18,0.1)] lg:hidden">
-        {hasSizes && !selectedSize && (
-          <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-sale">
-            Please select a size above
-          </p>
+        {/*
+          Sizes live here on mobile, directly above the button they gate.
+
+          This replaces a 10px line reading "Please select a size above". The instruction was
+          correct and useless: the control it referred to was off-screen, so the shopper was
+          told why the button was dead but not given the means to fix it. Putting the actual
+          choice in the bar makes the disabled state self-resolving — tap a size, the button
+          lights up, no scrolling.
+        */}
+        {hasSizes && (
+          <div className="mb-2.5">
+            <div className="mb-1.5 flex items-baseline justify-between">
+              <span className="text-[10px] uppercase tracking-[0.24em] text-muted">
+                {selectedSize ? "Size" : "Select a size"}
+              </span>
+              {selectedSize && (
+                <span className="text-[10px] uppercase tracking-[0.24em] text-ink">
+                  {selectedSize}
+                </span>
+              )}
+            </div>
+            <div className="flex gap-1.5">
+              {sizes.map((s) => (
+                <SizeButton
+                  key={s}
+                  size={s}
+                  selected={selectedSize === s}
+                  inStock={isSizeInStock(s)}
+                  onSelect={() => setSelectedSize(s)}
+                />
+              ))}
+            </div>
+          </div>
         )}
         <div className="flex items-center gap-2">
           {/* Qty stepper */}

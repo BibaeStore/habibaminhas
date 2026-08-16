@@ -135,8 +135,10 @@ export default async function ProductPage({
           />
         </div>
 
-        {/* Info panel — pb-24 on mobile reserves space above the sticky Add to Bag bar */}
-        <div className="pb-24 lg:col-span-5 lg:pb-0 lg:sticky lg:top-[116px] lg:self-start">
+        {/* Info panel — the bottom padding reserves space above the sticky Add to Bag bar.
+            Raised from pb-24 when the bar gained its size row: at ~180px tall including the
+            iOS safe-area inset, 96px of padding left the last of the copy underneath it. */}
+        <div className="pb-48 lg:col-span-5 lg:pb-0 lg:sticky lg:top-[116px] lg:self-start">
           {/* Out of Stock Banner */}
           {isOutOfStock && (
             <div className="mb-4 rounded-md border-2 border-ink/20 bg-cream p-4 text-center">
