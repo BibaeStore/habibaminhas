@@ -90,6 +90,58 @@ Voice notes and transcription mangle the same words repeatedly. Confirmed meanin
 | "the buttons are printed" | the **dupatta** is printed | 041 |
 | "mixed cloth" / "I don't know the name of this cloth" | fabric genuinely unknown — **do not name a fibre**, see below | 043 |
 | "branded lawn" | cotton lawn | 033 |
+| "buffoon" | **organza** — reads as "chiffon" but the owner confirmed organza. Ask; the two drape differently and the care differs. | 045 |
+| "pulse lace" | **pearl lace** — individual pearls stitched along an edge | 046 |
+| "A8 line" | **A-line** | 046 |
+| "chicken kari", "chicken curry" | **chikankari** — but see the craft-term warning below; the term has been wrong as often as right | 033, 035, 045 |
+
+### 🔴 Craft terms are wrong in BOTH directions — always read the close-up
+
+Three products now have had the owner's craft term contradicted by the photographs, and the error
+has gone both ways. **Never let a craft term reach copy without checking a close-up.**
+
+| Product | Owner said | Photos showed | Outcome |
+|---|---|---|---|
+| 033 | folder said "chicken kari" | printed lawn + applied lace, no embroidery at all | chikankari removed entirely |
+| 035 | "chikankari" | genuine white-on-white embroidery with cut eyelets | term kept |
+| 045 | "appliqué at the bottom and borders" | **cutwork** — fabric cut away into satin-bound eyelets, scalloped cut hem | described as cutwork; appliqué never used |
+
+**Appliqué and cutwork are opposites and are easy to confuse in a voice note.** Appliqué *adds*
+fabric on top of the ground. Cutwork *removes* it — shapes are cut out and the raw edges bound with
+satin stitch so they cannot fray. Look for holes you can see through: if the trousers or the skin
+show through the pattern, it is cutwork, not appliqué.
+
+**Never claim "hand" unless the owner says the word.** Machine schiffli work is perfectly uniform
+with even motif spacing; hand work varies in stitch tension and spacing. Only 034 carries the hand
+claim, because the owner stated it explicitly. 035, 037, 044, 045 and 046 all deliberately do not.
+
+### Run the false-claim sweep after every batch
+
+One query, and it catches the most damaging class of error on this site. On 046 the phrase
+"hand-stitched pearls" had slipped into `seo_description` alone, while the body copy correctly said
+"individually stitched" — the sweep caught it before anyone saw it.
+
+```sql
+select slug,
+  (description       ~* '\yhand[- ]?(embroider|stitch|work|craft|made|worked)') as hand_in_desc,
+  (short_description ~* '\yhand[- ]?(embroider|stitch|work|craft|made|worked)') as hand_in_specs,
+  (faqs::text        ~* '\yhand[- ]?(embroider|stitch|work|craft|made|worked)') as hand_in_faqs,
+  (seo_description   ~* '\yhand')                                              as hand_in_seo
+from public.products where slug in ( … the batch … );
+```
+
+Swap `hand` for `chikankari`, `appliqué`, `silk`, or any other material claim you want to confirm
+is absent. **Check every text column, not just `description`** — that is exactly how 046 slipped.
+
+### State plainly when a piece is NOT included
+
+A customer who expects a piece and does not get it is a guaranteed return, and it is the one
+mistake that costs money in both directions. Say it in the prose **and** in an FAQ, not just the
+spec list:
+
+- 039/040 — trousers not supplied with the frocks
+- 045 — the cutwork eyelets are open holes and **no inner slip is included** in the 3-piece set
+- 043 — the opposite case, where the lining *is* included and is the whole reason it is a 4-piece
 
 **When the owner does not know the fabric, describe its behaviour, never its fibre.** 043's shirt
 could have been fil coupé organza, burnout devoré, or a jacquard — all plausible from the photo,

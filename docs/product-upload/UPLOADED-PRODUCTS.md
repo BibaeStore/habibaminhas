@@ -11,8 +11,88 @@ for f in "new articles august 2026/all hb clothes"/*/; do n=$(basename "$f");
   grep -qF "$n" docs/product-upload/UPLOADED-PRODUCTS.md || echo "NOT YET UPLOADED: $n"; done
 ```
 
-As of 2026-08-15 three folders remain: `peach with pink embroidery`,
-`white chicken kaari with cut work`, `white with very wide flapper bottom`.
+**As of 2026-08-20 the `all hb clothes` batch is fully processed — zero folders remain.**
+All 17 folders map to products 030–046.
+
+---
+
+## 044, 045, 046 — the rest of the boutique-shoot batch
+
+Uploaded 2026-08-20 in one session, straight after 043. All three came from the same high-res
+boutique shoot (3506×4381, ~13 MB per PNG, ~99% compression) and all three use flapper trousers
+and an organza dupatta, which is clearly the theme of this drop.
+
+| | **044 Peach Sorbet** | **045 White Jasmine** | **046 Pearl Veil** |
+|---|---|---|---|
+| **id** | `c9995060-f90b-49bd-8ded-e25a77721bbe` | `e79072f0-fa3b-48db-a236-fde60487b9c8` | `38724241-480f-46d9-8d25-400b571e9171` |
+| **slug** | `ld-peach-pink-embroidered-3-piece-suit-044` | `ld-white-chikankari-cutwork-3-piece-suit-045` | `ld-white-pearl-organza-3-piece-suit-046` |
+| **SKU** | `BIBA-PCH-MIX-SML-044` | `BIBA-WHT-MIX-SML-045` | `BIBA-WHT-MIX-SML-046` |
+| **Price** | Rs. 6,500 | Rs. 5,500 | Rs. 5,500 |
+| **Stock** | S ×1, M ×3, L ×1 (5) | S ×1, M ×3, L ×1 (5) | S ×1, M ×3, L ×1 (5) |
+| **Subcategory** | `stitched-suits`, `3-piece-suits`, `casual` | same | same |
+| **Images** | 4 × WebP, 50.2 MB → 591 KB | 4 × WebP, 51.4 MB → 623 KB | 4 × WebP, 46.0 MB → 554 KB |
+| **Source folder** | `…/peach with pink embroidery` | `…/white chicken kaari with cut work` | `…/white with very wide flapper bottom` |
+
+### 044 — Peach Sorbet (peach, tonal rose embroidery, organza dupatta)
+
+**Owner specified:** long shirt, neck embroidery, border embroidery, organza dupatta, flapper
+trousers, 3-piece, Rs. 6,500, "three medium, one large, one small".
+
+The stock phrasing was the known-ambiguous one, read as **S ×1, M ×3, L ×1 = 5** per the 032/038
+precedent and confirmed. The owner said "4-piece" mid-brief and then corrected to **3-piece**, so
+it carries `3-piece-suits` unlike 043.
+
+**Not claimed: hand embroidery.** The close-up shows perfectly uniform motifs with sequins — this
+reads as machine schiffli work, and the owner never said hand. Same call as 035 and 037.
+
+**Fabric not named** (owner did not state it); care set to dry clean, correct for sequins + organza.
+
+**Copy angles:** *"What is tonal embroidery?"* — thread only a shade deeper than the ground, so the
+yoke reads as texture at distance and detail up close. Plus *"Is the back embroidered?"*, answered
+**no** and justified rather than apologised for: you sit on the back of a long shirt, so embroidery
+there is crushed within the hour, and putting the work at yoke and hem spends the money where it
+is seen. **The back view in this batch made that claim verifiable** — 043 had no back shot.
+
+### 045 & 046 — a deliberate white pair, same price, opposite philosophies
+
+Both white, both 3-piece, both Rs. 5,500. The copy cross-links them and tells the shopper which to
+choose — the same trick used on 039/040, and it is good internal linking:
+
+> *White Jasmine is covered in cutwork from collar to hem — pick it when you want the garment to be
+> the event. Pearl Veil puts everything into one panel and one pearl edge — pick it when you want
+> to be well dressed without being looked at. Neither is dressier; they are loud and quiet versions
+> of the same budget.*
+
+**045 — ⚠️ the owner's craft term was wrong again, in the opposite direction to 033.** The brief
+said *"appliqué work at the bottom and borders"*. The photos show **cutwork**: fabric cut away into
+satin-bound eyelets with a scalloped cut hem. Appliqué is the exact opposite — fabric layered *on
+top*. Confirmed with the owner, who chose to keep "chikankari" and describe the technique as
+cutwork. `chikankari` is retained (owner asserts it, and white-on-white with cut openwork matches
+the 035 precedent); **appliqué appears nowhere.**
+
+**045 — ⚠️ the eyelets are open holes and no lining is included.** It is a 3-piece: shirt, trousers,
+dupatta. The copy and the second FAQ both state plainly that no inner slip is supplied and that
+most customers wear one. This is the 039/040 lesson: a customer who expects a piece and does not
+get it is a guaranteed return.
+
+**045 dupatta:** the owner said *"buffoon"*, which reads as chiffon. Asked, because the photo looked
+crisper than chiffon — the answer was **organza**. Add `buffoon` → organza to the decode table.
+
+**046 transcription decoded and confirmed from the photos:** *"pulse lace"* → **pearl lace**
+(individual pearls stitched along the dupatta edge, clearly visible in the close-up), and
+*"A8 line"* → **A-line**. Both verified before they reached copy.
+
+**046 — caught before publish: "hand-stitched pearls" had slipped into `seo_description`.** The
+owner never said hand, and the body copy correctly said "individually stitched". Fixed by UPDATE
+immediately after insert. A regex sweep across 043–046 for `hand[- ]?(embroider|stitch|work|…)`
+in `description`, `short_description`, `faqs` and `seo_description` now returns clean on all four.
+**Run that sweep after every batch** — it is one query and it catches the single most damaging
+class of false claim on this site.
+
+**Verified live (all three):** URL → 200, `robots: index, follow`, correct canonical, brand not
+duplicated · schema `Product`, `Offer`, `Brand`, `AggregateRating`, `BreadcrumbList` with
+`availability: InStock` · sitemap 173 total, `/product/` 68 → 71, `/ladies/` unchanged at 7 —
+**no new collection page, nothing removed.**
 
 ---
 
