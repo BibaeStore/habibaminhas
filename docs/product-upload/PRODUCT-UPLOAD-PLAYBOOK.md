@@ -72,6 +72,84 @@ sb.storage.from('products').remove(['old-name-1.webp','old-name-2.webp']).then(r
 S×1, M×3, L×1 (five pieces), not one of each. Confirm before inserting — `stock` must equal the
 sum of `sizes_stock`.
 
+**🔴 Re-confirm stock whenever "sold out" appears anywhere in the brief.** On 043 the owner opened
+with "it's already sold out", then gave "4M, 2S, 2L sizes available" a few answers later. Asked
+directly, the piece was **in stock with 8 units**. Publishing the first reading would have shipped
+a sellable Rs. 7,500 product as an unbuyable page. The two readings produce opposite products —
+buyable vs. not, `InStock` vs. `OutOfStock` schema, featured vs. not — so this is worth blocking on.
+
+### Owner vocabulary — decode these before they reach copy
+
+Voice notes and transcription mangle the same words repeatedly. Confirmed meanings:
+
+| Owner says | Means | First seen |
+|---|---|---|
+| "organs", "organza at the back" | **organza** (usually the dupatta, as a listed piece) | 043 |
+| "to batta", "d'abata", "duppata" | **dupatta** | 041 |
+| "flapper" / "very wide flapper bottom" | **wide flared trousers** — close through the hip, released into a wide flare falling straight to the floor. Not palazzo (wide from the waist), not bootcut (flares at the ankle). Confirmed by the folder name `white with very wide flapper bottom`. | 043 |
+| "the buttons are printed" | the **dupatta** is printed | 041 |
+| "mixed cloth" / "I don't know the name of this cloth" | fabric genuinely unknown — **do not name a fibre**, see below | 043 |
+| "branded lawn" | cotton lawn | 033 |
+| "buffoon" | **organza** — reads as "chiffon" but the owner confirmed organza. Ask; the two drape differently and the care differs. | 045 |
+| "pulse lace" | **pearl lace** — individual pearls stitched along an edge | 046 |
+| "A8 line" | **A-line** | 046 |
+| "chicken kari", "chicken curry" | **chikankari** — but see the craft-term warning below; the term has been wrong as often as right | 033, 035, 045 |
+
+### 🔴 Craft terms are wrong in BOTH directions — always read the close-up
+
+Three products now have had the owner's craft term contradicted by the photographs, and the error
+has gone both ways. **Never let a craft term reach copy without checking a close-up.**
+
+| Product | Owner said | Photos showed | Outcome |
+|---|---|---|---|
+| 033 | folder said "chicken kari" | printed lawn + applied lace, no embroidery at all | chikankari removed entirely |
+| 035 | "chikankari" | genuine white-on-white embroidery with cut eyelets | term kept |
+| 045 | "appliqué at the bottom and borders" | **cutwork** — fabric cut away into satin-bound eyelets, scalloped cut hem | described as cutwork; appliqué never used |
+
+**Appliqué and cutwork are opposites and are easy to confuse in a voice note.** Appliqué *adds*
+fabric on top of the ground. Cutwork *removes* it — shapes are cut out and the raw edges bound with
+satin stitch so they cannot fray. Look for holes you can see through: if the trousers or the skin
+show through the pattern, it is cutwork, not appliqué.
+
+**Never claim "hand" unless the owner says the word.** Machine schiffli work is perfectly uniform
+with even motif spacing; hand work varies in stitch tension and spacing. Only 034 carries the hand
+claim, because the owner stated it explicitly. 035, 037, 044, 045 and 046 all deliberately do not.
+
+### Run the false-claim sweep after every batch
+
+One query, and it catches the most damaging class of error on this site. On 046 the phrase
+"hand-stitched pearls" had slipped into `seo_description` alone, while the body copy correctly said
+"individually stitched" — the sweep caught it before anyone saw it.
+
+```sql
+select slug,
+  (description       ~* '\yhand[- ]?(embroider|stitch|work|craft|made|worked)') as hand_in_desc,
+  (short_description ~* '\yhand[- ]?(embroider|stitch|work|craft|made|worked)') as hand_in_specs,
+  (faqs::text        ~* '\yhand[- ]?(embroider|stitch|work|craft|made|worked)') as hand_in_faqs,
+  (seo_description   ~* '\yhand')                                              as hand_in_seo
+from public.products where slug in ( … the batch … );
+```
+
+Swap `hand` for `chikankari`, `appliqué`, `silk`, or any other material claim you want to confirm
+is absent. **Check every text column, not just `description`** — that is exactly how 046 slipped.
+
+### State plainly when a piece is NOT included
+
+A customer who expects a piece and does not get it is a guaranteed return, and it is the one
+mistake that costs money in both directions. Say it in the prose **and** in an FAQ, not just the
+spec list:
+
+- 039/040 — trousers not supplied with the frocks
+- 045 — the cutwork eyelets are open holes and **no inner slip is included** in the 3-piece set
+- 043 — the opposite case, where the lining *is* included and is the whole reason it is a 4-piece
+
+**When the owner does not know the fabric, describe its behaviour, never its fibre.** 043's shirt
+could have been fil coupé organza, burnout devoré, or a jacquard — all plausible from the photo,
+all different care regimes. The copy instead says "a sheer ground carrying an opaque all-over
+floral motif, fully lined", which is verifiable from the photograph, and sets care to **dry clean
+only** — correct for any sheer, beaded, or organza garment whatever the fibre turns out to be. No
+fibre word in the title, slug, copy, or keywords. Use `MIX` as the SKU fabric code.
+
 ### 2b. Check resolution and decide image order before converting
 
 The gallery shows `images[0]` as the main/LCP shot, so **order matters** and the script sorts by
@@ -87,6 +165,18 @@ never upscale to hide it, that fakes detail and looks worse.
 ```bash
 node -e "const s=require('sharp');['1','2','3'].forEach(f=>s(f+'.png').metadata().then(m=>console.log(f,m.width+'x'+m.height)))"
 ```
+
+**The newer boutique shoot is much larger — expect ~99% compression, not ~94%.** The `pink
+paradise` batch (043) arrived at **3506×4381, ~13 MB per PNG**, versus 1122×1402 on the earlier
+folders. 49.8 MB → 525 KB. Two consequences:
+
+- The 1600px cap does real work now, so **spot-check the WebP before uploading** when the garment
+  is sheer, beaded, or finely textured — that is where q=82 would show first. On 043 the sheer
+  ground, the floral motif, the neckline tassel and the dupatta shimmer all held; no quality bump
+  was needed.
+- These are shot in the boutique against the lit **Habiba Minhas logo wall**, and the warm lighting
+  pushes sampled colours peachy. Sample `palette` from a well-lit flat area of the garment and
+  sanity-check the hex against what the eye reads, or a blush pink comes out looking terracotta.
 
 ### 3. Convert the images
 
@@ -178,6 +268,40 @@ without a redeploy. Do **not** use WebFetch to count sitemap URLs — it approxi
 `stitched-suits` · `3-piece-suits` · `2-piece-suits` · `party-wear` · `formal-wear` · `casual`
 
 Note it is `casual`, **not** `casual-wear`.
+
+### ⚠️ Piece counts outside 2 and 3 have no subcategory — do not invent one
+
+There is **no `4-piece-suits` subcategory**, and 043 (the first 4-piece product) deliberately did
+not create one. Adding it would spin up a brand-new indexable collection page at
+`/ladies/4-piece-suits/`, which the standing SEO rule says to **stop and ask about first** — and a
+new collection row ships with null `description` / `seo_title` / `seo_desc`, so the page would go
+live with no copy at all.
+
+For a 4-piece (or any count with no matching subcategory), tag it `stitched-suits` + `casual` and
+**omit the piece-count subcategory entirely**. Do not tag it `3-piece-suits` to fill the gap —
+that is simply false, and the piece count is stated in the title, the Details tab, and the FAQs
+anyway. If the owner wants a `/ladies/4-piece-suits/` page, that is a separate approved job that
+includes writing ~2,000–3,300 chars of collection copy.
+
+### Sold-out products — `status` stays `active`
+
+Verified in code, 2026-08-15. If a piece is genuinely sold out, set `stock` 0 and `sizes_stock`
+all zeros, and **leave `status` as `active`**:
+
+- `app/product/[category]/[slug]/page.tsx:98` — an out-of-stock product **does not 404**. It
+  renders a "Currently Unavailable" banner, an *Out of Stock* badge, hides Add to Bag, and shows
+  the notify-when-back-in-stock form.
+- `components/seo/product-schema.tsx:45` — `availability` flips to `schema.org/OutOfStock`
+  automatically. Honest structured data, no manual step.
+- `app/sitemap.ts:193` filters on `status: "active"` only, **not** on stock — so the URL stays in
+  the sitemap and stays indexed. That is what you want: a live page with `OutOfStock` schema beats
+  a 404.
+- Setting `status` to `draft` instead **removes it from the sitemap and 404s a live URL** — that
+  trips the standing SEO rule. Don't.
+
+Also turn `featured` **off** for a sold-out piece — one flag drives both the homepage strip and
+`/new/`, and sending shoppers to something they cannot buy costs conversion. Badge `Limited` reads
+honestly on a sold-out one-off; `Restock` if it is coming back.
 
 ---
 
