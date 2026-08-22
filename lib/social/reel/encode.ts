@@ -1,5 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { REEL_HEIGHT, REEL_WIDTH } from "./frames";
 
 const run = promisify(execFile);
@@ -11,17 +13,103 @@ const run = promisify(execFile);
  * a top-level import would make this module unloadable in production even for code paths
  * that never encode anything. Resolving inside the call keeps the module importable
  * everywhere and fails only where it actually matters.
+ *
+ * **The path it exports cannot be trusted inside Next.** `ffmpeg-static` computes its
+ * binary location as `path.join(__dirname, "ffmpeg.exe")`, and the bundler rewrites
+ * `__dirname` to `/ROOT` in the server bundle — so the export becomes
+ * `\ROOT\node_modules\ffmpeg-static\ffmpeg.exe`, which does not exist, and encoding fails
+ * with a bare `ENOENT`. The CLI script never hit this because tsx does not bundle.
+ *
+ * So the exported path is treated as a *hint*: used when it points at a real file, and
+ * otherwise resolved from the project root, which is where the package actually lives.
  */
 async function resolveFfmpeg(): Promise<string> {
-  const mod = (await import("ffmpeg-static")) as unknown as { default?: string };
-  const path = mod.default;
-  if (!path) throw new Error("ffmpeg is not available in this environment");
-  return path;
+  const candidates: string[] = [];
+
+  try {
+    const mod = (await import("ffmpeg-static")) as unknown as { default?: string };
+    if (typeof mod.default === "string") candidates.push(mod.default);
+  } catch {
+    // Not installed at all — the cwd fallback below produces the useful error message.
+  }
+
+  const binary = process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
+  candidates.push(join(process.cwd(), "node_modules", "ffmpeg-static", binary));
+
+  for (const candidate of candidates) {
+    if (candidate && existsSync(candidate)) return candidate;
+  }
+
+  throw new Error(
+    `ffmpeg was not found. Looked in: ${candidates.join(", ")}. ` +
+      "Run `npm install` to restore ffmpeg-static, and note that reels can only be built " +
+      "on your own computer — not on the server.",
+  );
 }
 
 /** Can this process actually encode video? False on Vercel, true on the owner's machine. */
 export function canEncodeHere(): boolean {
   return !process.env.VERCEL;
+}
+
+/**
+ * Writes the **last** frame of a video to `outputPath` as a JPEG.
+ *
+ * `-sseof` seeks relative to the end of the file, and `-update 1` makes ffmpeg overwrite
+ * the same output file for every frame it decodes — so once the tail has been walked, what
+ * remains on disk is the final frame. That is the reliable idiom; `select=eq(n\,LAST)`
+ * needs a frame count ffmpeg does not know while streaming, and asking for `-frames:v 1`
+ * after the seek gives the *first* frame of the tail rather than the last.
+ *
+ * A one-second tail is enough to guarantee landing on the real final frame while keeping
+ * the decode cheap. On a video shorter than that, the seek simply clamps to the start.
+ *
+ * The last frame is used rather than the first because these reels end on a held product
+ * shot, while the opening frame is mid-motion — and this image becomes the Pinterest cover,
+ * which is the entire thumbnail Pinterest ranks and displays in its grid.
+ */
+export async function extractLastFrame(videoPath: string, outputPath: string): Promise<void> {
+  const ffmpegPath = await resolveFfmpeg();
+  await run(
+    ffmpegPath,
+    ["-y", "-sseof", "-1.0", "-i", videoPath, "-update", "1", "-q:v", "2", outputPath],
+    { maxBuffer: 1024 * 1024 * 16 },
+  );
+}
+
+/**
+ * Writes one small JPEG per second of video into `outDir`, named `cand-001.jpg` upward.
+ *
+ * Candidate `n` is the frame at `n - 1` seconds, which is what lets the caller turn its
+ * choice back into a timestamp. Deliberately downscaled: these exist only to be measured,
+ * and the chosen one is re-extracted at full resolution afterwards.
+ */
+export async function extractCandidateFrames(videoPath: string, outDir: string): Promise<void> {
+  const ffmpegPath = await resolveFfmpeg();
+  await run(
+    ffmpegPath,
+    [
+      "-y", "-i", videoPath,
+      "-vf", "fps=1,scale=360:-1",
+      "-q:v", "5",
+      join(outDir, "cand-%03d.jpg"),
+    ],
+    { maxBuffer: 1024 * 1024 * 32 },
+  );
+}
+
+/** Writes the frame at `seconds` to `outputPath`, full resolution. */
+export async function extractFrameAt(
+  videoPath: string,
+  seconds: number,
+  outputPath: string,
+): Promise<void> {
+  const ffmpegPath = await resolveFfmpeg();
+  await run(
+    ffmpegPath,
+    ["-y", "-ss", String(seconds), "-i", videoPath, "-frames:v", "1", "-q:v", "2", outputPath],
+    { maxBuffer: 1024 * 1024 * 16 },
+  );
 }
 
 /**

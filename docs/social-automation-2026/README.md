@@ -1,9 +1,12 @@
 # Social Media Automation — Habiba Minhas
 
 **Created:** 2026-08-09
-**Status:** ✅ **Phase 1 + 1b live.** Three products published to Instagram and Facebook.
-Scheduled automation is still switched off — the pg_cron job is inactive, so every post so
-far went out by hand through the review queue. See [TRACKER](./TRACKER.md) for detail.
+**Status:** ✅ **Phases 1, 1b and 2 (reels) built. Planner built. Scheduler switched on
+2026-08-12** — `social-post-slots` is now `active = true` for the first time. Posts still
+queue for review (`approval_required = true`), so nothing publishes unattended yet.
+🔴 **The 2026-08-12 work is uncommitted, and its migrations are already applied to
+production — reel publishing from the live admin is broken until the branch is deployed.**
+See [TRACKER](./TRACKER.md).
 **Backlog ID:** A-6 "Social content pipeline" in `docs/automation-2026/02-BACKLOG.md`
 
 ---
@@ -25,8 +28,9 @@ Pinterest, LinkedIn, X and the rest slot in later without a rewrite.
 | 02 | [Architecture](./02-ARCHITECTURE.md) | Database tables, rotation logic, cron, platform adapters |
 | 03 | [Content & Schedule](./03-CONTENT-AND-SCHEDULE.md) | Captions, hashtags, social SEO/AEO, posting times |
 | 04 | [Collaborators, Music & Post Control](./04-COLLABORATORS-MUSIC-CONTROL.md) | Tagging a second account, delete/repost. **Built** — music moved to 05 |
-| 05 | [Planner, Reels, Video & Audio](./05-PLANNER-REELS-AUDIO.md) | What the Schedule tab already does, what is genuinely missing, and the order to build it. **Plan only** |
-| — | [TRACKER](./TRACKER.md) | What is done vs not |
+| 05 | [Planner, Reels, Video & Audio](./05-PLANNER-REELS-AUDIO.md) | Reels and the planner. **R-0 → R-5 and R-7 built; only R-6 (audio) remains** |
+| 06 | [TikTok](./06-TIKTOK.md) | Developer account, OAuth, tokens, the audit gate, and what the owner must do. **Research only — nothing built** |
+| — | [TRACKER](./TRACKER.md) | What is done vs not. **Start here for current state** |
 
 ---
 

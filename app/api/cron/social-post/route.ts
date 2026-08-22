@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runScheduledPost } from "@/lib/social/publish";
+import { runScheduledReels } from "@/lib/social/reel/publish";
 import { getSocialSettings } from "@/lib/social/config";
 
 /**
@@ -58,7 +59,28 @@ async function handle(req: Request) {
 
   try {
     const result = await runScheduledPost({ force, productId });
-    return NextResponse.json(result);
+
+    /*
+     * Reels are drained separately, after photos, and are never allowed to affect them.
+     *
+     * Their own try/catch is the whole point: a misconfigured reel schedule or a Meta
+     * transcode failure must not be able to stop the daily photo post, which is the
+     * proven, live half of this pipeline. Photos have already been published by the time
+     * this runs, so the worst case is that reels wait for the next tick.
+     *
+     * Skipped entirely on a forced run — "Post now" means post a photo now, and silently
+     * publishing a reel as a side effect of that button would be a surprise.
+     */
+    let reels: unknown = { action: "skipped", detail: "forced run" };
+    if (!force) {
+      try {
+        reels = await runScheduledReels();
+      } catch (e) {
+        reels = { ok: false, action: "error", detail: (e as Error).message };
+      }
+    }
+
+    return NextResponse.json({ ...result, reels });
   } catch (e) {
     // A thrown error here means something outside the per-post error handling failed.
     // Answer 200 with the reason rather than 500: pg_net has no retry semantics, and a

@@ -29,6 +29,27 @@ const CAT_LABEL: Record<string, string> = {
   "accessories":   "Accessories",
 };
 
+/**
+ * An image column that `next/image` will actually accept, or null.
+ *
+ * `size_guide` was a boolean before the 2026-05-20 migration turned it into a URL column,
+ * and something has since written the *string* `"false"` into it for thirteen products.
+ * That is the worst possible value: a `typeof x === "string"` check passes it, a truthiness
+ * check passes it, and `next/image` then throws `Failed to parse src "false"` — which takes
+ * the whole edit modal down rather than degrading.
+ *
+ * So the test is what the loader actually requires: an absolute URL or a rooted path.
+ * Anything else is treated as "not set", which is what those rows meant all along.
+ */
+function imageSrcOrNull(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("/")) {
+    return null;
+  }
+  return trimmed;
+}
+
 const ADULT_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const KIDS_SIZES  = ["2Y", "4Y", "6Y", "8Y", "10Y", "12Y"];
 const PAGE_SIZE   = 15;
@@ -1222,11 +1243,11 @@ function ViewProductModal({ product, onClose, onEdit }: { product: Product; onCl
                   : "—"}
               </div>
             </div>
-            {product.size_guide && (
+            {imageSrcOrNull(product.size_guide) && (
               <div className="sm:col-span-2">
                 <div className="text-xs font-semibold text-[var(--admin-text-muted)]">Size Guide</div>
                 <div className="mt-2 relative h-32 overflow-hidden rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)]">
-                  <Image src={product.size_guide} alt="Size Guide" fill sizes="300px" className="object-contain" />
+                  <Image src={imageSrcOrNull(product.size_guide)!} alt="Size Guide" fill sizes="300px" className="object-contain" />
                 </div>
               </div>
             )}
@@ -1272,7 +1293,7 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [description, setDescription] = useState(product.description ?? "");
   const [shortDescription, setShortDescription] = useState(product.short_description ?? "");
   const [sizeGuideImage, setSizeGuideImage] = useState<string | null>(
-    typeof product.size_guide === "string" ? product.size_guide : null
+    imageSrcOrNull(product.size_guide),
   );
   const [uploadingSizeGuide, setUploadingSizeGuide] = useState(false);
   const [images,      setImages]      = useState<string[]>(product.images ?? []);
@@ -1282,7 +1303,7 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
       : ["#f2e0d8", "#c97a86", "#5a2030"]) as Palette,
   );
   const [tryonEnabledVal, setTryonEnabledVal] = useState(product.tryon_enabled ?? false);
-  const [tryonImageVal,   setTryonImageVal]   = useState<string | null>(product.tryon_image ?? null);
+  const [tryonImageVal,   setTryonImageVal]   = useState<string | null>(imageSrcOrNull(product.tryon_image));
   const [uploadingTryonImageEdit, setUploadingTryonImageEdit] = useState(false);
   const [uploading,   setUploading]   = useState(false);
   const [saving,      setSaving]      = useState(false);

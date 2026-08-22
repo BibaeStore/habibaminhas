@@ -55,6 +55,11 @@ export type SocialSettings = {
   products_per_post: number;
   timezone: string;
   slot_times: string[];
+  /** Weekdays photos may post on, 0 = Sunday. Written by the active plan. */
+  post_days: number[];
+  /** Reels run on their own days and times so a reel cadence cannot disturb the photo one. */
+  reel_days: number[];
+  reel_times: string[];
   categories: string[];
   require_in_stock: boolean;
   min_images: number;
@@ -76,21 +81,32 @@ export async function getSocialSettings(): Promise<SocialSettings | null> {
   return data as unknown as SocialSettings;
 }
 
+/** The two things we publish. They have separate destinations. */
+export type ContentKind = "photo" | "video";
+
 /**
- * Platforms the pipeline should actually post to.
+ * Platforms the pipeline should actually post to, for one kind of content.
  *
- * A platform must be both `supported` (an adapter exists) and `enabled` (the owner wants
- * it). Reading this from the registry rather than `social_settings.platforms` means
- * enabling TikTok later is a row update, and the owner can never enable a platform we
- * cannot yet publish to.
+ * A platform must both *support* the content type (an adapter exists) and be *enabled*
+ * for it (the owner wants it there). These are asked separately because they are separate
+ * facts: TikTok cannot receive a static product post at all, so no owner setting should be
+ * able to send one there, while Facebook can receive both and it is purely the owner's
+ * choice whether it does.
+ *
+ * Reading this from the registry rather than `social_settings.platforms` means enabling a
+ * new platform later is a row update, and the owner can never target one we cannot yet
+ * publish to.
  */
-export async function getActivePlatforms(): Promise<string[]> {
+export async function getActivePlatforms(kind: ContentKind): Promise<string[]> {
   const sb = createAdminClient();
+  const supports = kind === "video" ? "supports_video" : "supports_photo";
+  const enabled = kind === "video" ? "video_enabled" : "photo_enabled";
+
   const { data, error } = await sb
     .from("social_platforms")
     .select("key")
-    .eq("supported", true)
-    .eq("enabled", true)
+    .eq(supports, true)
+    .eq(enabled, true)
     .order("sort_order");
 
   if (error || !data) return [];
@@ -151,13 +167,21 @@ export function productUrl(
  * A slot counts as due inside a tolerance window after its time, so a late or skipped
  * cron tick does not silently drop the day's post. `alreadyPostedInSlot` prevents the
  * same slot firing twice within that window.
+ *
+ * `days` gates which weekdays may post at all (0 = Sunday, matching `Date.getDay()`).
+ * Without it a plan of "4 photos a week on Mon, Wed, Fri and Sun" would post seven times a
+ * week, quietly overshooting the very target it was written to enforce. Omitted or empty
+ * means every day, which is the behaviour that predates plans.
  */
 export function findDueSlot(
   slotTimes: string[],
   timezone: string,
   now: Date = new Date(),
   toleranceMinutes = 30,
+  days?: number[] | null,
 ): string | null {
+  if (days && days.length > 0 && !days.includes(localWeekday(timezone, now))) return null;
+
   const localMinutes = minutesSinceMidnight(now, timezone);
   if (localMinutes === null) return null;
 
@@ -168,6 +192,23 @@ export function findDueSlot(
     if (delta >= 0 && delta < toleranceMinutes) return slot;
   }
   return null;
+}
+
+/**
+ * Weekday in the configured timezone, 0 = Sunday.
+ *
+ * Derived from the local calendar date rather than the raw instant: at 01:00 Monday in
+ * Karachi it is still Sunday in UTC, and a scheduler that believed the latter would post
+ * on the wrong day of a plan.
+ */
+export function localWeekday(timezone: string, date: Date = new Date()): number {
+  try {
+    const [y, m, d] = localDateKey(timezone, date).split("-").map(Number);
+    // Anchored at UTC noon so no offset can push the date onto a neighbouring day.
+    return new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay();
+  } catch {
+    return date.getUTCDay();
+  }
 }
 
 /** "19:00" -> 1140. Returns null for anything malformed rather than guessing. */
@@ -253,5 +294,28 @@ export function startOfLocalDayUtc(timezone: string, date: Date = new Date()): D
     const fallback = new Date(date);
     fallback.setUTCHours(0, 0, 0, 0);
     return fallback;
+  }
+}
+
+/**
+ * Midnight on Monday of the current local week, as a UTC instant.
+ *
+ * Weekly targets are the unit a plan is written in — "4 photos and 2 reels a week" — so
+ * "this week" has to be a fixed boundary both the planner and the progress figures agree
+ * on. Monday rather than Sunday because that is how a working schedule is read, and the
+ * same reason as `startOfLocalDayUtc`: the week must turn over at midnight in Karachi, not
+ * in UTC, or Monday's first post counts against the previous week.
+ */
+export function startOfLocalWeekUtc(timezone: string, date: Date = new Date()): Date {
+  const dayStart = startOfLocalDayUtc(timezone, date);
+  try {
+    const [y, m, d] = localDateKey(timezone, date).split("-").map(Number);
+    // getUTCDay on a UTC-noon anchor: noon is far enough from either midnight that no
+    // timezone offset can push it onto the neighbouring date.
+    const weekday = new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay(); // 0 = Sunday
+    const sinceMonday = (weekday + 6) % 7;                            // Monday = 0
+    return new Date(dayStart.getTime() - sinceMonday * 86_400_000);
+  } catch {
+    return dayStart;
   }
 }

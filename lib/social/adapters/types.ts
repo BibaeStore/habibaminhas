@@ -25,6 +25,17 @@ export type PublishImagePostInput = {
    * platforms that have no equivalent (Facebook has none).
    */
   collaborators?: string[];
+  /**
+   * Pinterest only — a pin has a title above its description, and Pinterest is a search
+   * engine, so this is the field that decides whether the pin is ever found. Meta has no
+   * equivalent and its adapters ignore it.
+   */
+  title?: string;
+  /**
+   * Pinterest only — where the pin sends people. Not decoration: a pin without a link is
+   * an image nobody can act on, and traffic is the entire reason Pinterest is here.
+   */
+  link?: string;
 };
 
 export type PlatformLimits = {

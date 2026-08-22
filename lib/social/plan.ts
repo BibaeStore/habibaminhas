@@ -1,0 +1,324 @@
+import type { Tables } from "@/lib/supabase/types";
+
+export type PlanRow = Tables<"social_plans">;
+
+/**
+ * Plans — targets in, schedule out.
+ *
+ * A plan is what a marketing month is actually written in: "4 photos and 2 reels a week".
+ * The scheduler, however, thinks in slots — a set of times it fires at. This module is the
+ * translation between the two, and it exists as pure functions so the arithmetic can be
+ * reasoned about without a database or a running scheduler.
+ *
+ * The one idea worth holding on to: **the scheduler is capacity-driven, the plan is
+ * target-driven.** The scheduler posts at every configured time on every allowed day, so
+ * it publishes `days × times` per week no matter what number the plan carries. A plan
+ * whose target and capacity disagree is therefore not a plan that misses slightly — it is
+ * a plan that silently does something other than what it says. `validatePlan` treats that
+ * as an error rather than a warning for exactly that reason.
+ */
+
+/** 0 = Sunday, matching `Date.getDay()` and `social_settings.post_days`. */
+export const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+/** Monday-first ordering, which is how a working schedule is read. */
+export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
+
+/**
+ * Average weeks in a month (365.25 / 12 / 7).
+ *
+ * Monthly figures are *derived* rather than stored. Campaigns are budgeted monthly but
+ * schedules run weekly, and storing both invites the two to drift apart — the same class
+ * of bug as the platform flag that meant two things at once.
+ */
+export const WEEKS_PER_MONTH = 4.348;
+
+export function weeklyToMonthly(perWeek: number): number {
+  return Math.round(perWeek * WEEKS_PER_MONTH);
+}
+
+export function monthlyToWeekly(perMonth: number): number {
+  return Math.max(0, Math.round(perMonth / WEEKS_PER_MONTH));
+}
+
+// ─── Compilation ──────────────────────────────────────────────────────────────
+
+export type CompiledSchedule = {
+  slot_times: string[];
+  post_days: number[];
+  reel_times: string[];
+  reel_days: number[];
+};
+
+/**
+ * A plan, expressed in the shape the existing scheduler already understands.
+ *
+ * Nothing about `runScheduledPost` is rewritten — the plan simply becomes the thing that
+ * writes its settings. That keeps the blast radius small, and it means a plan being
+ * deleted or deactivated leaves the last compiled schedule in place rather than stopping
+ * posting altogether.
+ */
+export function compilePlan(plan: PlanRow): CompiledSchedule {
+  return {
+    slot_times: normaliseTimes(plan.photo_times),
+    post_days: normaliseDays(plan.photo_days),
+    reel_times: normaliseTimes(plan.reel_times),
+    reel_days: normaliseDays(plan.reel_days),
+  };
+}
+
+function normaliseTimes(times: string[] | null): string[] {
+  const cleaned = (times ?? [])
+    .map((t) => t.trim())
+    .filter((t) => /^\d{1,2}:\d{2}$/.test(t))
+    .map((t) => (t.length === 4 ? `0${t}` : t));
+  return [...new Set(cleaned)].sort();
+}
+
+function normaliseDays(days: number[] | null): number[] {
+  return [...new Set((days ?? []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort();
+}
+
+/** How many posts a day/time combination actually produces per week. */
+export function weeklyCapacity(days: number[] | null, times: string[] | null): number {
+  return normaliseDays(days).length * normaliseTimes(times).length;
+}
+
+/**
+ * Days spread as evenly as possible across the week, Monday first.
+ *
+ * Used when a target changes, so the schedule follows the number rather than the owner
+ * having to work out that "3 a week" means Monday, Wednesday and Saturday. Clustering
+ * three posts on consecutive days and then going quiet for four reads as an abandoned
+ * account, which is the opposite of what a cadence is for.
+ */
+export function suggestDays(count: number): number[] {
+  const n = Math.max(0, Math.min(7, Math.trunc(count)));
+  if (n === 0) return [];
+  if (n >= 7) return [0, 1, 2, 3, 4, 5, 6];
+  const picked = new Set<number>();
+  for (let i = 0; i < n; i++) picked.add(WEEK_ORDER[Math.round((i * 7) / n) % 7]);
+  // Rounding can collide; fill from the Monday-first order until the count is met.
+  for (const day of WEEK_ORDER) {
+    if (picked.size >= n) break;
+    picked.add(day);
+  }
+  return [...picked].sort();
+}
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+
+export type PlanIssue = {
+  level: "error" | "warning";
+  field: "photos" | "reels" | "period" | "general";
+  message: string;
+};
+
+export type PlanContext = {
+  /** Products eligible for a photo post right now. */
+  eligibleProducts: number;
+  /** Products with the 3+ images a single-product reel needs. */
+  eligibleReelProducts: number;
+  /** `social_settings.max_posts_per_day` — the hard safety ceiling. */
+  dailyCeiling: number;
+  /** Other plans, for overlap checking. */
+  otherPlans?: Array<Pick<PlanRow, "id" | "name" | "active_from" | "active_to">>;
+};
+
+/**
+ * The ways a plan fails quietly.
+ *
+ * Each of these produces a schedule that runs without error while doing something other
+ * than what the owner believes. They are surfaced as the plan is typed rather than
+ * discovered a fortnight later from the posting history.
+ */
+export function validatePlan(plan: PlanRow, ctx: PlanContext): PlanIssue[] {
+  const issues: PlanIssue[] = [];
+
+  for (const kind of ["photos", "reels"] as const) {
+    const isPhoto = kind === "photos";
+    const target = isPhoto ? plan.photos_per_week : plan.reels_per_week;
+    const days = isPhoto ? plan.photo_days : plan.reel_days;
+    const times = isPhoto ? plan.photo_times : plan.reel_times;
+    const noun = isPhoto ? "photo posts" : "reels";
+
+    if (target <= 0) continue;
+
+    const capacity = weeklyCapacity(days, times);
+    const dayCount = normaliseDays(days).length;
+    const timeCount = normaliseTimes(times).length;
+
+    if (timeCount === 0) {
+      issues.push({
+        level: "error",
+        field: kind,
+        message: `No posting time set for ${noun}, so none will go out.`,
+      });
+    } else if (dayCount === 0) {
+      issues.push({
+        level: "error",
+        field: kind,
+        message: `No days chosen for ${noun}, so none will go out.`,
+      });
+    } else if (capacity < target) {
+      issues.push({
+        level: "error",
+        field: kind,
+        message: `${dayCount} ${dayCount === 1 ? "day" : "days"} × ${timeCount} ${timeCount === 1 ? "time" : "times"} gives ${capacity} ${noun} a week, but the target is ${target}. Add a day or a second time — otherwise only ${capacity} will go out.`,
+      });
+    } else if (capacity > target) {
+      issues.push({
+        level: "error",
+        field: kind,
+        message: `This schedule posts ${capacity} ${noun} a week, more than the target of ${target}. The scheduler fires every chosen time on every chosen day, so it will publish ${capacity}, not ${target}.`,
+      });
+    }
+  }
+
+  // The hard daily ceiling is a safety net, not a target — a plan that exceeds it will be
+  // silently truncated on the day rather than rejected.
+  const photosPerDay = normaliseTimes(plan.photo_times).length;
+  if (photosPerDay > ctx.dailyCeiling) {
+    issues.push({
+      level: "error",
+      field: "photos",
+      message: `${photosPerDay} photo posts on a single day exceeds the hard daily ceiling of ${ctx.dailyCeiling}. Raise the ceiling in Settings or remove a time.`,
+    });
+  }
+
+  // Catalogue runway. Repetition is not an error — it is a judgement about how quickly the
+  // audience sees the same garment twice.
+  if (plan.photos_per_week > 0 && ctx.eligibleProducts > 0) {
+    const weeks = ctx.eligibleProducts / plan.photos_per_week;
+    if (weeks < 3) {
+      issues.push({
+        level: "warning",
+        field: "photos",
+        message: `${ctx.eligibleProducts} eligible products at ${plan.photos_per_week} a week repeats the catalogue every ${weeks.toFixed(1)} weeks. Add products or lower the target if that feels too soon.`,
+      });
+    }
+  }
+  if (plan.photos_per_week > 0 && ctx.eligibleProducts === 0) {
+    issues.push({
+      level: "error",
+      field: "photos",
+      message: "No products are eligible to post. Check the category and stock filters in Settings.",
+    });
+  }
+
+  if (plan.reels_per_week > 0 && ctx.eligibleReelProducts === 0) {
+    issues.push({
+      level: "warning",
+      field: "reels",
+      message:
+        "No product has the 3+ images a single-product reel needs. Collection reels still work — they use one image each.",
+    });
+  }
+
+  // Reels cannot be generated on a schedule: encoding runs on the owner's machine, not the
+  // server. Saying so here is more honest than a plan that promises two a week and
+  // produces none.
+  if (plan.reels_per_week > 0) {
+    issues.push({
+      level: "warning",
+      field: "reels",
+      message: `Reels publish automatically but are not *made* automatically — video encoding runs on your computer. Generate a batch when you are at it, and the plan will send ${plan.reels_per_week} a week out from the approved queue.`,
+    });
+  }
+
+  if (plan.active_from && plan.active_to && plan.active_to < plan.active_from) {
+    issues.push({
+      level: "error",
+      field: "period",
+      message: "The end date is before the start date.",
+    });
+  }
+
+  for (const other of ctx.otherPlans ?? []) {
+    if (other.id === plan.id) continue;
+    if (overlaps(plan, other)) {
+      issues.push({
+        level: "warning",
+        field: "period",
+        message: `Its active period overlaps “${other.name}”. Only one plan runs at a time, so whichever is activated wins.`,
+      });
+    }
+  }
+
+  return issues;
+}
+
+function overlaps(
+  a: Pick<PlanRow, "active_from" | "active_to">,
+  b: Pick<PlanRow, "active_from" | "active_to">,
+): boolean {
+  // An open end means "runs indefinitely", so treat missing bounds as infinite.
+  const aFrom = a.active_from ?? "0000-01-01";
+  const aTo = a.active_to ?? "9999-12-31";
+  const bFrom = b.active_from ?? "0000-01-01";
+  const bTo = b.active_to ?? "9999-12-31";
+  return aFrom <= bTo && bFrom <= aTo;
+}
+
+// ─── Expansion, for the grids ─────────────────────────────────────────────────
+
+export type PlannedSlot = {
+  /** Local calendar date, YYYY-MM-DD. */
+  date: string;
+  time: string;
+  kind: "photo" | "reel";
+};
+
+/**
+ * Every slot a plan produces between two dates.
+ *
+ * Dates are handled as plain `YYYY-MM-DD` strings stepped through UTC noon, never as local
+ * `Date` arithmetic: stepping by 86,400,000 milliseconds across a daylight-saving boundary
+ * silently skips or repeats a day, and a calendar that loses a Wednesday is worse than no
+ * calendar.
+ */
+export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): PlannedSlot[] {
+  const photoDays = new Set(normaliseDays(plan.photo_days));
+  const reelDays = new Set(normaliseDays(plan.reel_days));
+  const photoTimes = normaliseTimes(plan.photo_times);
+  const reelTimes = normaliseTimes(plan.reel_times);
+
+  const out: PlannedSlot[] = [];
+  const start = Date.parse(`${fromISO}T12:00:00Z`);
+  const end = Date.parse(`${toISO}T12:00:00Z`);
+  if (Number.isNaN(start) || Number.isNaN(end)) return out;
+
+  for (let t = start; t <= end; t += 86_400_000) {
+    const day = new Date(t);
+    const date = day.toISOString().slice(0, 10);
+
+    // Outside the plan's active period it produces nothing.
+    if (plan.active_from && date < plan.active_from) continue;
+    if (plan.active_to && date > plan.active_to) continue;
+
+    const weekday = day.getUTCDay();
+    if (plan.photos_per_week > 0 && photoDays.has(weekday)) {
+      for (const time of photoTimes) out.push({ date, time, kind: "photo" });
+    }
+    if (plan.reels_per_week > 0 && reelDays.has(weekday)) {
+      for (const time of reelTimes) out.push({ date, time, kind: "reel" });
+    }
+  }
+
+  return out.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
+
+/** A one-line summary of what a plan does, for the plan list. */
+export function describePlan(plan: PlanRow): string {
+  const parts: string[] = [];
+  if (plan.photos_per_week > 0) {
+    parts.push(`${plan.photos_per_week} photo${plan.photos_per_week === 1 ? "" : "s"}`);
+  }
+  if (plan.reels_per_week > 0) {
+    parts.push(`${plan.reels_per_week} reel${plan.reels_per_week === 1 ? "" : "s"}`);
+  }
+  if (parts.length === 0) return "Nothing scheduled";
+  return `${parts.join(" + ")} a week · about ${weeklyToMonthly(
+    plan.photos_per_week + plan.reels_per_week,
+  )} a month`;
+}

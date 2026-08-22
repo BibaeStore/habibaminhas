@@ -11,10 +11,11 @@ import {
   type SocialSettings,
 } from "./config";
 import { selectNextProducts, clearManualOrder, type ProductCandidate } from "./select";
-import { buildCaption } from "./caption";
+import { buildCaption, buildPinContent } from "./caption";
 import { prepareImages } from "./images";
 import { createInstagramAdapter, deleteInstagramMedia } from "./adapters/instagram";
 import { createFacebookAdapter, deleteFacebookPost } from "./adapters/facebook";
+import { createPinterestAdapter, deletePin } from "./adapters/pinterest";
 import { MetaApiError, type PlatformAdapter } from "./adapters/types";
 
 /**
@@ -27,11 +28,20 @@ import { MetaApiError, type PlatformAdapter } from "./adapters/types";
  *   - a global kill switch and a hard daily ceiling, both enforced before any API call
  */
 
-export type PlatformName = "instagram" | "facebook";
+export type PlatformName = "instagram" | "facebook" | "pinterest";
+
+/** Platforms this module can actually publish a photo post to. */
+const PHOTO_PLATFORMS: readonly PlatformName[] = ["instagram", "facebook", "pinterest"];
+
+function isPhotoPlatform(p: string): p is PlatformName {
+  return (PHOTO_PLATFORMS as readonly string[]).includes(p);
+}
 
 function adapterFor(platform: string, creds: MetaCredentials): PlatformAdapter | null {
   if (platform === "instagram") return createInstagramAdapter(creds);
   if (platform === "facebook") return createFacebookAdapter(creds);
+  // Pinterest authenticates from its own stored OAuth token, not the Meta credentials.
+  if (platform === "pinterest") return createPinterestAdapter();
   return null; // unknown platform in settings — skipped rather than crashing the run
 }
 
@@ -40,6 +50,40 @@ export type RunOutcome = {
   action: string;
   detail?: unknown;
 };
+
+type PostContent = {
+  caption: string;
+  hashtags: string[];
+  altText: string;
+  /** Pinterest only. Null elsewhere. */
+  pinTitle: string | null;
+  pinLink: string | null;
+};
+
+/**
+ * The text for one product on one platform, in the shape both the log row and the adapter
+ * want.
+ *
+ * Pinterest is not a Meta caption with a different logo on it — a pin is a title, a
+ * description and a destination link, so it is built by its own function rather than
+ * squeezed through `buildCaption`. Centralised here because the queue path and the repost
+ * path must agree on it; when they did not, one of them silently produced a different post.
+ */
+function buildContentFor(product: ProductCandidate, platform: PlatformName): PostContent {
+  if (platform === "pinterest") {
+    const pin = buildPinContent(product);
+    return {
+      caption: pin.description,
+      hashtags: pin.hashtags,
+      altText: pin.altText,
+      pinTitle: pin.title,
+      pinLink: pin.link,
+    };
+  }
+
+  const { caption, hashtags, altText } = buildCaption(product, platform);
+  return { caption, hashtags, altText, pinTitle: null, pinLink: null };
+}
 
 /**
  * The scheduled entry point, called every 15 minutes by pg_cron.
@@ -67,13 +111,21 @@ export async function runScheduledPost(options?: {
   //    an approval made at 22:00 is not held until tomorrow's slot.
   const drained = await publishApproved(settings, creds);
 
-  // 2. Is a slot due?
-  const slot = options?.force ? "manual" : findDueSlot(settings.slot_times, settings.timezone);
+  // 2. Is a slot due? `post_days` gates the weekday, so an active plan's chosen days are
+  //    honoured rather than every slot firing every day.
+  const slot = options?.force
+    ? "manual"
+    : findDueSlot(settings.slot_times, settings.timezone, new Date(), 30, settings.post_days);
   if (!slot) {
     return {
       ok: true,
       action: "no_slot_due",
-      detail: { drained, slots: settings.slot_times, timezone: settings.timezone },
+      detail: {
+        drained,
+        slots: settings.slot_times,
+        days: settings.post_days,
+        timezone: settings.timezone,
+      },
     };
   }
 
@@ -154,26 +206,20 @@ async function processProduct(
     return { product: product.slug, ok: false, reason: "image_prep_failed" };
   }
 
-  // Targets come from the platform registry (supported AND enabled), falling back to the
-  // legacy settings column if the registry is empty for any reason.
-  const registry = await getActivePlatforms();
-  const targets = (registry.length > 0 ? registry : settings.platforms).filter(
-    (p): p is PlatformName => p === "instagram" || p === "facebook",
-  );
+  // Targets come from the platform registry — those that support a *photo* post and are
+  // enabled for one. A video-only destination must never receive a static post, which a
+  // single shared on/off flag could not express.
+  const registry = await getActivePlatforms("photo");
+  const targets = (registry.length > 0 ? registry : settings.platforms).filter(isPhotoPlatform);
 
   const collaborators = await getEnabledCollaborators("instagram");
 
-  const perPlatform = targets.map((platform) => {
-    const { caption, hashtags, altText } = buildCaption(product, platform);
-    return {
-      platform,
-      caption,
-      hashtags,
-      altText,
-      // Facebook has no collaborator concept — the adapter ignores an empty list.
-      collaborators: platform === "instagram" ? collaborators : [],
-    };
-  });
+  const perPlatform = targets.map((platform) => ({
+    platform,
+    ...buildContentFor(product, platform),
+    // Facebook and Pinterest have no collaborator concept — the adapters ignore an empty list.
+    collaborators: platform === "instagram" ? collaborators : [],
+  }));
 
   // Review queue on: write pending rows and stop. Nothing reaches Meta until approved.
   if (settings.approval_required) {
@@ -187,6 +233,8 @@ async function processProduct(
       hashtags: p.hashtags,
       image_urls: imageUrls,
       alt_text: p.altText,
+      pin_title: p.pinTitle,
+      pin_link: p.pinLink,
       slot,
       group_id: groupId,
     }));
@@ -210,6 +258,8 @@ async function processProduct(
         hashtags: p.hashtags,
         imageUrls,
         altText: p.altText,
+        pinTitle: p.pinTitle,
+        pinLink: p.pinLink,
         slot,
         groupId,
         collaborators: p.collaborators,
@@ -242,6 +292,16 @@ type PublishInput = {
    * "none" so that omission is a compile error rather than a quiet no-op.
    */
   collaborators: string[];
+  /**
+   * Pinterest pin title and destination link. Null for every other platform.
+   *
+   * Required for exactly the reason `collaborators` is: a pin published without its link
+   * is not an error anywhere — Pinterest accepts it and it looks fine — it is simply a pin
+   * that sends nobody to the site, which defeats the point of the platform. Making these
+   * required means a new call site cannot forget them silently.
+   */
+  pinTitle: string | null;
+  pinLink: string | null;
 };
 
 /**
@@ -265,6 +325,8 @@ async function publishOne(creds: MetaCredentials, input: PublishInput): Promise<
       caption: input.caption,
       altText: input.altText ?? undefined,
       collaborators: input.collaborators,
+      title: input.pinTitle ?? undefined,
+      link: input.pinLink ?? undefined,
     });
 
     const row = {
@@ -279,6 +341,8 @@ async function publishOne(creds: MetaCredentials, input: PublishInput): Promise<
       hashtags: input.hashtags,
       image_urls: input.imageUrls,
       alt_text: input.altText,
+      pin_title: input.pinTitle,
+      pin_link: input.pinLink,
       slot: input.slot,
       posted_at: new Date().toISOString(),
       error: null,
@@ -316,6 +380,8 @@ async function publishOne(creds: MetaCredentials, input: PublishInput): Promise<
         hashtags: input.hashtags,
         image_urls: input.imageUrls,
         alt_text: input.altText,
+        pin_title: input.pinTitle,
+        pin_link: input.pinLink,
         slot: input.slot,
         ...(input.groupId ? { group_id: input.groupId } : {}),
         ...failure,
@@ -366,6 +432,8 @@ async function publishApproved(
         altText: row.alt_text as string | null,
         slot: row.slot as string | null,
         collaborators: row.platform === "instagram" ? collaborators : [],
+        pinTitle: row.pin_title as string | null,
+        pinLink: row.pin_link as string | null,
       }),
     );
   }
@@ -403,6 +471,8 @@ export async function publishLogEntry(logId: string): Promise<unknown> {
     altText: row.alt_text as string | null,
     slot: row.slot as string | null,
     collaborators,
+    pinTitle: row.pin_title as string | null,
+    pinLink: row.pin_link as string | null,
   });
 }
 
@@ -450,6 +520,8 @@ export async function deletePostFromPlatforms(
         await deleteInstagramMedia(creds, externalId);
       } else if (row.platform === "facebook") {
         await deleteFacebookPost(creds, externalId);
+      } else if (row.platform === "pinterest") {
+        await deletePin(externalId);
       } else {
         results.push({ platform: row.platform, ok: false, reason: "no_adapter" });
         continue;
@@ -527,18 +599,18 @@ export async function repostWithFreshCaption(
 
   const outcomes: unknown[] = [];
   for (const platform of platforms) {
-    if (platform !== "instagram" && platform !== "facebook") continue;
-    const { caption, hashtags, altText } = buildCaption(candidate, platform);
+    if (!isPhotoPlatform(platform)) continue;
+
     outcomes.push(
       await publishOne(creds, {
         productId: candidate.id,
         productSlug: candidate.slug,
         productTitle: candidate.title,
         platform,
-        caption,
-        hashtags,
         imageUrls,
-        altText,
+        // Rebuilt from current product data, so a repost also picks up any content rule
+        // changes since the original went out.
+        ...buildContentFor(candidate, platform),
         slot: "repost",
         groupId: newGroupId,
         collaborators: platform === "instagram" ? collaborators : [],

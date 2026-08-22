@@ -415,6 +415,93 @@ export function buildCaption(
   return { caption, hashtags, altText: buildAltText(product, specs) };
 }
 
+/** Pinterest's hard field limits. Over-length fields are rejected, not trimmed. */
+export const PIN_TITLE_MAX_CHARS = 100;
+export const PIN_DESCRIPTION_MAX_CHARS = 800;
+
+export type PinContent = {
+  title: string;
+  description: string;
+  hashtags: string[];
+  altText: string;
+  /** Where the pin sends people, UTM-tagged. */
+  link: string;
+};
+
+/**
+ * Builds a pin, which is a genuinely different object from an Instagram caption.
+ *
+ * Pinterest is a **search engine with a feed attached**, not a feed with search bolted on.
+ * That inverts almost every choice `buildCaption` makes:
+ *
+ *   - A pin has a **title**, weighted heavily in ranking and shown in the grid. This is the
+ *     field that decides whether the pin is ever found, so it leads with the searchable
+ *     words — fabric, piece count, garment — rather than an atmospheric hook.
+ *   - A pin has a **real link**, so there is no "link in bio" contortion.
+ *   - **Hashtags barely matter.** Pinterest deprecated hashtag search and now treats them as
+ *     ordinary description text, so a 15-tag block would just be noise where indexed prose
+ *     should be. A handful are kept for the admin UI's benefit and nothing more.
+ *   - Pins are **evergreen** — they surface for months, unlike a post that dies in a day.
+ *     Which makes the standing no-inventory rule matter more here, not less.
+ */
+export function buildPinContent(product: ProductCandidate): PinContent {
+  const specs = parseSpecs(product.short_description);
+
+  const name = shortName(product.title);
+  const garment = garmentNoun(product.title);
+  const pieces = pieceLabel(product.title, specs);
+  const fabric = primaryFabric(specs);
+
+  // Title: name first so the pin is recognisably ours, then the words people type.
+  const descriptor = [pieces, fabric, garment].filter(Boolean).join(" ");
+  const title = cut(
+    descriptor ? `${name} — ${titleCase(descriptor)}` : name,
+    PIN_TITLE_MAX_CHARS,
+  );
+
+  /*
+   * Description: real sentences, because Pinterest indexes this text and a keyword dump
+   * ranks worse than prose while also reading as spam to a human.
+   *
+   * Same standing content rule as every other caption here — no sizes, no stock counts,
+   * nothing that goes stale. A pin outlives the inventory it describes by months.
+   */
+  const detail = [
+    pieces ? `${titleCase(pieces)}` : null,
+    fabric ? `${titleCase(fabric)}` : null,
+    pickSpec(specs, "embroidery", "work"),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const description = cut(
+    [
+      buildKeywordLine(product, specs),
+      detail || null,
+      formatPrice(product.price),
+      "Delivered across Pakistan. Tap through to see the full range.",
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+    PIN_DESCRIPTION_MAX_CHARS,
+  );
+
+  return {
+    title,
+    description,
+    // Trimmed hard: they are plain text to Pinterest, so more would only crowd the index.
+    hashtags: buildHashtags(product, specs).slice(0, 5),
+    altText: buildAltText(product, specs),
+    link: productUrl(product.category, product.slug, "pinterest"),
+  };
+}
+
+/** Hard character cut with an ellipsis, for fields a platform rejects rather than trims. */
+function cut(value: string, max: number): string {
+  const clean = value.trim();
+  return clean.length <= max ? clean : `${clean.slice(0, max - 1).trimEnd()}…`;
+}
+
 /**
  * Assembles body + hashtags within Meta's 2,200-character ceiling.
  *
@@ -452,20 +539,79 @@ function clampCaption(body: string, hashtags: string[]): string {
  * Varied by the day so consecutive uploads do not read identically, which is itself a spam
  * signal.
  */
-export function buildUploadCaption(seed = new Date().toISOString().slice(0, 10)): GeneratedCaption {
-  const hooks = [
-    "New in — hand-finished, ready to wear.",
-    "Fresh off the rail at the Karachi studio.",
-    "The kind of stitching you only see up close.",
-    "Made in small runs, worn every day.",
-  ];
-  const hook = hooks[stableIndex(seed, hooks.length)];
+const UPLOAD_HOOKS = [
+  "New in — hand-finished, ready to wear.",
+  "Fresh off the rail at the Karachi studio.",
+  "The kind of stitching you only see up close.",
+  "Made in small runs, worn every day.",
+  "Cut, stitched and finished by hand this week.",
+  "Straight from the workroom floor.",
+  "Small batch, properly finished, ready to wear.",
+  "This week's make, off the rail and on camera.",
+];
 
-  const urdu = [
-    "Abhi order karein, nationwide delivery.",
-    "Ghar baithay order karein — poore Pakistan mein delivery.",
-    "Online order karein, delivery aap ke ghar tak.",
-  ][stableIndex(seed, 3)];
+const UPLOAD_URDU = [
+  "Abhi order karein, nationwide delivery.",
+  "Ghar baithay order karein — poore Pakistan mein delivery.",
+  "Online order karein, delivery aap ke ghar tak.",
+  "Pasand aaya? Abhi order karein — delivery poore Pakistan mein.",
+  "Apna size chunein aur order karein, delivery ghar tak.",
+  "Order karein aaj, delivery poore Pakistan mein.",
+];
+
+const UPLOAD_BODIES = [
+  "Pakistani stitched suits — cotton, lawn and chiffon, cut and finished in our Karachi studio and delivered across Pakistan.",
+  "Fully stitched eastern wear in cotton, lawn and chiffon, made in our own Karachi workroom and sent anywhere in Pakistan.",
+  "Ready-to-wear Pakistani suits, finished by hand in Karachi — cotton for every day, chiffon when it matters.",
+];
+
+const UPLOAD_CTAS = [
+  "Shop the full collection — link in bio 🔗",
+  "Everything is on the site — link in bio 🔗",
+  "See the whole range — link in bio 🔗",
+];
+
+/**
+ * How many genuinely different captions this can produce.
+ *
+ * Exported so the caller can walk the whole set before any of it repeats.
+ */
+export const UPLOAD_CAPTION_VARIANTS =
+  UPLOAD_HOOKS.length * UPLOAD_URDU.length * UPLOAD_BODIES.length * UPLOAD_CTAS.length;
+
+/**
+ * A ready-to-use caption for a video the owner uploaded themselves.
+ *
+ * An uploaded reel has no product behind it, so nothing can be derived — but leaving the
+ * box empty means it goes out bare, which has already happened once. The owner's stated
+ * habit is to accept whatever is offered and only occasionally edit, so this has to be
+ * publishable as written rather than a prompt to write something.
+ *
+ * Built to the same rules as the product captions: a concrete opening rather than a brand
+ * adjective, one Roman-Urdu line near the call to action, keywords in a real sentence
+ * because Instagram indexes caption text and not only hashtags, and no inventory detail —
+ * a reel is permanent and stock goes stale the moment something sells.
+ *
+ * **`variant` selects the wording, and it must differ between uploads.** This previously
+ * took a seed defaulting to *the current date*, which meant every video uploaded on the
+ * same day received a byte-identical caption. Consecutive identical captions are a spam
+ * signal to Instagram and read as carelessness to a human. The caller picks the variant
+ * least recently used, so the set is walked before anything repeats.
+ */
+export function buildUploadCaption(variant = 0): GeneratedCaption {
+  const v = Math.abs(Math.trunc(variant));
+
+  // Mixed radix, so advancing the variant by one changes the hook every time rather than
+  // cycling one field through all its values before the next ever moves.
+  const hook = UPLOAD_HOOKS[v % UPLOAD_HOOKS.length];
+  const urdu = UPLOAD_URDU[Math.floor(v / UPLOAD_HOOKS.length) % UPLOAD_URDU.length];
+  const body =
+    UPLOAD_BODIES[Math.floor(v / (UPLOAD_HOOKS.length * UPLOAD_URDU.length)) % UPLOAD_BODIES.length];
+  const cta =
+    UPLOAD_CTAS[
+      Math.floor(v / (UPLOAD_HOOKS.length * UPLOAD_URDU.length * UPLOAD_BODIES.length)) %
+        UPLOAD_CTAS.length
+    ];
 
   const hashtags = [
     "#PakistaniFashion",
@@ -481,21 +627,16 @@ export function buildUploadCaption(seed = new Date().toISOString().slice(0, 10))
     "#HabibaMinhasStudio",
   ];
 
-  const body = [
-    hook,
-    "",
-    "Pakistani stitched suits — cotton, lawn and chiffon, cut and finished in our Karachi studio and delivered across Pakistan.",
-    "",
-    urdu,
-    "",
-    "Shop the full collection — link in bio 🔗",
-  ].join("\n");
-
   return {
-    caption: clampCaption(body, hashtags),
+    caption: clampCaption([hook, "", body, "", urdu, "", cta].join("\n"), hashtags),
     hashtags,
     altText: "Habiba Minhas — Pakistani stitched suits, made in Karachi.",
   };
+}
+
+/** The opening line a variant produces, for spotting which have been used already. */
+export function uploadCaptionHook(variant: number): string {
+  return UPLOAD_HOOKS[Math.abs(Math.trunc(variant)) % UPLOAD_HOOKS.length];
 }
 
 /**

@@ -1,7 +1,8 @@
 # Plan — Planner, Reels, Video and Audio
 
 **Created:** 2026-08-11
-**Status:** 🔵 Approved by the owner 2026-08-11. R-0 complete; build not started.
+**Status:** ✅ **R-0 → R-5 and R-7 built** (2026-08-11/12). **R-6 (audio) is the only item
+left.** See §9 for the per-step record and how R-7 differs from the spec below.
 **Supersedes:** the "Music" section of [04](./04-COLLABORATORS-MUSIC-CONTROL.md).
 
 Phase 1 (photo posts) is live and proven. This document is the committed spec for the next
@@ -329,16 +330,36 @@ the daily-ceiling and collaborator bugs happened in the first place.
 
 ## 9. Build order
 
+> ⚠️ **The git commits use a different numbering.** They say "Phase 1–4"; commit
+> "Phase 1" is **R-2** here. Trust this table.
+
 | # | Step | Status | Breaks anything? |
 |---|---|---|---|
 | **R-0** | Trending-audio probe | ✅ **Done — negative result** | No |
-| **R-1** | `social_media_queue` + `social_plans` tables, `social-media` bucket | ⬜ | No — additive only |
-| **R-2** | Local reel builder, Format A | ⬜ | No — writes drafts, never publishes |
-| **R-3** | Reels tab: preview, regenerate, approve, discard | ⬜ | No |
-| **R-4** | `publishVideoPost` + async status polling | ⬜ | Additive to the adapter |
-| **R-5** | Format B (collection reel) | ⬜ | Reuses R-2 |
-| **R-6** | Audio library + mixing | ⬜ | Optional per reel |
-| **R-7** | Planner tab + plan-driven scheduling | ⬜ | Compiles down to existing slots |
+| **R-1** | `social_media_queue` + `social_plans` tables, `social-media` bucket | ✅ `1fa96d3` | No — additive only |
+| **R-2** | Local reel builder, Format A | ✅ `74e8c00` | No — writes drafts, never publishes |
+| **R-3** | Reels tab: preview, regenerate, approve, discard | ✅ `c9229d5` + `36cbf87` | No |
+| **R-4** | `publishVideoPost` + async status polling | ✅ `d4fc328` + `cd37522` + `35bfbc4` | Additive to the adapter |
+| **R-5** | Format B (collection reel) | ✅ `fa41bad` | Reuses R-2 |
+| **R-6** | Audio library + mixing | ⬜ **Only remaining item** | Optional per reel |
+| **R-7** | Planner tab + plan-driven scheduling | ✅ 2026-08-12, uncommitted | Compiles down to existing slots |
+
+### R-7 as actually built (2026-08-12)
+
+Differs from §7 above in three ways worth recording:
+
+1. **Monthly targets are derived, not stored.** §8's schema proposed
+   `photos_per_month` / `reels_per_month`. Storing both invites drift, so weekly is the one
+   truth and monthly is computed at ×4.348 — either field can still be typed into.
+2. **A target/schedule mismatch is an *error*, not a warning.** The scheduler is
+   capacity-driven: it fires every chosen time on every chosen day, publishing
+   `days × times` regardless of the target. So a mismatch does not miss slightly, it
+   quietly does something else. Changing a target now auto-picks evenly spread days.
+3. **`post_days` had to be added to `social_settings`.** §7 assumed a plan compiles down to
+   `slot_times`, but `slot_times` has no concept of *which days* — so every time fired every
+   day and no weekly target could be honoured. `findDueSlot` now gates on the weekday.
+
+**Week grid only.** The month grid in §7 is not built.
 
 **R-2 is where quality is won or lost.** Auto-generated slideshows look cheap when pacing
 and easing are wrong, and Meta demotes low-effort content. Expect to iterate on the look

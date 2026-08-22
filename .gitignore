@@ -157,3 +157,8 @@ qa-*.png
 .mcp
 *.mcp.json
 .mcp.json
+
+# Raw product photography dropped in for upload (~800MB of source PNGs).
+# The optimised WebP derivatives live in Supabase Storage and are what the site serves;
+# committing the originals would permanently bloat the repo and every CI checkout.
+new articles august 2026/

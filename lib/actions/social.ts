@@ -14,9 +14,12 @@ import {
 } from "@/lib/social/publish";
 import { getPublishingQuota } from "@/lib/social/adapters/instagram";
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
-import { buildUploadCaption } from "@/lib/social/caption";
+import {
+  buildUploadCaption, uploadCaptionHook, UPLOAD_CAPTION_VARIANTS,
+} from "@/lib/social/caption";
 import { buildProductReel, buildCollectionReel } from "@/lib/social/reel/build";
 import { canEncodeHere } from "@/lib/social/reel/encode";
+import { ensureReelCover } from "@/lib/social/reel/cover";
 import { publishQueuedReel } from "@/lib/social/reel/publish";
 
 /**
@@ -127,6 +130,76 @@ export async function skipQueuedPost(id: string): Promise<void> {
   revalidatePath("/admin/social");
 }
 
+/**
+ * Approve one logical post and publish it to the chosen platforms, in one action.
+ *
+ * A post fans out to one `social_post_log` row per platform, all sharing a `group_id`. The
+ * review queue used to list those rows individually, so a three-platform post asked the
+ * owner to approve the same picture and caption three times — and the count only grows as
+ * platforms are added. This approves the *post*, which is the thing the owner actually
+ * decided about.
+ *
+ * `platforms` is the subset to publish. Anything in the group left out is marked `skipped`
+ * rather than left pending, so an unticked platform is a decision that has been recorded
+ * instead of an item that silently reappears in the queue tomorrow.
+ *
+ * Platforms publish **sequentially and independently**: one failing never stops the next,
+ * and each row records its own outcome. That mirrors how the scheduled path already behaves.
+ */
+export async function approveAndPublishGroup(
+  groupId: string,
+  platforms: string[],
+): Promise<{ ok: boolean; published: number; failed: number; results: unknown[] }> {
+  const sb = createAdminClient();
+
+  const { data: rows, error } = await sb
+    .from("social_post_log")
+    .select("id, platform")
+    .eq("group_id", groupId)
+    .in("status", ["pending", "approved"]);
+
+  if (error) throw new Error(error.message);
+
+  const chosen = (rows ?? []).filter((r) => platforms.includes(r.platform as string));
+  const dropped = (rows ?? []).filter((r) => !platforms.includes(r.platform as string));
+
+  // Record the platforms the owner deliberately excluded, before publishing anything.
+  if (dropped.length > 0) {
+    await sb
+      .from("social_post_log")
+      .update({ status: "skipped" })
+      .in("id", dropped.map((r) => r.id as string));
+  }
+
+  const results: unknown[] = [];
+  let published = 0;
+  let failed = 0;
+
+  for (const row of chosen) {
+    await sb.from("social_post_log").update({ status: "approved" }).eq("id", row.id as string);
+    const result = await publishLogEntry(row.id as string);
+    const ok = (result as { ok?: boolean })?.ok === true;
+    if (ok) published += 1;
+    else failed += 1;
+    results.push({ platform: row.platform, result });
+  }
+
+  revalidatePath("/admin/social");
+  return { ok: failed === 0, published, failed, results };
+}
+
+/** Skip every platform of one logical post, so the whole thing leaves the queue together. */
+export async function skipQueuedGroup(groupId: string): Promise<void> {
+  const sb = createAdminClient();
+  const { error } = await sb
+    .from("social_post_log")
+    .update({ status: "skipped" })
+    .eq("group_id", groupId)
+    .in("status", ["pending", "approved"]);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/social");
+}
+
 /** Retry a failed post using the caption and images already generated for it. */
 export async function retryFailedPost(id: string): Promise<unknown> {
   const result = await publishLogEntry(id);
@@ -156,29 +229,66 @@ export async function fetchPlatforms(): Promise<SocialPlatformRow[]> {
 }
 
 /**
- * Enables or disables posting to a platform.
+ * Enables or disables one *kind* of content on one platform.
  *
- * Refuses to enable one we cannot publish to — `supported` reflects whether an adapter
- * exists, and a platform toggled on without one would fail silently every run.
+ * Photos and reels are switched independently because they are genuinely independent
+ * destinations: TikTok cannot receive a static product post at all, and a platform that
+ * suits reels may be somewhere the owner never wants a product photograph. A single shared
+ * switch could express neither.
+ *
+ * Refuses to enable a combination we cannot publish — `supports_photo` / `supports_video`
+ * reflect whether an adapter exists, and a platform switched on without one would fail
+ * silently on every run.
  */
-export async function setPlatformEnabled(key: string, enabled: boolean): Promise<void> {
+export async function setPlatformEnabled(
+  key: string,
+  kind: "photo" | "video",
+  enabled: boolean,
+): Promise<void> {
   const sb = createAdminClient();
+  const capability = kind === "video" ? "supports_video" : "supports_photo";
 
   if (enabled) {
     const { data } = await sb
       .from("social_platforms")
-      .select("supported, name")
+      .select("supports_photo, supports_video, name")
       .eq("key", key)
       .maybeSingle();
-    if (!data?.supported) {
-      throw new Error(`${data?.name ?? key} has no adapter yet, so it cannot be enabled.`);
+    if (!data?.[capability]) {
+      throw new Error(
+        `${data?.name ?? key} has no ${kind === "video" ? "reel" : "photo"} adapter yet, so it cannot be switched on for ${kind === "video" ? "reels" : "photos"}.`,
+      );
+    }
+
+    /*
+     * Pinterest needs an account *and* a board before it can publish anything — Pinterest
+     * has no concept of a pin without a board. Guarded on the server rather than only by
+     * disabling the toggle, so the failure is a clear message now instead of an error on
+     * every scheduled run later.
+     */
+    if (key === "pinterest") {
+      const { data: account } = await sb
+        .from("social_accounts")
+        .select("credentials, meta")
+        .eq("platform", "pinterest")
+        .maybeSingle();
+
+      const token = (account?.credentials as { access_token?: string } | null)?.access_token;
+      const boardId = (account?.meta as { board_id?: string } | null)?.board_id;
+
+      if (!token) throw new Error("Connect the Pinterest account first.");
+      if (!boardId) throw new Error("Choose a Pinterest board first — every pin needs one.");
     }
   }
 
-  const { error } = await sb
-    .from("social_platforms")
-    .update({ enabled, updated_at: new Date().toISOString() })
-    .eq("key", key);
+  // Written as two literal shapes rather than one computed key: a computed property widens
+  // the object to a string index signature, which the generated Update type rejects.
+  const patch: TablesUpdate<"social_platforms"> =
+    kind === "video"
+      ? { video_enabled: enabled, updated_at: new Date().toISOString() }
+      : { photo_enabled: enabled, updated_at: new Date().toISOString() };
+
+  const { error } = await sb.from("social_platforms").update(patch).eq("key", key);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/social");
 }
@@ -580,16 +690,33 @@ export async function registerUploadedReel(input: {
   durationSeconds?: number;
 }): Promise<{ ok: boolean; detail?: string }> {
   const sb = createAdminClient();
-  const { error } = await sb.from("social_media_queue").insert({
-    kind: "upload",
-    product_ids: [],
-    video_url: input.publicUrl,
-    caption: input.caption.trim() || null,
-    duration_seconds: input.durationSeconds ?? null,
-    status: "draft",
-    platform: "instagram",
-  });
+  const { data: inserted, error } = await sb
+    .from("social_media_queue")
+    .insert({
+      kind: "upload",
+      product_ids: [],
+      video_url: input.publicUrl,
+      caption: input.caption.trim() || null,
+      duration_seconds: input.durationSeconds ?? null,
+      status: "draft",
+      platform: "instagram",
+    })
+    .select("id")
+    .single();
   if (error) return { ok: false, detail: error.message };
+
+  /*
+   * Give it a cover straight away, from the video's last frame.
+   *
+   * A generated reel gets one from its source stills; an upload has none, so nothing ever
+   * set `thumbnail_url` and the row could not be pinned — Pinterest requires a cover image
+   * for a video pin, unlike Meta which makes its own.
+   *
+   * Best-effort on purpose: this needs ffmpeg, which exists on the owner's machine but not
+   * on Vercel. A failure here must not lose an upload that is otherwise fine for Instagram
+   * and Facebook, so it is awaited for the result but never allowed to throw.
+   */
+  await ensureReelCover(inserted.id);
 
   revalidatePath("/admin/social");
   return { ok: true };
@@ -673,6 +800,7 @@ export async function publishReelNow(id: string): Promise<{ ok: boolean; detail:
 export async function approveAndPublishReel(
   id: string,
   caption?: string,
+  platforms?: string[],
 ): Promise<{ ok: boolean; detail: string }> {
   const sb = createAdminClient();
   if (caption !== undefined) {
@@ -686,7 +814,7 @@ export async function approveAndPublishReel(
     .eq("status", "draft");
   if (error) return { ok: false, detail: error.message };
 
-  const result = await publishQueuedReel(id);
+  const result = await publishQueuedReel(id, platforms);
   revalidatePath("/admin/social");
   return { ok: result.ok, detail: result.detail };
 }
@@ -761,7 +889,45 @@ export async function rebuildReel(id: string): Promise<{ ok: boolean; detail: st
  * when accepted.
  */
 export async function suggestUploadCaption(): Promise<string> {
-  return buildUploadCaption().caption;
+  const sb = createAdminClient();
+
+  /*
+   * Pick a wording that has not been used recently.
+   *
+   * The previous version seeded the caption from the current date, so every video uploaded
+   * on the same day came out byte-identical — and two reels a week apart could still match.
+   * Consecutive identical captions read as carelessness to a person and as automation to
+   * Instagram, which is the one thing an automated account should not look like.
+   *
+   * Same least-recently-used rule the product rotation already runs on: walk the whole set
+   * before repeating any of it.
+   */
+  const { data } = await sb
+    .from("social_media_queue")
+    .select("caption")
+    .not("caption", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(UPLOAD_CAPTION_VARIANTS);
+
+  const recent = (data ?? []).map((r) => r.caption ?? "");
+
+  let best = 0;
+  let bestAge = -1;
+  for (let variant = 0; variant < UPLOAD_CAPTION_VARIANTS; variant++) {
+    const hook = uploadCaptionHook(variant);
+    const lastUsed = recent.findIndex((c) => c.startsWith(hook));
+
+    // Never used: take it immediately — nothing can be staler than that.
+    if (lastUsed === -1) return buildUploadCaption(variant).caption;
+
+    // Otherwise remember whichever was used longest ago.
+    if (lastUsed > bestAge) {
+      bestAge = lastUsed;
+      best = variant;
+    }
+  }
+
+  return buildUploadCaption(best).caption;
 }
 
 /**

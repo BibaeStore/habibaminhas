@@ -714,38 +714,44 @@ export type Database = {
         Row: {
           created_at: string
           description: string
-          enabled: boolean
           handle: string | null
           key: string
           name: string
+          photo_enabled: boolean
           profile_url: string | null
           sort_order: number
-          supported: boolean
+          supports_photo: boolean
+          supports_video: boolean
           updated_at: string
+          video_enabled: boolean
         }
         Insert: {
           created_at?: string
           description: string
-          enabled?: boolean
           handle?: string | null
           key: string
           name: string
+          photo_enabled?: boolean
           profile_url?: string | null
           sort_order?: number
-          supported?: boolean
+          supports_photo?: boolean
+          supports_video?: boolean
           updated_at?: string
+          video_enabled?: boolean
         }
         Update: {
           created_at?: string
           description?: string
-          enabled?: boolean
           handle?: string | null
           key?: string
           name?: string
+          photo_enabled?: boolean
           profile_url?: string | null
           sort_order?: number
-          supported?: boolean
+          supports_photo?: boolean
+          supports_video?: boolean
           updated_at?: string
+          video_enabled?: boolean
         }
         Relationships: []
       }
@@ -937,6 +943,8 @@ export type Database = {
           id: string
           image_urls: string[] | null
           permalink: string | null
+          pin_link: string | null
+          pin_title: string | null
           platform: string
           posted_at: string | null
           product_id: string | null
@@ -960,6 +968,8 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           permalink?: string | null
+          pin_link?: string | null
+          pin_title?: string | null
           platform: string
           posted_at?: string | null
           product_id?: string | null
@@ -983,6 +993,8 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           permalink?: string | null
+          pin_link?: string | null
+          pin_title?: string | null
           platform?: string
           posted_at?: string | null
           product_id?: string | null
@@ -1012,8 +1024,11 @@ export type Database = {
           min_images: number
           period: string
           platforms: string[]
+          post_days: number[]
           posts_per_period: number
           products_per_post: number
+          reel_days: number[]
+          reel_times: string[]
           require_in_stock: boolean
           slot_times: string[]
           timezone: string
@@ -1028,8 +1043,11 @@ export type Database = {
           min_images?: number
           period?: string
           platforms?: string[]
+          post_days?: number[]
           posts_per_period?: number
           products_per_post?: number
+          reel_days?: number[]
+          reel_times?: string[]
           require_in_stock?: boolean
           slot_times?: string[]
           timezone?: string
@@ -1044,8 +1062,11 @@ export type Database = {
           min_images?: number
           period?: string
           platforms?: string[]
+          post_days?: number[]
           posts_per_period?: number
           products_per_post?: number
+          reel_days?: number[]
+          reel_times?: string[]
           require_in_stock?: boolean
           slot_times?: string[]
           timezone?: string

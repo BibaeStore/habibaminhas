@@ -1,10 +1,158 @@
 # TRACKER — Social Automation
 
-**Last updated:** 2026-08-11 (fifth update — app migrated, two silent bugs fixed)
-**Status:** ✅ **Phase 1 built and proven end to end.** Three products published to both
-platforms. `social_settings.enabled = true`, but the **pg_cron job `social-post-slots` is
-still `active = false`**, so nothing publishes on a schedule — every post so far went out
-by hand through the review queue.
+**Last updated:** 2026-08-12 (seventh update — reels shipped, admin rebuilt, planner built,
+scheduler switched on, TikTok researched)
+
+**Status:** ✅ **Phases 1, 1b and 2 (reels) built.** Planner built. The pg_cron job
+`social-post-slots` is now **`active = true`** — the scheduler runs for the first time.
+Nothing publishes without approval: `approval_required = true`, so posts queue for review.
+
+## 🔴 Open right now — read first
+
+| # | Issue | Severity |
+|---|---|---|
+| 1 | **Production code is out of sync with the live database.** The `social_platforms` column rename is applied to production, but the code that reads it is on an unmerged branch. **Reel publishing from the live admin is broken** until `feat/social-restructure` is deployed | 🔴 High |
+| 2 | Nothing from 2026-08-12 is committed or pushed. Branch `feat/social-restructure` | 🟡 |
+| 3 | `META_SYSTEM_USER_TOKEN` was pasted into a chat transcript on 2026-08-09 — **still not rotated** | 🟡 |
+| 4 | New Meta app contact email is `bibaestore@gmial.com` (typo), and ToS / data-deletion URLs still point at `facebook.com` | 🟡 |
+
+### Current live configuration — verified 2026-08-12
+
+| Setting | Value |
+|---|---|
+| Active plan | **"August Plan"**, 12 → 31 Aug |
+| Photos | 7/week · every day · 19:00 |
+| Reels | 2/week · Mon & Fri · 20:00 |
+| `social_settings.enabled` | `true` |
+| `approval_required` | `true` — **photos queue for review, they do not auto-publish** |
+| `max_posts_per_day` | 2 |
+| pg_cron `social-post-slots` | **`active = true`** (enabled 2026-08-12; had never run before) |
+| Platforms — photos | Instagram ✅ Facebook ✅ |
+| Platforms — reels | Instagram ✅ Facebook ✅ |
+
+---
+
+## Session 2026-08-13 — Pinterest connect flow
+
+**Built** (uncommitted, same branch):
+
+| File | What |
+|---|---|
+| `lib/social/adapters/pinterest.ts` | OAuth token exchange + **lazy** refresh, account, boards, image pins, 4-step video pins |
+| `app/api/social/pinterest/callback/route.ts` | OAuth callback with `state` verification |
+| `lib/actions/social-pinterest.ts` | Connect / disconnect / list boards / choose board / create board / test |
+| Platforms modal | Connect button, connected account, board picker, expiry warning |
+| Migration `pinterest_platform_capabilities` | `supports_photo` + `supports_video` = true; both `*_enabled` left **false** |
+
+**Three decisions worth recording:**
+
+1. **Refresh is lazy, not scheduled.** Checked before every call, refreshing if under a day
+   remains. A cron job is one more thing that can stop unnoticed — and this project has
+   already had a pg_cron job sit inactive for days without anyone spotting it.
+2. **The board lives on the connection**, in `social_accounts.meta`, not per post.
+   Pinterest has no concept of a pin without a board.
+3. **`setPlatformEnabled` refuses to switch Pinterest on** without both a token and a board,
+   server-side. Otherwise it fails on every scheduled run instead of once, clearly, now.
+
+**Not done:** publishing is **not wired**. `publish.ts` still carries a hardcoded
+`p === "instagram" || p === "facebook"` filter — the same pattern already removed from the
+reel publisher — so a pin would never be attempted even with the platform enabled.
+
+**Owner setup outstanding:** business account, app registration, both redirect URIs
+(production *and* `localhost:3000`, so it can be connected without deploying), scopes, and
+`PINTEREST_APP_ID` / `PINTEREST_APP_SECRET`.
+
+---
+
+## Session 2026-08-12 — admin rebuilt, planner, scheduler on
+
+### What shipped (all on `feat/social-restructure`, **not committed**)
+
+**The admin was reorganised, because it had become two applications sharing a URL.** A photo
+post's life ran across three tabs (Schedule → Review queue → Posts) while a reel's whole
+life sat inside one tab with private sub-tabs. The same question had two different answers
+depending on which content type you asked about.
+
+Now **three pages**, with everything shared behind header buttons:
+
+```
+/admin/social          Posts     [Upcoming | Review | Published]
+/admin/social/reels    Reels     [Upcoming | Upload | Review | Published]
+/admin/social/planner  Planner
+                       header → Platforms · Collaborators · Posting rules (modals)
+                       header → active plan badge, opens that plan's week
+```
+
+- `/admin/social/settings` was **deleted** — it became modals. On a page, the schedule sat
+  under two long scrolling lists where nothing suggested it existed.
+- Sub-tabs replaced stacked sections: reaching "Published" no longer means scrolling past
+  everything upcoming and everything awaiting review.
+- Published items are **tables with a detail popup** rather than editable cards. An
+  Instagram caption cannot be edited in place anyway, so every historical post carried a
+  textarea that did nothing.
+- The week **calendar** is now the primary "Upcoming" view — past days show what actually
+  published, future days show what the plan lays out.
+
+### Schema changes (applied to production directly via MCP)
+
+| Migration | What |
+|---|---|
+| `social_platforms_per_content_type` | Dropped `enabled` + `supported`. Added `supports_photo`, `supports_video` (capability) and `photo_enabled`, `video_enabled` (choice) |
+| `social_settings_post_days` | Added `post_days`, `reel_days`, `reel_times` |
+
+> 🔴 **Both are applied to the production database while the code that reads them is
+> unmerged.** See "Open right now" at the top. The photo path survives on a fallback to
+> `settings.platforms`; **reel publishing from the live admin does not.**
+
+### Bugs found and fixed
+
+1. **Platform targeting was one flag for two content types.** A single `enabled` column
+   governed photos *and* reels, so switching on a video-only platform such as TikTok would
+   also have aimed static posts at it. The reel publisher papered over this with a
+   hardcoded `key in ('instagram','facebook')` filter — and its dispatch was
+   `platform === "instagram" ? … : publishFacebookReel(…)`, so **any** future platform
+   would have silently posted to the Facebook Page. Dispatch is now an explicit `switch`
+   with an unknown-platform branch.
+2. **`ReferenceError: PlanRow is not defined` — the planner was completely broken.** A type
+   *re-export* (`export type { PlanRow }`) inside a `"use server"` file; Next's server-action
+   transform emits it as a runtime re-export of something that only exists at compile time.
+   **`tsc`, `eslint` and `next build` all passed** — it only failed when the server ran.
+   *Lesson: build-clean is not run-clean for server actions.*
+3. **`spawn \ROOT\node_modules\ffmpeg-static\ffmpeg.exe ENOENT` — the Generate button never
+   worked.** `ffmpeg-static` computes its path as `path.join(__dirname, …)`, and Next's
+   bundler rewrites `__dirname` to `/ROOT`. The CLI script always worked because tsx does
+   not bundle. `resolveFfmpeg()` now treats the exported path as a hint and falls back to
+   `process.cwd()/node_modules/...`, erroring with both paths named.
+4. **Upload captions were identical for every upload on the same day.** `buildUploadCaption`
+   seeded from *the current date*. It now takes an explicit variant over **432**
+   combinations, and the caller picks the least recently used by checking existing captions.
+5. **Feedback rendered off-screen.** Action results appeared at the top of a long page, so a
+   button pressed near the bottom looked dead whether it worked or failed — this is what
+   hid bug 3 for hours. Replaced with a fixed toast plus inline progress.
+6. **No concept of a week anywhere.** `slot_times` said what time of day but nothing said
+   which days, so every time fired every day and no weekly target could be held to.
+   `findDueSlot` now gates on `post_days`, and Posting rules has a day picker.
+7. **`publishApprovedReels` was dead code.** It existed but nothing called it, so an
+   approved reel sat in `approved` forever. Now wired into the cron as `runScheduledReels`,
+   on its own days/times, in its own `try/catch` so a reel failure cannot stop the photo post.
+
+### Scheduler switched on
+
+`social-post-slots` moved from `active = false` to **`active = true`**. Its
+`cron.job_run_details` was **completely empty** — it had never run once since being created.
+`approval_required` was deliberately left `true`, so the first days produce review items
+rather than live posts.
+
+### Not done
+
+- **R-6 audio** — untouched.
+- **Month view** — only a week calendar exists.
+- **Post types** (educational / awareness / promotional) — the owner asked for these in the
+  planner; deferred by agreement until the planner itself settled. Needs an artwork
+  decision: auto-rendered cards vs owner-supplied.
+- Nothing committed.
+
+---
 
 ### 🔄 Meta app migrated — 2026-08-11
 
@@ -387,20 +535,27 @@ owner 2026-08-11, who asked why the social tab has no planner for scheduled post
 counts, videos and audio.
 
 Short version: *scheduling and post counts already exist* (as slots per day). Reels, video
-and audio genuinely do not, and **audio is blocked behind video** — Instagram only allows
+and audio genuinely did not, and **audio is blocked behind video** — Instagram only allows
 audio on Reels, and a static image has no audio track to attach one to.
 
-| # | Task | Status | Depends on |
-|---|---|---|---|
-| P-1 | Trending-audio probe — does `/ig_audio` return Pakistani tracks? | ⬜ | Nothing — ten minutes |
-| P-2 | Planner / calendar view (read-only first) | ⬜ | Nothing |
-| P-3 | Cadence stated in plain language on the Schedule tab | ⬜ | Nothing |
-| P-4 | `social_media_queue` table + `social-media` bucket + upload tab | ⬜ | P-1 |
-| P-5 | Reel publishing + async status polling | ⬜ | P-4 |
-| P-6 | Trending-audio attachment | ⬜ | P-5, P-1 |
-| P-7 | Independent reel cadence | ⬜ | P-5 |
+> ⚠️ **Numbering warning.** Doc 05 tracks this work as **R-0…R-7**. The git commits call
+> the same work **"Phase 1–4"**, which is a *different scale* — commit "Phase 1" is R-2.
+> Trust the R-numbers below; the commit titles are misleading.
 
-**P-1 to P-3 need no video pipeline and cannot break publishing — do those first.**
+| # | Task | Status | Where |
+|---|---|---|---|
+| R-0 | Trending-audio probe | ✅ **Done — negative result** | `1fa96d3` · doc 05 §1 |
+| R-1 | `social_media_queue` + `social_plans` + `social-media` bucket | ✅ | `1fa96d3` |
+| R-2 | Reel builder, Format A (one product) | ✅ | `74e8c00` ("Phase 1") |
+| R-3 | Reels review desk | ✅ | `c9229d5`, `36cbf87` ("Phase 2") |
+| R-4 | Publish reels to Instagram **and** Facebook | ✅ | `d4fc328`, `cd37522`, `35bfbc4` ("Phase 3") |
+| R-5 | Format B (collection reel) | ✅ | `fa41bad` ("Phase 4") |
+| **R-6** | **Audio library + mixing** | ⬜ **Not started** | `social_audio_tracks` does not exist |
+| R-7 | Planner + plan-driven scheduling | ✅ | uncommitted, branch `feat/social-restructure` |
+
+**R-6 is the only part of doc 05 still unbuilt.** It needs a one-time licensed music
+library seeded into the `social-media` bucket — see doc 05 §2 for why trending audio is not
+available to any API.
 
 ---
 
@@ -409,11 +564,18 @@ audio on Reels, and a static image has no audio track to attach one to.
 Each is one adapter file plus one `social_accounts` row. Sequenced by how well each
 tolerates automation.
 
+> **What makes a platform hard is the auth model, not the API.** Meta is uniquely easy: a
+> System User token never expires and needs no login flow. TikTok, Pinterest, YouTube and
+> Threads all require user OAuth plus a refresh that must run forever. **That machinery is
+> built once and reused** — whichever of them comes first pays for the rest.
+
 | Platform | Automation friendliness | Status | Note |
 |---|---|---|---|
-| Pinterest | Good — official API, and the audience matches | ⬜ | Best next after Meta |
+| **TikTok** | Medium — API exists, but **audit gates all public reach** | 🔵 **Researched 2026-08-12 — [06-TIKTOK.md](./06-TIKTOK.md)** | **Video only** by owner decision. App `7673180229468211201` created 2026-08-12, still Draft. Needs OAuth + 24h token refresh |
+| **Pinterest** | **Good — the easiest left** | 🟡 **Connect flow + adapter BUILT 2026-08-13.** Blocked on owner setup; publishing not yet wired | **Trial mode is limited to the app owner's own account — which is all we need**, so no review, exactly as Standard Access made Meta App Review unnecessary. Best audience fit remaining, and pins carry a link to the product page so it sends *traffic* rather than only reach. Access token 30d, refresh 60d **refreshable indefinitely**. No domain verification needed for pin media |
+| **YouTube Shorts** | Medium — Google OAuth, upload is a sensitive scope | ⬜ | **Our 9:16 MP4 reels upload as-is with no re-encoding.** Quota ~6 uploads/day, far above need |
+| **Threads** | Medium — **not as easy as being Meta suggests** | ⬜ | Separate app review (2–6 weeks), separate scopes, Tech Provider Verification. Text-first, so a weak fit for garments. 250 posts/24h |
 | LinkedIn | Good — official API | ⬜ | Weakest audience fit for this brand |
-| TikTok | Medium — Content Posting API exists, stricter review | ⬜ | Video-first, pairs with Phase 2 |
 | X / Twitter | Medium — API is paid at useful tiers | ⬜ | Check current pricing before committing |
 | Reddit | **Poor fit** | ⬜ | Automated promotion gets accounts banned. Manual only |
 | Quora | **Poor fit** | ⬜ | Same. Answer real questions by hand |
@@ -467,4 +629,5 @@ Re-run the query in `README.md` § finding 2 to refresh these.
 | 2026-08-09 | Researched via Meta DevTools MCP. **App Review found to be not required** (biggest blocker retired). Business Verification also retired. PPA confirmed not applicable. Page/Portfolio/IG IDs confirmed. All 6 decisions answered. Added B-14 (token refresh) and B-15 (test post). Corrected rate limit 100 → 50. Captured API error-code constraints. Still nothing implemented |
 | 2026-08-09 | Phase 1 implemented and the **first real post published** to both platforms |
 | 2026-08-10 | App switched to Live mode. App Review submission abandoned. Phase 1b shipped: collaborators, platform registry, post control, drag-drop queue |
+| 2026-08-12 | **Reels R-2 → R-5 shipped** (product reel, review desk, publish to both platforms, collection reel). **Admin rebuilt** into three pages with shared settings as header modals and sub-tabs per page. **Planner built** (R-7) — named plans, targets, validation, week calendar, compile-down to the scheduler. Two migrations applied: per-content-type platform flags, and day-of-week scheduling. **Seven bugs fixed**, including a completely broken planner (`PlanRow` runtime ReferenceError that passed every build check) and a Generate button that had never worked (`__dirname` → `/ROOT` in the bundled ffmpeg path). **pg_cron `social-post-slots` switched on for the first time** — it had never run. **TikTok researched** → [06](./06-TIKTOK.md). ⚠️ Left uncommitted, and the applied migrations put production out of sync with deployed code |
 | 2026-08-11 | **Meta app migrated** to `4259780697609294` after the old one stopped issuing tokens; took three token attempts to reach 21 scopes. Ivory Noir published on the new token — both platforms. **Three bugs found and fixed**: collaborators never passed on the queue publish path, drag-and-drop order never persisted, and the daily ceiling counted platform rows instead of posts (so "2" meant one post/day and silently blocked "Post now"). **Meta's negative-caching of failed media URLs identified and worked around.** Phase 2 re-scoped as planner + Reels + audio ([05](./05-PLANNER-REELS-AUDIO.md)) |
