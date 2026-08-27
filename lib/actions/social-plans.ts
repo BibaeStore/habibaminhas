@@ -150,6 +150,8 @@ export async function duplicatePlan(id: string): Promise<PlanRow> {
     photos_per_week: source.photos_per_week,
     photo_days: source.photo_days,
     photo_times: source.photo_times,
+    photo_window_start: source.photo_window_start,
+    photo_window_end: source.photo_window_end,
     reels_per_week: source.reels_per_week,
     reel_days: source.reel_days,
     reel_times: source.reel_times,

@@ -767,3 +767,115 @@ export function relativeTime(iso: string | null): string {
   if (days < 30) return `${days}d ago`;
   return new Date(then).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
+
+/**
+ * The evening window a daily posting time is drawn from.
+ *
+ * Shared by all three screens that can change the photo schedule — the settings page, the
+ * settings drawer and the planner — because the alternative is three controls that drift
+ * apart, and the window is precisely the setting where the owner must be able to trust that
+ * what one screen says is what another does.
+ *
+ * Switching the toggle off clears both bounds, which is what makes the fixed-times list take
+ * over again: the scheduler treats a half-set window as no window at all.
+ */
+export function SlotWindowEditor({
+  start, end, stepMinutes = 15, timezone, onChange, disabled,
+}: {
+  start: string | null;
+  end: string | null;
+  /** Read-only here — it has to match the pg_cron tick, so it is not an admin-editable field. */
+  stepMinutes?: number;
+  timezone?: string;
+  onChange: (start: string | null, end: string | null) => void;
+  disabled?: boolean;
+}) {
+  const on = Boolean(start && end);
+  const preview = describeSlotWindow(start, end, stepMinutes);
+
+  return (
+    <div className="space-y-3">
+      <label className="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          checked={on}
+          disabled={disabled}
+          onChange={(e) => (e.target.checked ? onChange("18:30", "21:30") : onChange(null, null))}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--admin-accent)]"
+        />
+        <span>
+          <span className="block text-[14px] font-semibold text-[var(--admin-text)]">
+            Vary the time each day
+          </span>
+          <span className="block text-[13px] text-[var(--admin-text-muted)]">
+            One post a day at a time drawn from the window below, instead of the same clock time
+            every day. The fixed times above are ignored while this is on.
+          </span>
+        </span>
+      </label>
+
+      {on && (
+        <div className="space-y-2 rounded-lg border-2 border-slate-300 bg-[var(--admin-bg)] p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Clock size={15} className="shrink-0 text-[var(--admin-text-muted)]" />
+            <input
+              type="time"
+              value={start ?? ""}
+              disabled={disabled}
+              onChange={(e) => onChange(e.target.value || null, end)}
+              className={`${inputCls} max-w-[140px]`}
+              aria-label="Window starts"
+            />
+            <span className="text-[14px] text-[var(--admin-text-muted)]">to</span>
+            <input
+              type="time"
+              value={end ?? ""}
+              disabled={disabled}
+              onChange={(e) => onChange(start, e.target.value || null)}
+              className={`${inputCls} max-w-[140px]`}
+              aria-label="Window ends"
+            />
+          </div>
+          <p className="text-[13px] text-[var(--admin-text-muted)]">
+            {preview}
+            {timezone ? ` · ${timezone}` : ""}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A plain-language summary of a window, including the bit that surprises people.
+ *
+ * The count matters: the scheduler ticks every 15 minutes, so a three-hour window holds 13
+ * possible times and not "any time at all". Saying so here is the difference between an owner
+ * who understands why a time recurred after a fortnight and one who thinks it is broken.
+ */
+export function describeSlotWindow(
+  start: string | null,
+  end: string | null,
+  stepMinutes = 15,
+): string {
+  const from = timeToMinutes(start);
+  const to = timeToMinutes(end);
+  if (from === null || to === null) return "Set both ends of the window.";
+  if (to < from) return "The window has to end after it starts.";
+
+  const count = Math.floor((to - from) / stepMinutes) + 1;
+  if (count <= 1) return "Only one time fits in that window — it will post at the same time daily.";
+
+  const noRepeat = Math.floor(count / 3) + 1;
+  return `${count} possible times, ${stepMinutes} minutes apart. Every one is used before any repeats, and no time comes round again inside ${noRepeat} days.`;
+}
+
+function timeToMinutes(time: string | null): number | null {
+  if (!time) return null;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}

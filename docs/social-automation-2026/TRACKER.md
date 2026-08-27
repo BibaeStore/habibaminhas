@@ -1,11 +1,58 @@
 # TRACKER — Social Automation
 
-**Last updated:** 2026-08-12 (seventh update — reels shipped, admin rebuilt, planner built,
-scheduler switched on, TikTok researched)
+**Last updated:** 2026-08-27 (eighth update — audit of the live pipeline, and the fixed
+19:00 photo slot replaced with a randomised evening window)
 
-**Status:** ✅ **Phases 1, 1b and 2 (reels) built.** Planner built. The pg_cron job
-`social-post-slots` is now **`active = true`** — the scheduler runs for the first time.
-Nothing publishes without approval: `approval_required = true`, so posts queue for review.
+**Status:** ✅ **Phases 1, 1b and 2 (reels) built.** Planner built. `social-post-slots` is
+`active = true` and has published **10 consecutive days without a miss** (18–27 Aug).
+
+> ⚠️ **`approval_required` is `false`, not `true`.** It was changed on 2026-08-18. Photos
+> **auto-publish** — they do not queue for review. Earlier updates in this file say the
+> opposite and are wrong; this line is the current one.
+
+## Session 2026-08-27 — audit, and the randomised posting window
+
+**Audited first, against the live database rather than these docs.**
+
+| Working | Evidence |
+|---|---|
+| Daily photo post | 10 consecutive days, 18–27 Aug, every one at 19:00–19:01 PKT |
+| Instagram | 21 posts, 0 failures |
+| Facebook | 21 posts, 0 failures |
+| Occasion agent | published 25 Aug 10:00 PKT |
+| Reels | 1 scheduled drain, 24 Aug 20:00 PKT |
+
+| Not working | Severity |
+|---|---|
+| **Pinterest fails daily** — 6 consecutive failures 22–27 Aug, "Apps with Trial access may not create Pins in production". Still blocked on Standard access | 🔴 |
+| **6 approved reels backlogged**, oldest approved 12 Aug. Drains 1 per slot, 2 slots a week | 🟡 |
+| Active plan "August Plan" expires **31 Aug**. Nothing breaks — `active_to` is not enforced by the scheduler, the compiled settings simply persist — but the planner will show an expired plan governing live posting | 🟡 |
+| `META_SYSTEM_USER_TOKEN` still not rotated (pasted into a transcript 9 Aug) | 🟡 |
+
+**Built** — branch `feat/social-random-slot-window`:
+
+| File | What |
+|---|---|
+| `lib/social/slot-window.ts` | **New.** Pure module. Derives one posting time per calendar date from a window. No clock, no DB, no state |
+| `lib/social/config.ts` | `resolvePhotoSlots()` — today's times, window or fixed |
+| `lib/social/publish.ts` | Uses the resolver; `slotAlreadyRan` made window-aware |
+| `lib/social/plan.ts` | Window carried through `compilePlan`, capacity arithmetic, and the calendar preview |
+| `lib/actions/social-plans.ts` | Window survives duplicate + compile |
+| `components/admin/social/ui.tsx` | `SlotWindowEditor`, shared by all three schedule screens |
+| `supabase/migrations/20260827_social_random_slot_window.sql` | Additive columns + the 18:30–21:30 seed |
+
+**Live config now:** `slot_window_start = 18:30`, `slot_window_end = 21:30`, step 15 min —
+13 possible times, every one used before any repeats, no repeat inside 5 days. Reels are
+untouched (Mon/Fri 20:00) and a photo drawn within 45 min of a reel slot is moved.
+
+**The research question, answered:** a fixed daily time is *not* something Meta penalises.
+Publishing via the Content Publishing API is sanctioned, the documented ceiling is 100 API
+posts/24h, and Mosseri has stated scheduled posts are not down-ranked. The reason to vary
+the time is coverage and measurement, not ban risk. Detail in `03-CONTENT-AND-SCHEDULE.md`.
+
+**Not done, deliberately:** the pg_cron tick is still every 15 minutes. That caps the grid
+at 13 times for a 3-hour window, so a full month with no repeat is unreachable. Raising the
+job to `*/5` would give 37 — a one-line change, not yet requested.
 
 ## 🔴 Open right now — read first
 

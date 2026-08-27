@@ -1,4 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import {
+  parseWindow,
+  pickSlotForDate,
+  REEL_COLLISION_GAP_MINUTES,
+  type SlotWindow,
+} from "./slot-window";
 
 /**
  * Configuration for the social posting pipeline.
@@ -55,6 +61,15 @@ export type SocialSettings = {
   products_per_post: number;
   timezone: string;
   slot_times: string[];
+  /**
+   * Evening window a single daily posting time is drawn from, "HH:MM" in `timezone`.
+   *
+   * Both set   -> `slot_times` is ignored and the time varies day to day (see slot-window.ts).
+   * Either null -> the fixed `slot_times` list, which is the behaviour that predates windows.
+   */
+  slot_window_start: string | null;
+  slot_window_end: string | null;
+  slot_window_step_minutes: number;
   /** Weekdays photos may post on, 0 = Sunday. Written by the active plan. */
   post_days: number[];
   /** Reels run on their own days and times so a reel cadence cannot disturb the photo one. */
@@ -155,6 +170,48 @@ export function productUrl(
     utm_content: slug,
   });
   return `${base}/product/${category}/${slug}/?${params.toString()}`;
+}
+
+export type ResolvedPhotoSchedule = {
+  /** The times `findDueSlot` should consider for today. */
+  slots: string[];
+  /** Which mechanism produced them — echoed into the cron response so a run is explainable. */
+  source: "window" | "fixed";
+  window: SlotWindow | null;
+};
+
+/**
+ * The photo posting times for today.
+ *
+ * The scheduler still asks "is a slot due?" exactly as it always has — this only decides what
+ * goes into that list. When a window is configured the list is a single time derived from
+ * today's date; otherwise it is the fixed `slot_times`, untouched.
+ *
+ * Every failure path falls back to `slot_times` rather than to nothing. A malformed window is
+ * a configuration mistake, and the correct response to one is to keep posting on the old
+ * schedule and show the problem in the admin, not to silently take the account quiet.
+ */
+export function resolvePhotoSlots(
+  settings: SocialSettings,
+  now: Date = new Date(),
+): ResolvedPhotoSchedule {
+  const window = parseWindow(
+    settings.slot_window_start,
+    settings.slot_window_end,
+    settings.slot_window_step_minutes,
+  );
+  if (!window) return { slots: settings.slot_times, source: "fixed", window: null };
+
+  // Only steer around reels on days a reel can actually go out.
+  const isReelDay = (settings.reel_days ?? []).includes(localWeekday(settings.timezone, now));
+
+  const picked = pickSlotForDate(localDateKey(settings.timezone, now), window, {
+    avoid: isReelDay ? settings.reel_times ?? [] : [],
+    minGapMinutes: REEL_COLLISION_GAP_MINUTES,
+  });
+  if (!picked) return { slots: settings.slot_times, source: "fixed", window };
+
+  return { slots: [picked], source: "window", window };
 }
 
 /**

@@ -170,16 +170,67 @@ Feed posts should land **no later than 21:00** so engagement accumulates before 
 Lunchtime and afternoon into early evening. Early morning performs worst. Global data points
 at Thursday around 09:00 local, but the Pakistan-specific pattern favours **13:00–16:00**.
 
-### Recommended default configuration
+### Current configuration — a window, not a time (from 2026-08-27)
 
 ```sql
-slot_times = '{19:00}'      -- one post per day, 7pm PKT
-timezone   = 'Asia/Karachi'
+slot_window_start        = '18:30'   -- inclusive
+slot_window_end          = '21:30'   -- inclusive
+slot_window_step_minutes = 15        -- must match the pg_cron tick
+timezone                 = 'Asia/Karachi'
 ```
 
-7pm sits inside the Instagram evening peak and late enough in the Facebook window to serve
-both from a single slot. If cadence goes to 2/day, add `13:00` rather than doubling up in
-the evening.
+One post a day at a time **drawn from that window**, varying daily, rather than the same
+clock time every day. `slot_times` is ignored while both bounds are set, and is still kept
+up to date as the fallback if the window is ever cleared.
+
+**Why, and why not for the reason people assume.** Posting at a fixed time is *not* an
+automation signal Meta acts on. Publishing through the Content Publishing API is the
+sanctioned path, its only documented ceiling is 100 API posts per rolling 24h, and Adam
+Mosseri has said outright that scheduled posts are not down-ranked ("there was a bug where
+it did affect unconnected reach, but that was many, many months ago and it has since been
+fixed"). Meta's automation enforcement targets *engagement* automation — mass follow/like/
+comment, unofficial APIs, password-sharing tools — none of which this pipeline does.
+
+The real argument is measurement and coverage: 19:00 every day tests exactly one hour and
+reaches only the audience awake for it. A varying time turns the schedule into free
+time-of-day A/B data while staying inside the evening peak.
+
+### How the time is chosen
+
+`lib/social/slot-window.ts`. The time is **derived from the calendar date**, not rolled at
+runtime — the cron ticks every 15 minutes, so a `Math.random()` inside the route would be
+re-rolled 96 times a day and fire repeatedly. Same date in, same time out, with no stored
+state to keep in sync.
+
+Each cycle of N days is a seeded permutation of all N times in the grid, so:
+
+| Property | 18:30–21:30 @ 15 min |
+|---|---|
+| Possible times (N) | **13** |
+| Every time used before any repeats | yes, once per 13-day cycle |
+| Minimum gap before a time recurs | **5 days** (`floor(N/3) + 1`) |
+| Average gap | 13 days |
+
+> ⚠️ **A full month with no repeat is not reachable.** 30 days cannot be covered by 13
+> distinct times. This is the maximum spread the arithmetic allows. More requires a wider
+> window or a finer step — and a finer step requires speeding up the pg_cron job, because
+> the tick is the real resolution limit: a 19:37 draw would simply publish at the 19:45 tick.
+
+**Reel collision guard.** Photos were pinned at 19:00 and reels at 20:00, so they could
+never clash. A window makes a Monday/Friday clash possible, so a photo drawn within 45
+minutes of a reel slot is moved to the next clear time in the same cycle.
+
+**Where it is configured.** The window lives on both `social_settings` *and*
+`social_plans.photo_window_start/end`. That is not duplication: activating or saving a plan
+calls `writeScheduleFromPlan`, which overwrites `social_settings` wholesale — without the
+plan carrying the window, the first save in the planner would silently revert posting to a
+fixed time with nothing on screen to say so.
+
+### If cadence goes to 2/day
+
+Add a fixed `13:00` slot rather than a second window. Two windows on one day would need
+their own mutual collision rule, and the afternoon slot is aimed at Facebook, where the
+Pakistan pattern favours 13:00–16:00 and there is nothing to vary against.
 
 ### ⚠️ Ramadan changes everything
 

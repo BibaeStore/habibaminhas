@@ -18,6 +18,7 @@ import {
 } from "@/lib/social/plan";
 import {
   Field, Pill, SectionHeading, EmptyState, DayPicker, TimeList, Toast, inputCls,
+  SlotWindowEditor,
 } from "@/components/admin/social/ui";
 import { WeekCalendar, mondayOf, shiftWeek } from "@/components/admin/social/week-calendar";
 import { useAct } from "@/components/admin/social/use-act";
@@ -310,6 +311,8 @@ function PlanEditor({
                     photos_per_week: draft.photos_per_week,
                     photo_days: draft.photo_days,
                     photo_times: draft.photo_times,
+                    photo_window_start: draft.photo_window_start,
+                    photo_window_end: draft.photo_window_end,
                     reels_per_week: draft.reels_per_week,
                     reel_days: draft.reel_days,
                     reel_times: draft.reel_times,
@@ -378,6 +381,11 @@ function PlanEditor({
         onTarget={(n) => setTarget("photo", n)}
         onDays={(d) => set("photo_days", d)}
         onTimes={(t) => set("photo_times", t)}
+        windowStart={draft.photo_window_start}
+        windowEnd={draft.photo_window_end}
+        onWindow={(start, end) =>
+          setDraft((d) => ({ ...d, photo_window_start: start, photo_window_end: end }))
+        }
       />
 
       <CadenceEditor
@@ -423,6 +431,7 @@ function IssueList({ issues }: { issues: PlanIssue[] }) {
 /** Target, days and times for one content type. */
 function CadenceEditor({
   kind, title, icon, perWeek, days, times, onTarget, onDays, onTimes,
+  windowStart = null, windowEnd = null, onWindow,
 }: {
   kind: "photo" | "reel";
   title: string;
@@ -433,8 +442,15 @@ function CadenceEditor({
   onTarget: (n: number) => void;
   onDays: (days: number[]) => void;
   onTimes: (times: string[]) => void;
+  /** Photos only — reels stay on fixed times, so a reel cadence cannot drift into a photo. */
+  windowStart?: string | null;
+  windowEnd?: string | null;
+  onWindow?: (start: string | null, end: string | null) => void;
 }) {
-  const capacity = weeklyCapacity(days, times);
+  // A window posts once per posting day, so capacity is the day count and the times list is
+  // inert. Counting the list here would show a figure the scheduler does not honour.
+  const usingWindow = Boolean(onWindow && windowStart && windowEnd);
+  const capacity = usingWindow ? days.length : weeklyCapacity(days, times);
 
   return (
     <AdminCard padded>
@@ -472,14 +488,24 @@ function CadenceEditor({
             <DayPicker days={days} onChange={onDays} />
           </Field>
 
-          <Field label="Times" hint="Each time fires on each chosen day.">
-            <TimeList
-              times={times}
-              onChange={onTimes}
-              fallback={kind === "reel" ? "20:00" : "19:00"}
-              label={`${title} time`}
+          {!usingWindow && (
+            <Field label="Times" hint="Each time fires on each chosen day.">
+              <TimeList
+                times={times}
+                onChange={onTimes}
+                fallback={kind === "reel" ? "20:00" : "19:00"}
+                label={`${title} time`}
+              />
+            </Field>
+          )}
+
+          {onWindow && (
+            <SlotWindowEditor
+              start={windowStart}
+              end={windowEnd}
+              onChange={onWindow}
             />
-          </Field>
+          )}
         </div>
       </div>
     </AdminCard>

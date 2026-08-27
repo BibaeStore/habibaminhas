@@ -20,6 +20,7 @@ import {
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
 import {
   Field, Pill, Toggle, Modal, CategoryPicker, EmptyState, DayPicker, TimeList, inputCls,
+  SlotWindowEditor,
 } from "./ui";
 
 /**
@@ -576,7 +577,12 @@ export function SettingsModal({
     );
   }
 
-  const perWeek = (current.post_days?.length ?? 0) * (current.slot_times?.length ?? 0);
+  // A window posts once per posting day, so the weekly figure is the day count — counting
+  // `slot_times` here would advertise a cadence the scheduler does not run.
+  const usingWindow = Boolean(current.slot_window_start && current.slot_window_end);
+  const perWeek = usingWindow
+    ? current.post_days?.length ?? 0
+    : (current.post_days?.length ?? 0) * (current.slot_times?.length ?? 0);
 
   return (
     <Modal
@@ -607,8 +613,11 @@ export function SettingsModal({
             When photos post
           </h4>
           <p className="mb-3 text-[13px] text-[var(--admin-text-muted)]">
-            Every chosen time fires on every chosen day, in {current.timezone}. That is{" "}
-            <strong>{perWeek} a week</strong>. An active plan sets these for you.
+            {usingWindow
+              ? <>One post a day at a varying time, in {current.timezone}. That is{" "}
+                  <strong>{perWeek} a week</strong>. An active plan sets these for you.</>
+              : <>Every chosen time fires on every chosen day, in {current.timezone}. That is{" "}
+                  <strong>{perWeek} a week</strong>. An active plan sets these for you.</>}
           </p>
 
           <Field label="Days">
@@ -619,14 +628,32 @@ export function SettingsModal({
             />
           </Field>
 
+          {!usingWindow && (
+            <div className="mt-4">
+              <Field label="Times">
+                <TimeList
+                  times={current.slot_times}
+                  onChange={(t) => set("slot_times", t)}
+                  label="Posting time"
+                />
+              </Field>
+            </div>
+          )}
+
           <div className="mt-4">
-            <Field label="Times">
-              <TimeList
-                times={current.slot_times}
-                onChange={(t) => set("slot_times", t)}
-                label="Posting time"
-              />
-            </Field>
+            <SlotWindowEditor
+              start={current.slot_window_start}
+              end={current.slot_window_end}
+              stepMinutes={current.slot_window_step_minutes}
+              timezone={current.timezone}
+              onChange={(start, end) =>
+                setDraft({
+                  ...(current as SocialSettingsRow),
+                  slot_window_start: start,
+                  slot_window_end: end,
+                })
+              }
+            />
           </div>
         </div>
 

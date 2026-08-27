@@ -844,6 +844,8 @@ export type Database = {
           notes: string | null
           photo_days: number[]
           photo_times: string[]
+          photo_window_end: string | null
+          photo_window_start: string | null
           photos_per_week: number
           reel_days: number[]
           reel_times: string[]
@@ -860,6 +862,8 @@ export type Database = {
           notes?: string | null
           photo_days?: number[]
           photo_times?: string[]
+          photo_window_end?: string | null
+          photo_window_start?: string | null
           photos_per_week?: number
           reel_days?: number[]
           reel_times?: string[]
@@ -876,6 +880,8 @@ export type Database = {
           notes?: string | null
           photo_days?: number[]
           photo_times?: string[]
+          photo_window_end?: string | null
+          photo_window_start?: string | null
           photos_per_week?: number
           reel_days?: number[]
           reel_times?: string[]
@@ -1031,6 +1037,9 @@ export type Database = {
           reel_times: string[]
           require_in_stock: boolean
           slot_times: string[]
+          slot_window_end: string | null
+          slot_window_start: string | null
+          slot_window_step_minutes: number
           timezone: string
           updated_at: string
         }
@@ -1050,6 +1059,9 @@ export type Database = {
           reel_times?: string[]
           require_in_stock?: boolean
           slot_times?: string[]
+          slot_window_end?: string | null
+          slot_window_start?: string | null
+          slot_window_step_minutes?: number
           timezone?: string
           updated_at?: string
         }
@@ -1069,6 +1081,9 @@ export type Database = {
           reel_times?: string[]
           require_in_stock?: boolean
           slot_times?: string[]
+          slot_window_end?: string | null
+          slot_window_start?: string | null
+          slot_window_step_minutes?: number
           timezone?: string
           updated_at?: string
         }
