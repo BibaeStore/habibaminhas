@@ -202,12 +202,10 @@ export function resolvePhotoSlots(
   );
   if (!window) return { slots: settings.slot_times, source: "fixed", window: null };
 
-  // Only steer around reels on days a reel can actually go out.
-  const isReelDay = (settings.reel_days ?? []).includes(localWeekday(settings.timezone, now));
-
   const picked = pickSlotForDate(localDateKey(settings.timezone, now), window, {
-    avoid: isReelDay ? settings.reel_times ?? [] : [],
-    minGapMinutes: REEL_COLLISION_GAP_MINUTES,
+    days: settings.reel_days ?? [],
+    times: settings.reel_times ?? [],
+    gapMinutes: REEL_COLLISION_GAP_MINUTES,
   });
   if (!picked) return { slots: settings.slot_times, source: "fixed", window };
 

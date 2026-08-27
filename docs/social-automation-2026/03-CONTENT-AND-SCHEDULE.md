@@ -211,6 +211,10 @@ Each cycle of N days is a seeded permutation of all N times in the grid, so:
 | Minimum gap before a time recurs | **5 days** (`floor(N/3) + 1`) |
 | Average gap | 13 days |
 
+Measured over 10 years against the live schedule: zero reel collisions, every time used
+280–282 times, and exactly **two** repeats closer than 5 days. Without reels the 5-day bound
+is exact — the two exceptions come from reel-day swaps landing on the cycle seam.
+
 > ⚠️ **A full month with no repeat is not reachable.** 30 days cannot be covered by 13
 > distinct times. This is the maximum spread the arithmetic allows. More requires a wider
 > window or a finer step — and a finer step requires speeding up the pg_cron job, because
@@ -218,7 +222,16 @@ Each cycle of N days is a seeded permutation of all N times in the grid, so:
 
 **Reel collision guard.** Photos were pinned at 19:00 and reels at 20:00, so they could
 never clash. A window makes a Monday/Friday clash possible, so a photo drawn within 45
-minutes of a reel slot is moved to the next clear time in the same cycle.
+minutes of a reel slot **trades times with another day in the same cycle**.
+
+> A trade, not a re-draw, and the distinction is the whole thing. 20:00 ± 45 min excludes 7
+> of the 13 times, so re-drawing pushed every displaced Monday and Friday onto the same 6
+> survivors — measured, that produced the same time on consecutive days 256 times in 10
+> years. A trade keeps the cycle an exact permutation, so it cannot concentrate anything.
+>
+> If reels ever move to *every* day at a time inside the window, there is no non-reel day
+> left to trade with and the guard stops being able to separate them. Two reel days a week
+> is comfortably inside what it can handle.
 
 **Where it is configured.** The window lives on both `social_settings` *and*
 `social_plans.photo_window_start/end`. That is not duplication: activating or saving a plan

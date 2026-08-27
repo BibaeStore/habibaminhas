@@ -378,8 +378,9 @@ export function expandPlan(
         // Same call the scheduler makes, including the reel-collision guard, so the calendar
         // shows the time that will actually fire rather than one the guard later moves.
         const drawn = pickSlotForDate(date, window, {
-          avoid: reelDays.has(weekday) ? reelTimes : [],
-          minGapMinutes: REEL_COLLISION_GAP_MINUTES,
+          days: [...reelDays],
+          times: reelTimes,
+          gapMinutes: REEL_COLLISION_GAP_MINUTES,
         });
         if (drawn) out.push({ date, time: drawn, kind: "photo" });
       } else {

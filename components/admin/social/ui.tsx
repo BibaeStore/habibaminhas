@@ -867,7 +867,7 @@ export function describeSlotWindow(
   if (count <= 1) return "Only one time fits in that window — it will post at the same time daily.";
 
   const noRepeat = Math.floor(count / 3) + 1;
-  return `${count} possible times, ${stepMinutes} minutes apart. Every one is used before any repeats, and no time comes round again inside ${noRepeat} days.`;
+  return `${count} possible times, ${stepMinutes} minutes apart. Every one is used before any repeats, so the same time is typically ${count} days apart and rarely closer than ${noRepeat}.`;
 }
 
 function timeToMinutes(time: string | null): number | null {

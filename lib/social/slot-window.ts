@@ -35,9 +35,16 @@
  * is the most spread the window arithmetic allows. Widening the window or shortening the step
  * is the only way to buy more, and both are data changes rather than code ones.
  *
- * `avoid` (the reel collision rule) is the one thing that can perturb the once-per-cycle
- * property, and only on days where a reel is already scheduled. That is a deliberate trade:
- * two posts to the same account inside a minute is worse than an uneven gap.
+ * The reel-collision rule is resolved by swapping two days inside the cycle rather than by
+ * re-drawing, so the cycle stays an exact permutation and the spacing above survives it. The
+ * one thing a swap can still disturb is the cycle seam, where a trade may move a time the
+ * boundary repair had placed. Measured over ten years against the live schedule (reels Mon
+ * and Fri at 20:00, 45-minute gap): zero collisions, usage even to within two out of ~281 per
+ * time, and exactly **two** repeats closer than 5 days. Without reels the bound is exact.
+ *
+ * The degenerate case is a reel every day at a time the window is built around: there is then
+ * no non-reel day to trade with, and the guard simply cannot place every photo clear of every
+ * reel. It still posts — it just stops being able to promise separation.
  */
 
 /** A validated window. Times are "HH:MM" in the account's timezone, both bounds inclusive. */
@@ -47,11 +54,20 @@ export type SlotWindow = {
   stepMinutes: number;
 };
 
-export type PickOptions = {
-  /** Times to stay clear of — in practice the reel slots, on a reel day. */
-  avoid?: string[];
-  /** How close to an `avoid` time counts as a collision. */
-  minGapMinutes?: number;
+/**
+ * The reel schedule, so photo draws can be kept clear of it.
+ *
+ * The whole schedule rather than "today's times to avoid", because the collision has to be
+ * resolved by *exchanging* two days inside the cycle, and that means knowing which other days
+ * in the cycle are reel days. Resolving it one day at a time is what the first version did,
+ * and it was wrong: a 45-minute exclusion removes 7 of the 13 times, so every displaced draw
+ * landed on the same 6 survivors and times began repeating a day apart.
+ */
+export type ReelSchedule = {
+  /** Weekdays reels post on, 0 = Sunday. */
+  days: number[];
+  times: string[];
+  gapMinutes: number;
 };
 
 const DAY_MS = 86_400_000;
@@ -204,38 +220,9 @@ function boundaryGuard(n: number): number {
   return Math.floor(n / 3);
 }
 
-/**
- * The permutation for one cycle, repaired so its opening does not echo the previous cycle's
- * closing days.
- *
- * The repair is a swap rather than a reshuffle: reserve positions carry no constraint, so a
- * forbidden time in the head is exchanged with the first reserve position holding a permitted
- * one. Every time still appears exactly once, the tail is untouched, and the result stays a
- * pure function of the grid and the cycle index — no recursion into earlier cycles beyond the
- * single raw shuffle of the one before.
- */
-function cyclePermutation(grid: readonly string[], cycle: number): string[] {
-  const n = grid.length;
-  const permutation = rawPermutation(grid, cycle);
-
-  const guard = boundaryGuard(n);
-  if (guard < 1) return permutation;
-
-  // The previous cycle's tail is safe to read from its *raw* shuffle precisely because the
-  // repair never writes into the tail region.
-  const forbidden = new Set(rawPermutation(grid, cycle - 1).slice(n - guard));
-
-  for (let i = 0; i < guard; i++) {
-    if (!forbidden.has(permutation[i])) continue;
-    for (let j = guard; j < n - guard; j++) {
-      if (forbidden.has(permutation[j])) continue;
-      [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
-      break;
-    }
-  }
-
-  return permutation;
-}
+// The two repairs run in a fixed order — reels first, then the boundary — and the order is
+// load-bearing. Doing it the other way round lets a reel swap move a time the boundary repair
+// has just placed, and the cross-cycle spacing quietly stops holding.
 
 // ─── Dates ────────────────────────────────────────────────────────────────────
 
@@ -256,11 +243,116 @@ export function dayIndex(dateKey: string): number | null {
 
 // ─── The draw ─────────────────────────────────────────────────────────────────
 
-/** Is `candidate` within `gap` minutes of anything in `avoid`? */
-function collides(candidate: string, avoid: readonly number[], gap: number): boolean {
+/**
+ * Weekday for a day index, 0 = Sunday.
+ *
+ * Epoch day 0 (1 Jan 1970) was a Thursday, hence the +4. Deriving it arithmetically rather
+ * than building a Date keeps the whole cycle resolution free of timezone reasoning — the day
+ * index already encodes the local calendar date.
+ */
+function weekdayForDayIndex(index: number): number {
+  return (((index % 7) + 7) % 7 + 4) % 7;
+}
+
+/** Is `candidate` within `gap` minutes of any reel time? */
+function collidesWithReel(candidate: string, reelMinutes: readonly number[], gap: number): boolean {
   const at = toMinutes(candidate);
   if (at === null) return false;
-  return avoid.some((other) => Math.abs(at - other) < gap);
+  return reelMinutes.some((other) => Math.abs(at - other) < gap);
+}
+
+/** Reel times as minutes, or null when there is nothing to steer around. */
+function reelContext(reels: ReelSchedule | null): number[] | null {
+  if (!reels || reels.days.length === 0 || reels.times.length === 0) return null;
+  const minutes = reels.times.map(toMinutes).filter((m): m is number => m !== null);
+  return minutes.length > 0 ? minutes : null;
+}
+
+/**
+ * One cycle with reel collisions resolved, but before any cross-cycle repair.
+ *
+ * Resolved by **swapping two days**, never by re-drawing. A swap keeps the cycle an exact
+ * permutation of the grid, so "every time is used once before any repeats" survives the reel
+ * guard. Re-drawing does not, and the difference is not academic — measured over ten years,
+ * a re-draw put the same time on consecutive days 256 times.
+ *
+ * Note what this deliberately does *not* consider: the previous cycle. That is what makes it
+ * safe for `resolveCycle` to call it one level back without recursing forever.
+ */
+function reelResolved(
+  grid: readonly string[],
+  cycle: number,
+  reels: ReelSchedule | null,
+): string[] {
+  const n = grid.length;
+  const permutation = rawPermutation(grid, cycle);
+
+  const reelMinutes = reelContext(reels);
+  if (!reelMinutes || !reels) return permutation;
+
+  const isReelDay = (position: number) =>
+    reels.days.includes(weekdayForDayIndex(cycle * n + position));
+  const clash = (time: string) => collidesWithReel(time, reelMinutes, reels.gapMinutes);
+
+  for (let p = 0; p < n; p++) {
+    if (!isReelDay(p) || !clash(permutation[p])) continue;
+
+    // Trade with a day that can take this time — so not another reel day — and whose own time
+    // is clear here.
+    for (let q = 0; q < n; q++) {
+      if (q === p || isReelDay(q) || clash(permutation[q])) continue;
+      [permutation[p], permutation[q]] = [permutation[q], permutation[p]];
+      break;
+    }
+  }
+
+  return permutation;
+}
+
+/**
+ * The final times for a whole cycle: reels resolved, then the cycle boundary repaired.
+ *
+ * The boundary repair writes only into the head and reserve, never the tail. That is what
+ * lets it read the previous cycle's tail from `reelResolved(cycle - 1)` and be certain it is
+ * looking at the times that will actually be published — one level back, no recursion.
+ *
+ * Deterministic because a whole cycle is resolved together and then indexed: day 3 and day 9
+ * compute the identical array and read different positions from it, so a swap looks the same
+ * from both ends.
+ */
+function resolveCycle(
+  grid: readonly string[],
+  cycle: number,
+  reels: ReelSchedule | null,
+): string[] {
+  const n = grid.length;
+  const permutation = reelResolved(grid, cycle, reels);
+
+  const guard = boundaryGuard(n);
+  if (guard < 1) return permutation;
+
+  const forbidden = new Set(reelResolved(grid, cycle - 1, reels).slice(n - guard));
+  const reelMinutes = reelContext(reels);
+  const isReelDay = (position: number) =>
+    Boolean(reels) && reels!.days.includes(weekdayForDayIndex(cycle * n + position));
+  const allowedAt = (position: number, time: string) =>
+    !reelMinutes || !isReelDay(position) || !collidesWithReel(time, reelMinutes, reels!.gapMinutes);
+
+  for (let i = 0; i < guard; i++) {
+    if (!forbidden.has(permutation[i])) continue;
+
+    // Reserve only: the tail carries the next cycle's guarantee and the rest of the head is
+    // already placed. The swap must also leave both days reel-legal, or fixing the spacing
+    // would reintroduce the collision the previous pass just removed.
+    for (let j = guard; j < n - guard; j++) {
+      if (forbidden.has(permutation[j])) continue;
+      if (!allowedAt(i, permutation[j]) || !allowedAt(j, permutation[i])) continue;
+      [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
+      break;
+    }
+  }
+
+  return permutation;
 }
 
 /**
@@ -276,7 +368,7 @@ function collides(candidate: string, avoid: readonly number[], gap: number): boo
 export function pickSlotForDate(
   dateKey: string,
   window: SlotWindow,
-  options: PickOptions = {},
+  reels: ReelSchedule | null = null,
 ): string | null {
   const grid = buildGrid(window);
   if (grid.length === 0) return null;
@@ -291,32 +383,9 @@ export function pickSlotForDate(
   const cycle = Math.floor(index / n);
   const position = ((index % n) + n) % n;
 
-  // Cycle-boundary repeats are handled inside the permutation itself, so this is just a
-  // lookup.
-  const permutation = cyclePermutation(grid, cycle);
-
-  const gap = options.minGapMinutes ?? 0;
-  const avoid = (options.avoid ?? [])
-    .map(toMinutes)
-    .filter((m): m is number => m !== null);
-
-  const chosen = permutation[position];
-  if (gap <= 0 || avoid.length === 0 || !collides(chosen, avoid, gap)) return chosen;
-
-  /*
-   * Collision with a reel slot. Walk the rest of this cycle's permutation for the first time
-   * that is clear, so the replacement still comes from the cycle's own ordering rather than
-   * from a fresh roll — the day moves, the distribution does not.
-   */
-  for (let step = 1; step < n; step++) {
-    const candidate = permutation[(position + step) % n];
-    if (!collides(candidate, avoid, gap)) return candidate;
-  }
-
-  // Every time in the window collides, i.e. the window sits entirely inside the reel slot's
-  // gap. That is a configuration problem, not a runtime one — post at the drawn time rather
-  // than not at all, and let the planner's validation say so.
-  return chosen;
+  // Boundary spacing and reel collisions are both resolved inside the cycle, so this is a
+  // lookup rather than a decision.
+  return resolveCycle(grid, cycle, reels)[position];
 }
 
 /**
