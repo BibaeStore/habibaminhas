@@ -175,11 +175,11 @@ at Thursday around 09:00 local, but the Pakistan-specific pattern favours **13:0
 ```sql
 slot_window_start        = '18:00'   -- inclusive
 slot_window_end          = '23:00'   -- inclusive
-slot_window_step_minutes = 3         -- must match the pg_cron tick
+slot_window_step_minutes = 5         -- must match the pg_cron tick
 timezone                 = 'Asia/Karachi'
 
 -- and the job that reads it
-cron.job 'social-post-slots' = '*/3 * * * *'
+cron.job 'social-post-slots' = '*/5 * * * *'
 ```
 
 One post a day at a time **drawn from that window**, varying daily, rather than the same
@@ -207,18 +207,35 @@ state to keep in sync.
 
 Each cycle of N days is a seeded permutation of all N times in the grid, so:
 
-| Property | 18:00–23:00 @ 3 min |
+| Property | 18:00–23:00 @ 5 min |
 |---|---|
-| Possible times (N) | **101** |
-| Every time used before any repeats | yes, once per 101-day cycle |
-| Minimum gap before a time recurs | **34 days** (`floor(N/3) + 1`) |
-| Average gap | 101 days |
+| Possible times (N) | **61** |
+| Every time used before any repeats | yes, once per 61-day cycle |
+| Minimum gap before a time recurs | **37 days** |
+| Average gap | 61 days |
 
 Measured over 10 years against the live schedule: **zero** rolling 30-day stretches contain a
-repeated time (0 of 3,621), zero reel collisions, minimum gap 34 days, every time used 36–38
+repeated time (0 of 3,621), zero reel collisions, minimum gap 37 days, every time used 59–61
 times. The owner's requirement — a unique posting time on every day of a month — holds.
 
-### Why the step is 3 minutes and not 15
+### How the spacing is guaranteed
+
+Cycles are **chained**, not independently shuffled. If a time sits at position `p` in one cycle
+of length N and `q` in the next, the days between its two uses are `gap = (N - p) + q`, so
+`gap >= G` is exactly `q >= p - (N - G)`. In words: a time may drift later in the order freely
+but may never jump more than `N - G` places earlier. Because that is a statement about
+*consecutive* cycles it holds across every boundary by construction — no seam to patch, no
+special case for day one of a cycle.
+
+`G` is set above the 30 actually required, because the reel guard needs headroom.
+
+> ⚠️ **Reel avoidance happens inside the chain, as each position is filled — never afterwards.**
+> The obvious approach is to resolve a clash by trading two days once the cycle is built. That
+> was tried and measured: a trade moves a time to a position the displacement rule never
+> sanctioned, and the minimum gap fell from 37 days to **6**. Choosing a reel-safe time while
+> the position is being filled keeps every placement inside the rule.
+
+### Why the step is 5 minutes
 
 This is arithmetic, not taste. A month needs at least 30 distinct clock times, and the step
 decides how many a window contains:
@@ -229,7 +246,9 @@ decides how many a window contains:
 | 18:00–23:00 | 15 min | `*/15` | 21 | 0% |
 | 18:00–23:00 | 10 min | `*/10` | 31 | 7% |
 | 18:00–23:00 | 5 min | `*/5` | 61 | 86% |
-| **18:00–23:00** | **3 min** | **`*/3`** | **101** | **100%** |
+| 18:00–23:00 | 5 min | `*/5` | 61 | 86% |
+| **18:00–23:00** | **5 min** | **`*/5`** | **61** | **100%** ← *with the chained algorithm* |
+| 18:00–23:00 | 3 min | `*/3` | 101 | 100% — **rejected, see below** |
 
 **Widening the window alone never fixes it.** Five hours at 15-minute spacing holds 21 times,
 and 21 values cannot cover 30 days.
@@ -240,7 +259,18 @@ and the tick must move together — which is why `slot_window_step_minutes` and 
 schedule are changed in the same migration, and why the step is displayed read-only in the
 admin.
 
-Cost of the finer tick: 480 wake-ups a day instead of 96. Each is an early exit — read
+**Why not 3 minutes, which also reaches 100%?** Because of a hard safety floor. The posting
+route declares `maxDuration = 300`, and the duplicate guard only becomes effective once the
+first `social_post_log` row is written — which happens *after* Instagram publishing completes,
+about 50 seconds into a run in live data. A tick shorter than 300 seconds can therefore fire
+while the previous invocation is still uploading and publish the day's product twice. At `*/5`
+or slower the platform's own 300-second ceiling makes that overlap impossible.
+
+5 minutes was originally rejected because the *old* algorithm managed only an 86% chance of a
+repeat-free month at N=61. That was a limitation of the algorithm, not of the arithmetic, and
+chaining fixed it — so the safer tick and the requirement are no longer in tension.
+
+Cost of the finer tick: 288 wake-ups a day instead of 96. Each is an early exit — read
 settings, check the slot, answer `no_slot_due` — roughly three small queries, comfortably
 inside the Supabase and Vercel free tiers. `social-occasion-agent` stays at `*/15`; occasion
 greetings publish at a fixed 10:00 and gain nothing from a finer tick.

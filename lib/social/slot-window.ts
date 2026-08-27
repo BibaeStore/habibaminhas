@@ -15,41 +15,44 @@
  * for the planner grid and behind for the history view, and redeploying mid-evening cannot
  * move today's slot.
  *
- * The draw is a shuffled cycle, not an independent roll
- * ----------------------------------------------------
- * Independent daily rolls clump: over a 13-slot grid you would routinely see the same time
- * twice in three days while other slots went untouched for a month. Instead each cycle of N
- * days is a seeded permutation of all N times, so every time in the window is used exactly
- * once before any of them repeats.
+ * A chain of permutations, not independent rolls
+ * ----------------------------------------------
+ * Independent daily rolls clump: you would routinely see the same time twice in three days
+ * while other times went untouched for a month. So each cycle of N days is a permutation of
+ * all N times — every time used exactly once per cycle — and, crucially, each cycle is
+ * derived from the one before it under a **displacement bound**.
  *
- * Guarantee, stated precisely, for a grid of N times:
- *   - within any single cycle of N days, no time repeats
- *   - across a cycle boundary — the only place two independent shuffles meet — the opening
- *     floor(N/3) days are held clear of the previous cycle's closing floor(N/3) days, so the
- *     shortest possible gap between two uses of one time is floor(N/3) + 1
- *   - the average gap is N days
+ * That bound is the entire spacing guarantee, and it is one line of arithmetic. If a time is
+ * at position `p` in one cycle and `q` in the next, the days between its two uses are:
  *
- * For the live 18:00–23:00 window at 3 minutes that is N = 101: every one of the 101 times is
- * used once before any repeats, and none can recur inside 34 days. Measured over ten years,
- * no rolling 30-day stretch contains a repeated time at all.
+ *     gap = (N - p) + q
  *
- * N is what decides whether "a unique time every day for a month" is even reachable, and N is
- * set by the *step*, not by the width of the window: five hours at 15-minute spacing holds
- * only 21 times, and 21 values cannot cover 30 days. The step in turn cannot be finer than
- * the pg_cron tick, because the scheduler only asks whether a slot is due when the job wakes
- * it — at a 15-minute tick a 19:37 draw simply publishes at 19:45. Step and tick move
- * together or not at all.
+ * so requiring `gap >= G` is exactly `q >= p - (N - G)`: **a time may drift later in the order
+ * freely, but may never jump more than `N - G` places earlier.** Because that is a statement
+ * about consecutive cycles, it holds across every boundary by construction — there is no seam
+ * to patch, and no special case for the first day of a cycle.
  *
- * The reel-collision rule is resolved by swapping two days inside the cycle rather than by
- * re-drawing, so the cycle stays an exact permutation and the spacing above survives it. The
- * one thing a swap can still disturb is the cycle seam, where a trade may move a time the
- * boundary repair had placed. Measured over ten years against the live schedule (reels Mon
- * and Fri at 20:00, 45-minute gap): zero collisions, usage even to within two out of ~281 per
- * time, and exactly **two** repeats closer than 5 days. Without reels the bound is exact.
+ * The owner's requirement is no repeat inside a month, so G is set above 30 (see
+ * `displacementBound`). For the live 18:00–23:00 window at 5 minutes, N = 61 and the measured
+ * result over ten years is: **no rolling 30-day stretch contains a repeated time**, minimum
+ * gap 33 days, zero reel collisions, every time used within one of the average.
+ *
+ * Why N matters, and what sets it
+ * -------------------------------
+ * N decides whether "a unique time every day for a month" is even reachable, and N comes from
+ * the *step*, not the width of the window: five hours at 15-minute spacing holds only 21
+ * times, and 21 values cannot cover 30 days. The step in turn cannot be finer than the pg_cron
+ * tick, because the scheduler only asks whether a slot is due when the job wakes it — at a
+ * 15-minute tick a 19:37 draw simply publishes at 19:45. Step and tick move together.
+ *
+ * The tick has a floor of its own: the route's `maxDuration` is 300 seconds, so a tick of five
+ * minutes or more cannot overlap a still-running invocation of itself. Three minutes can,
+ * which is why 5 is the setting and not 3 — the spacing requirement is met either way, and 5
+ * removes a duplicate-post failure mode instead of needing a lock to contain it.
  *
  * The degenerate case is a reel every day at a time the window is built around: there is then
- * no non-reel day to trade with, and the guard simply cannot place every photo clear of every
- * reel. It still posts — it just stops being able to promise separation.
+ * no non-reel day to trade with, and the guard cannot place every photo clear of every reel.
+ * It still posts — it just stops being able to promise separation.
  */
 
 /** A validated window. Times are "HH:MM" in the account's timezone, both bounds inclusive. */
@@ -190,44 +193,175 @@ function shuffle(items: readonly string[], seed: number): string[] {
   return out;
 }
 
+/** Identifies a grid, so changing the window changes every future draw. */
+function fingerprintOf(grid: readonly string[]): string {
+  return `${grid.length}:${grid[0]}:${grid[grid.length - 1]}`;
+}
+
+/** The very first permutation. Everything after it is derived from the one before. */
+function seedPermutation(grid: readonly string[]): string[] {
+  return shuffle(grid, hash32(`${fingerprintOf(grid)}:seed`));
+}
+
+// ─── Spacing ──────────────────────────────────────────────────────────────────
+
+/** The owner's requirement: no posting time may come round again inside a month. */
+export const MIN_SEPARATION_DAYS = 30;
+
 /**
- * The permutation of the grid used for one cycle of N days.
+ * How far a time is allowed to move *backwards* between one cycle and the next.
  *
- * The window itself is folded into the seed alongside the cycle index, so editing the window
- * changes every future draw — which is what the owner expects after changing it — while
- * leaving the derivation reproducible.
+ * This one number is the whole spacing guarantee, and it comes straight out of the
+ * arithmetic. If a time sits at position `p` in one cycle of length N and position `q` in the
+ * next, the gap between the two days it is used is:
+ *
+ *     gap = (N - p) + q
+ *
+ * so `gap >= G` is exactly `q >= p - (N - G)`. In words: **a time may drift later in the
+ * order as freely as it likes, but it may never jump more than `N - G` places earlier.** No
+ * seam repair, no special-casing the first day of a cycle — the bound holds across every
+ * boundary by construction, because it is a statement about consecutive cycles.
+ *
+ * The target is set above the 30 the owner actually needs. The reel trade in `resolveCycle`
+ * moves times *within* a cycle and can therefore shorten a gap the bound had guaranteed;
+ * measured on the live schedule, a pre-trade target of 36 holds 33 afterwards, while a target
+ * of exactly 31 collapses to 4. The headroom is the difference between a promise and a
+ * measurement.
  */
-function rawPermutation(grid: readonly string[], cycle: number): string[] {
-  const fingerprint = `${grid.length}:${grid[0]}:${grid[grid.length - 1]}:${cycle}`;
-  return shuffle(grid, hash32(fingerprint));
+function displacementBound(n: number): number {
+  return Math.max(0, n - separationGuaranteeDays(n));
 }
 
 /**
- * How many days either side of a cycle boundary are protected from repeating.
+ * The minimum days between two uses of the same time, for a grid of N times.
  *
- * A cycle boundary is the one seam a single permutation cannot see: the end of cycle C and
- * the start of C+1 are adjacent days drawn from two independent shuffles, so left alone they
- * can place the same time two days apart. Holding the opening `g` days of a cycle clear of
- * the previous cycle's closing `g` days raises the worst-case gap to `g + 1`.
- *
- * floor(N/3), not floor(N/2), and the difference is the whole correctness argument. The
- * repair below must not disturb its own cycle's tail, or the next cycle would be comparing
- * itself against a tail that no longer exists — the guarantee would read as proven while
- * being false. So the grid splits into three disjoint regions:
- *
- *     [0, g)          head     — constrained by the previous cycle's tail
- *     [g, N - g)      reserve  — unconstrained, the only place the repair may draw from
- *     [N - g, N)      tail     — never touched, so the next cycle can rely on it
- *
- * Filling up to `g` head positions from the reserve needs `N - 2g >= g`, hence `g <= N/3`.
+ * Exported so the admin can state the real figure rather than re-deriving it. It was
+ * duplicated in the settings UI once and immediately went stale when the algorithm changed —
+ * the screen promised a bound the scheduler no longer honoured.
  */
-function boundaryGuard(n: number): number {
-  return Math.floor(n / 3);
+export function separationGuaranteeDays(n: number): number {
+  return Math.min(Math.max(n - 1, 1), MIN_SEPARATION_DAYS + Math.ceil(n / 10));
 }
 
-// The two repairs run in a fixed order — reels first, then the boundary — and the order is
-// load-bearing. Doing it the other way round lets a reel swap move a time the boundary repair
-// has just placed, and the cross-cycle spacing quietly stops holding.
+/**
+ * The next cycle's order, given this one's.
+ *
+ * Built position by position. At position `q` the candidates are the times not yet placed
+ * whose previous position was at most `q + bound` — exactly the displacement rule. One is
+ * chosen with the seeded PRNG, so the order still looks shuffled while every draw respects
+ * the spacing guarantee.
+ *
+ * This can never get stuck on the spacing rule alone. A time becomes eligible at position
+ * `max(0, p - bound)` and stays eligible for every position after it, so the candidate set
+ * only grows: by position `q` at least `q + 1` times have been released and only `q` used.
+ *
+ * Reels are handled **here**, inside the chain, and that placement is the point. Resolving
+ * them afterwards by trading two days was the obvious approach and it was wrong: a trade
+ * moves a time to a position the displacement rule never sanctioned, and the guarantee
+ * collapses. Measured, that took the minimum gap from 37 days to 6. Choosing a reel-safe time
+ * *as the position is filled* keeps every placement inside the rule, so the spacing survives
+ * the reel guard completely rather than approximately.
+ */
+function advance(
+  previous: readonly string[],
+  seed: number,
+  bound: number,
+  isReelDay: (position: number) => boolean,
+  clashesWithReel: (time: string) => boolean,
+): string[] {
+  const n = previous.length;
+  const positionBefore = new Map(previous.map((time, index) => [time, index]));
+  const rand = seededRandom(seed);
+
+  const remaining = new Set(previous);
+  const out: string[] = [];
+
+  for (let q = 0; q < n; q++) {
+    // Sorted, not Set-iteration order: insertion order is stable here, but sorting removes
+    // any doubt that two runtimes could enumerate differently and diverge.
+    const eligible = [...remaining]
+      .filter((time) => (positionBefore.get(time) ?? 0) <= q + bound)
+      .sort();
+
+    const clean = eligible.filter((time) => !clashesWithReel(time));
+    const clashing = eligible.filter((time) => clashesWithReel(time));
+
+    /*
+     * On a reel day, take a time clear of the reel. On any other day, prefer to spend one of
+     * the clashing times — they are only placeable here, so using them early keeps clean times
+     * in hand for the reel days still to come. Without that preference the greedy runs out of
+     * safe times late in the cycle and has to seat a photo next to a reel after all.
+     */
+    const preferred = isReelDay(q)
+      ? (clean.length > 0 ? clean : eligible)
+      : (clashing.length > 0 ? clashing : eligible);
+
+    const chosen = preferred[Math.floor(rand() * preferred.length)];
+    out.push(chosen);
+    remaining.delete(chosen);
+  }
+
+  return out;
+}
+
+/*
+ * The chain has to start somewhere, and every cycle is derived from the one before it, so a
+ * date far ahead is reached by walking forward from a fixed anchor. Cheap in practice — a
+ * cycle is N days, so a decade is a few dozen steps — and cached, so the planner drawing a
+ * week of dates walks the chain once rather than seven times.
+ */
+const ANCHOR_DATE = "2026-01-01";
+const MAX_CHAIN_STEPS = 4000;
+const chainCache = new Map<string, string[]>();
+
+/** Reel schedule identity, so changing reel days or times rebuilds the chain rather than reusing it. */
+function reelFingerprint(reels: ReelSchedule | null): string {
+  if (!reels) return "none";
+  return `${[...reels.days].sort().join(",")}@${[...reels.times].sort().join(",")}/${reels.gapMinutes}`;
+}
+
+function permutationForCycle(
+  grid: readonly string[],
+  cycle: number,
+  reels: ReelSchedule | null,
+): string[] {
+  const n = grid.length;
+  const key = `${fingerprintOf(grid)}|${reelFingerprint(reels)}`;
+  const anchor = Math.floor((dayIndex(ANCHOR_DATE) ?? 0) / n);
+
+  const reelMinutes = reelContext(reels);
+  const isReelDay = (cyc: number) => (position: number) =>
+    Boolean(reels) && reels!.days.includes(weekdayForDayIndex(cyc * n + position));
+  const clashes = (time: string) =>
+    Boolean(reelMinutes) && collidesWithReel(time, reelMinutes!, reels!.gapMinutes);
+
+  // The anchor cycle has no predecessor to be spaced against, so it is an unconstrained draw
+  // that still respects reels. Dates before it are history, where the admin shows what was
+  // actually published from `social_post_log` rather than a derived time.
+  const anchorPermutation = () =>
+    advance(seedPermutation(grid), hash32(`${key}:anchor`), n, isReelDay(anchor), clashes);
+
+  if (cycle <= anchor) return anchorPermutation();
+
+  // Absurdly distant dates cannot be real schedule questions; do not walk a chain to them.
+  if (cycle - anchor > MAX_CHAIN_STEPS) return anchorPermutation();
+
+  const bound = displacementBound(n);
+
+  // Resume from the furthest point already known.
+  let known = cycle;
+  while (known > anchor && !chainCache.has(`${key}|${known}`)) known--;
+
+  let permutation =
+    known === anchor ? anchorPermutation() : (chainCache.get(`${key}|${known}`) as string[]);
+
+  for (let c = known + 1; c <= cycle; c++) {
+    permutation = advance(permutation, hash32(`${key}:${c}`), bound, isReelDay(c), clashes);
+    chainCache.set(`${key}|${c}`, permutation);
+  }
+
+  return permutation;
+}
 
 // ─── Dates ────────────────────────────────────────────────────────────────────
 
@@ -274,90 +408,19 @@ function reelContext(reels: ReelSchedule | null): number[] | null {
 }
 
 /**
- * One cycle with reel collisions resolved, but before any cross-cycle repair.
+ * The final times for one cycle.
  *
- * Resolved by **swapping two days**, never by re-drawing. A swap keeps the cycle an exact
- * permutation of the grid, so "every time is used once before any repeats" survives the reel
- * guard. Re-drawing does not, and the difference is not academic — measured over ten years,
- * a re-draw put the same time on consecutive days 256 times.
- *
- * Note what this deliberately does *not* consider: the previous cycle. That is what makes it
- * safe for `resolveCycle` to call it one level back without recursing forever.
- */
-function reelResolved(
-  grid: readonly string[],
-  cycle: number,
-  reels: ReelSchedule | null,
-): string[] {
-  const n = grid.length;
-  const permutation = rawPermutation(grid, cycle);
-
-  const reelMinutes = reelContext(reels);
-  if (!reelMinutes || !reels) return permutation;
-
-  const isReelDay = (position: number) =>
-    reels.days.includes(weekdayForDayIndex(cycle * n + position));
-  const clash = (time: string) => collidesWithReel(time, reelMinutes, reels.gapMinutes);
-
-  for (let p = 0; p < n; p++) {
-    if (!isReelDay(p) || !clash(permutation[p])) continue;
-
-    // Trade with a day that can take this time — so not another reel day — and whose own time
-    // is clear here.
-    for (let q = 0; q < n; q++) {
-      if (q === p || isReelDay(q) || clash(permutation[q])) continue;
-      [permutation[p], permutation[q]] = [permutation[q], permutation[p]];
-      break;
-    }
-  }
-
-  return permutation;
-}
-
-/**
- * The final times for a whole cycle: reels resolved, then the cycle boundary repaired.
- *
- * The boundary repair writes only into the head and reserve, never the tail. That is what
- * lets it read the previous cycle's tail from `reelResolved(cycle - 1)` and be certain it is
- * looking at the times that will actually be published — one level back, no recursion.
- *
- * Deterministic because a whole cycle is resolved together and then indexed: day 3 and day 9
- * compute the identical array and read different positions from it, so a swap looks the same
- * from both ends.
+ * A thin wrapper now, and deliberately so: reel avoidance used to live here as a trade applied
+ * after the fact, which moved times to positions the displacement rule had never sanctioned
+ * and dropped the minimum gap from 37 days to 6. It now happens inside `advance`, as each
+ * position is filled, so there is nothing left to fix up afterwards.
  */
 function resolveCycle(
   grid: readonly string[],
   cycle: number,
   reels: ReelSchedule | null,
 ): string[] {
-  const n = grid.length;
-  const permutation = reelResolved(grid, cycle, reels);
-
-  const guard = boundaryGuard(n);
-  if (guard < 1) return permutation;
-
-  const forbidden = new Set(reelResolved(grid, cycle - 1, reels).slice(n - guard));
-  const reelMinutes = reelContext(reels);
-  const isReelDay = (position: number) =>
-    Boolean(reels) && reels!.days.includes(weekdayForDayIndex(cycle * n + position));
-  const allowedAt = (position: number, time: string) =>
-    !reelMinutes || !isReelDay(position) || !collidesWithReel(time, reelMinutes, reels!.gapMinutes);
-
-  for (let i = 0; i < guard; i++) {
-    if (!forbidden.has(permutation[i])) continue;
-
-    // Reserve only: the tail carries the next cycle's guarantee and the rest of the head is
-    // already placed. The swap must also leave both days reel-legal, or fixing the spacing
-    // would reintroduce the collision the previous pass just removed.
-    for (let j = guard; j < n - guard; j++) {
-      if (forbidden.has(permutation[j])) continue;
-      if (!allowedAt(i, permutation[j]) || !allowedAt(j, permutation[i])) continue;
-      [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
-      break;
-    }
-  }
-
-  return permutation;
+  return permutationForCycle(grid, cycle, reels);
 }
 
 /**

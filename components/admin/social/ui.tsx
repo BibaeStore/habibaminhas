@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, X, ChevronDown, Clock, AlertTriangle, Loader2, Trash2, Plus } from "lucide-react";
 import { PlatformIcon, platformLabel, platformBrand } from "@/components/admin/platform-icons";
+import { separationGuaranteeDays } from "@/lib/social/slot-window";
 
 /**
  * Shared furniture for the social admin.
@@ -780,7 +781,7 @@ export function relativeTime(iso: string | null): string {
  * over again: the scheduler treats a half-set window as no window at all.
  */
 export function SlotWindowEditor({
-  start, end, stepMinutes = 3, timezone, onChange, disabled,
+  start, end, stepMinutes = 5, timezone, onChange, disabled,
 }: {
   start: string | null;
   end: string | null;
@@ -860,7 +861,7 @@ export function SlotWindowEditor({
 export function describeSlotWindow(
   start: string | null,
   end: string | null,
-  stepMinutes = 3,
+  stepMinutes = 5,
 ): string {
   const from = timeToMinutes(start);
   const to = timeToMinutes(end);
@@ -870,8 +871,11 @@ export function describeSlotWindow(
   const count = Math.floor((to - from) / stepMinutes) + 1;
   if (count <= 1) return "Only one time fits in that window — it will post at the same time daily.";
 
-  const noRepeat = Math.floor(count / 3) + 1;
-  return `${count} possible times, ${stepMinutes} minutes apart. Every one is used before any repeats, so the same time is typically ${count} days apart and rarely closer than ${noRepeat}.`;
+  // Asked of the scheduler rather than recomputed here: this figure went stale once already,
+  // when the algorithm changed and the screen carried on promising the old bound.
+  const noRepeat = separationGuaranteeDays(count);
+  const month = noRepeat >= 30 ? " No time repeats within a month." : "";
+  return `${count} possible times, ${stepMinutes} minutes apart. Every one is used before any repeats — the same time is ${count} days apart on average and never closer than ${noRepeat}.${month}`;
 }
 
 function timeToMinutes(time: string | null): number | null {
