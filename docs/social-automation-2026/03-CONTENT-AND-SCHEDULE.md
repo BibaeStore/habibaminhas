@@ -170,16 +170,141 @@ Feed posts should land **no later than 21:00** so engagement accumulates before 
 Lunchtime and afternoon into early evening. Early morning performs worst. Global data points
 at Thursday around 09:00 local, but the Pakistan-specific pattern favours **13:00–16:00**.
 
-### Recommended default configuration
+### Current configuration — a window, not a time (from 2026-08-27)
 
 ```sql
-slot_times = '{19:00}'      -- one post per day, 7pm PKT
-timezone   = 'Asia/Karachi'
+slot_window_start        = '18:00'   -- inclusive
+slot_window_end          = '23:00'   -- inclusive
+slot_window_step_minutes = 5         -- must match the pg_cron tick
+timezone                 = 'Asia/Karachi'
+
+-- and the job that reads it
+cron.job 'social-post-slots' = '*/5 * * * *'
 ```
 
-7pm sits inside the Instagram evening peak and late enough in the Facebook window to serve
-both from a single slot. If cadence goes to 2/day, add `13:00` rather than doubling up in
-the evening.
+One post a day at a time **drawn from that window**, varying daily, rather than the same
+clock time every day. `slot_times` is ignored while both bounds are set, and is still kept
+up to date as the fallback if the window is ever cleared.
+
+**Why, and why not for the reason people assume.** Posting at a fixed time is *not* an
+automation signal Meta acts on. Publishing through the Content Publishing API is the
+sanctioned path, its only documented ceiling is 100 API posts per rolling 24h, and Adam
+Mosseri has said outright that scheduled posts are not down-ranked ("there was a bug where
+it did affect unconnected reach, but that was many, many months ago and it has since been
+fixed"). Meta's automation enforcement targets *engagement* automation — mass follow/like/
+comment, unofficial APIs, password-sharing tools — none of which this pipeline does.
+
+The real argument is measurement and coverage: 19:00 every day tests exactly one hour and
+reaches only the audience awake for it. A varying time turns the schedule into free
+time-of-day A/B data while staying inside the evening peak.
+
+### How the time is chosen
+
+`lib/social/slot-window.ts`. The time is **derived from the calendar date**, not rolled at
+runtime — the cron ticks every 15 minutes, so a `Math.random()` inside the route would be
+re-rolled 96 times a day and fire repeatedly. Same date in, same time out, with no stored
+state to keep in sync.
+
+Each cycle of N days is a seeded permutation of all N times in the grid, so:
+
+| Property | 18:00–23:00 @ 5 min |
+|---|---|
+| Possible times (N) | **61** |
+| Every time used before any repeats | yes, once per 61-day cycle |
+| Minimum gap before a time recurs | **37 days** |
+| Average gap | 61 days |
+
+Measured over 10 years against the live schedule: **zero** rolling 30-day stretches contain a
+repeated time (0 of 3,621), zero reel collisions, minimum gap 37 days, every time used 59–61
+times. The owner's requirement — a unique posting time on every day of a month — holds.
+
+### How the spacing is guaranteed
+
+Cycles are **chained**, not independently shuffled. If a time sits at position `p` in one cycle
+of length N and `q` in the next, the days between its two uses are `gap = (N - p) + q`, so
+`gap >= G` is exactly `q >= p - (N - G)`. In words: a time may drift later in the order freely
+but may never jump more than `N - G` places earlier. Because that is a statement about
+*consecutive* cycles it holds across every boundary by construction — no seam to patch, no
+special case for day one of a cycle.
+
+`G` is set above the 30 actually required, because the reel guard needs headroom.
+
+> ⚠️ **Reel avoidance happens inside the chain, as each position is filled — never afterwards.**
+> The obvious approach is to resolve a clash by trading two days once the cycle is built. That
+> was tried and measured: a trade moves a time to a position the displacement rule never
+> sanctioned, and the minimum gap fell from 37 days to **6**. Choosing a reel-safe time while
+> the position is being filled keeps every placement inside the rule.
+
+### Why the step is 5 minutes
+
+This is arithmetic, not taste. A month needs at least 30 distinct clock times, and the step
+decides how many a window contains:
+
+| Window | Step | Cron | N | Repeat-free 30-day stretches |
+|---|---|---|---|---|
+| 18:30–21:30 | 15 min | `*/15` | 13 | 0% |
+| 18:00–23:00 | 15 min | `*/15` | 21 | 0% |
+| 18:00–23:00 | 10 min | `*/10` | 31 | 7% |
+| 18:00–23:00 | 5 min | `*/5` | 61 | 86% |
+| 18:00–23:00 | 5 min | `*/5` | 61 | 86% |
+| **18:00–23:00** | **5 min** | **`*/5`** | **61** | **100%** ← *with the chained algorithm* |
+| 18:00–23:00 | 3 min | `*/3` | 101 | 100% — **rejected, see below** |
+
+**Widening the window alone never fixes it.** Five hours at 15-minute spacing holds 21 times,
+and 21 values cannot cover 30 days.
+
+**The cron tick is the real resolution limit.** The route only decides whether a slot is due
+when pg_cron wakes it, so at a 15-minute tick a 19:37 draw simply publishes at 19:45. The step
+and the tick must move together — which is why `slot_window_step_minutes` and the job's
+schedule are changed in the same migration, and why the step is displayed read-only in the
+admin.
+
+**Why not 3 minutes, which also reaches 100%?** Because of a hard safety floor. The posting
+route declares `maxDuration = 300`, and the duplicate guard only becomes effective once the
+first `social_post_log` row is written — which happens *after* Instagram publishing completes,
+about 50 seconds into a run in live data. A tick shorter than 300 seconds can therefore fire
+while the previous invocation is still uploading and publish the day's product twice. At `*/5`
+or slower the platform's own 300-second ceiling makes that overlap impossible.
+
+5 minutes was originally rejected because the *old* algorithm managed only an 86% chance of a
+repeat-free month at N=61. That was a limitation of the algorithm, not of the arithmetic, and
+chaining fixed it — so the safer tick and the requirement are no longer in tension.
+
+Cost of the finer tick: 288 wake-ups a day instead of 96. Each is an early exit — read
+settings, check the slot, answer `no_slot_due` — roughly three small queries, comfortably
+inside the Supabase and Vercel free tiers. `social-occasion-agent` stays at `*/15`; occasion
+greetings publish at a fixed 10:00 and gain nothing from a finer tick.
+
+> ⚠️ **A full month with no repeat is not reachable.** 30 days cannot be covered by 13
+> distinct times. This is the maximum spread the arithmetic allows. More requires a wider
+> window or a finer step — and a finer step requires speeding up the pg_cron job, because
+> the tick is the real resolution limit: a 19:37 draw would simply publish at the 19:45 tick.
+
+**Reel collision guard.** Photos were pinned at 19:00 and reels at 20:00, so they could
+never clash. A window makes a Monday/Friday clash possible, so a photo drawn within 45
+minutes of a reel slot **trades times with another day in the same cycle**.
+
+> A trade, not a re-draw, and the distinction is the whole thing. 20:00 ± 45 min excludes 7
+> of the times in the 13-slot window this was first built against, so re-drawing pushed every
+> displaced Monday and Friday onto the same 6 survivors — measured, that produced the same
+> time on consecutive days 256 times in 10 years. A trade keeps the cycle an exact
+> permutation, so it cannot concentrate anything.
+>
+> If reels ever move to *every* day at a time inside the window, there is no non-reel day
+> left to trade with and the guard stops being able to separate them. Two reel days a week
+> is comfortably inside what it can handle.
+
+**Where it is configured.** The window lives on both `social_settings` *and*
+`social_plans.photo_window_start/end`. That is not duplication: activating or saving a plan
+calls `writeScheduleFromPlan`, which overwrites `social_settings` wholesale — without the
+plan carrying the window, the first save in the planner would silently revert posting to a
+fixed time with nothing on screen to say so.
+
+### If cadence goes to 2/day
+
+Add a fixed `13:00` slot rather than a second window. Two windows on one day would need
+their own mutual collision rule, and the afternoon slot is aimed at Facebook, where the
+Pakistan pattern favours 13:00–16:00 and there is nothing to vary against.
 
 ### ⚠️ Ramadan changes everything
 

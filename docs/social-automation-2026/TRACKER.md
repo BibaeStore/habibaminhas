@@ -1,11 +1,87 @@
 # TRACKER — Social Automation
 
-**Last updated:** 2026-08-12 (seventh update — reels shipped, admin rebuilt, planner built,
-scheduler switched on, TikTok researched)
+**Last updated:** 2026-08-27 (eighth update — audit of the live pipeline, and the fixed
+19:00 photo slot replaced with a randomised evening window)
 
-**Status:** ✅ **Phases 1, 1b and 2 (reels) built.** Planner built. The pg_cron job
-`social-post-slots` is now **`active = true`** — the scheduler runs for the first time.
-Nothing publishes without approval: `approval_required = true`, so posts queue for review.
+**Status:** ✅ **Phases 1, 1b and 2 (reels) built.** Planner built. `social-post-slots` is
+`active = true` and has published **10 consecutive days without a miss** (18–27 Aug).
+
+> ⚠️ **`approval_required` is `false`, not `true`.** It was changed on 2026-08-18. Photos
+> **auto-publish** — they do not queue for review. Earlier updates in this file say the
+> opposite and are wrong; this line is the current one.
+
+## Session 2026-08-27 — audit, and the randomised posting window
+
+**Audited first, against the live database rather than these docs.**
+
+| Working | Evidence |
+|---|---|
+| Daily photo post | 10 consecutive days, 18–27 Aug, every one at 19:00–19:01 PKT |
+| Instagram | 21 posts, 0 failures |
+| Facebook | 21 posts, 0 failures |
+| Occasion agent | published 25 Aug 10:00 PKT |
+| Reels | 1 scheduled drain, 24 Aug 20:00 PKT |
+
+| Not working | Severity |
+|---|---|
+| **Pinterest fails daily** — 6 consecutive failures 22–27 Aug, "Apps with Trial access may not create Pins in production". Still blocked on Standard access | 🔴 |
+| **6 approved reels backlogged**, oldest approved 12 Aug. Drains 1 per slot, 2 slots a week | 🟡 |
+| Active plan "August Plan" expires **31 Aug**. Nothing breaks — `active_to` is not enforced by the scheduler, the compiled settings simply persist — but the planner will show an expired plan governing live posting | 🟡 |
+| `META_SYSTEM_USER_TOKEN` still not rotated (pasted into a transcript 9 Aug) | 🟡 |
+
+**Built** — branch `feat/social-random-slot-window`:
+
+| File | What |
+|---|---|
+| `lib/social/slot-window.ts` | **New.** Pure module. Derives one posting time per calendar date from a window. No clock, no DB, no state |
+| `lib/social/config.ts` | `resolvePhotoSlots()` — today's times, window or fixed |
+| `lib/social/publish.ts` | Uses the resolver; `slotAlreadyRan` made window-aware |
+| `lib/social/plan.ts` | Window carried through `compilePlan`, capacity arithmetic, and the calendar preview |
+| `lib/actions/social-plans.ts` | Window survives duplicate + compile |
+| `components/admin/social/ui.tsx` | `SlotWindowEditor`, shared by all three schedule screens |
+| `supabase/migrations/20260827_social_random_slot_window.sql` | Additive columns + the first window seed |
+| `supabase/migrations/20260827_social_window_three_minute_step.sql` | 18:00–23:00, first attempt at a 3-min step |
+| `supabase/migrations/20260828_social_window_five_minute_step.sql` | **Current.** Settles on 5 min + `*/5`, which is overlap-safe |
+
+**Live config now:** `slot_window_start = 18:00`, `slot_window_end = 23:00`, step **5 min**,
+`social-post-slots` on **`*/5`** — 61 possible times, every one used before any repeats,
+**minimum 37 days** between repeats. Measured over 10 years: **0 of 3,621 rolling 30-day
+stretches contains a repeated time**, which is the owner's actual requirement, plus zero
+photo/reel clashes. Reels are untouched (Mon/Fri 20:00).
+
+**Why 5 and not 3.** Both meet the spacing requirement, but the route declares
+`maxDuration = 300` and the duplicate guard only bites once the first `social_post_log` row is
+written — which is *after* Instagram publishing finishes, ~50s into a run. A tick under 300s
+can fire mid-upload and post twice; at `*/5` the platform's own ceiling makes overlap
+impossible. 5 min had been rejected earlier at 86% repeat-free months, but that was an
+algorithm limit (see below), not arithmetic.
+
+**The research question, answered:** a fixed daily time is *not* something Meta penalises.
+Publishing via the Content Publishing API is sanctioned, the documented ceiling is 100 API
+posts/24h, and Mosseri has stated scheduled posts are not down-ranked. The reason to vary
+the time is coverage and measurement, not ban risk. Detail in `03-CONTENT-AND-SCHEDULE.md`.
+
+**The cron tick was the real constraint, and it moved.** The first pass kept `*/15`, which
+caps an evening window at 21 times — fewer than the 30 a month needs, so unique-times-per-month
+was unreachable no matter how wide the window. Widening does not help; only a finer step does,
+and the step is meaningless unless the job wakes up that often. `social-post-slots` is now
+`*/5` and the step is 5 minutes, which is what makes the 100% figure above true.
+
+**The spacing algorithm was rebuilt twice, and both rewrites came from measurement.**
+
+1. *Independent per-cycle shuffles + a seam repair.* Capped the minimum gap at `floor(N/3)+1`,
+   so a repeat-free month needed N ≥ 90 and therefore a 3-minute tick.
+2. *Reel clashes resolved by trading two days after the cycle was built.* Looked correct;
+   measured, it dropped the minimum gap from 37 days to **6**, because a trade moves a time to
+   a position the spacing rule never sanctioned.
+
+Now: cycles are **chained under a displacement bound** (a time may drift later freely but never
+jump more than `N - G` places earlier), and reel-safe times are chosen **as each position is
+filled**, inside the chain. Both guarantees then hold by construction at N=61.
+
+⚠️ **The step and the cron schedule must always be changed together.** `slot_window_step_minutes`
+is displayed read-only in the admin for this reason. A finer step alone just rounds every draw
+up to the next tick.
 
 ## 🔴 Open right now — read first
 

@@ -6,8 +6,10 @@ import {
   getActivePlatforms,
   getEnabledCollaborators,
   findDueSlot,
+  resolvePhotoSlots,
   startOfLocalDayUtc,
   type MetaCredentials,
+  type ResolvedPhotoSchedule,
   type SocialSettings,
 } from "./config";
 import { selectNextProducts, clearManualOrder, type ProductCandidate } from "./select";
@@ -111,18 +113,28 @@ export async function runScheduledPost(options?: {
   //    an approval made at 22:00 is not held until tomorrow's slot.
   const drained = await publishApproved(settings, creds);
 
-  // 2. Is a slot due? `post_days` gates the weekday, so an active plan's chosen days are
-  //    honoured rather than every slot firing every day.
+  /*
+   * 2. Is a slot due? `post_days` gates the weekday, so an active plan's chosen days are
+   *    honoured rather than every slot firing every day.
+   *
+   *    `resolvePhotoSlots` is the only new step: when an evening window is configured it
+   *    returns today's single derived time, otherwise the fixed `slot_times` exactly as
+   *    before. The due-check below is unchanged either way — the window decides *which* time
+   *    to look for, never whether to post.
+   */
+  const now = new Date();
+  const schedule = resolvePhotoSlots(settings, now);
   const slot = options?.force
     ? "manual"
-    : findDueSlot(settings.slot_times, settings.timezone, new Date(), 30, settings.post_days);
+    : findDueSlot(schedule.slots, settings.timezone, now, 30, settings.post_days);
   if (!slot) {
     return {
       ok: true,
       action: "no_slot_due",
       detail: {
         drained,
-        slots: settings.slot_times,
+        slots: schedule.slots,
+        scheduleSource: schedule.source,
         days: settings.post_days,
         timezone: settings.timezone,
       },
@@ -131,7 +143,7 @@ export async function runScheduledPost(options?: {
 
   // 3. Has this slot already produced a post today? Prevents the 15-minute cron from
   //    firing the same 19:00 slot twice inside the tolerance window.
-  if (!options?.force && (await slotAlreadyRan(settings, slot))) {
+  if (!options?.force && (await slotAlreadyRan(settings, slot, schedule.source))) {
     return { ok: true, action: "slot_already_ran", detail: { slot, drained } };
   }
 
@@ -164,7 +176,7 @@ export async function runScheduledPost(options?: {
   return {
     ok: true,
     action: settings.approval_required ? "queued_for_review" : "published",
-    detail: { slot, rotation: status, drained, results },
+    detail: { slot, scheduleSource: schedule.source, rotation: status, drained, results },
   };
 }
 
@@ -667,14 +679,44 @@ async function countToday(settings: SocialSettings): Promise<number> {
   return groups.size + ungrouped;
 }
 
-/** Has this named slot already produced rows today? */
-async function slotAlreadyRan(settings: SocialSettings, slot: string): Promise<boolean> {
+/**
+ * Has this slot already produced rows today?
+ *
+ * Two questions wearing one name, because a window changes what "the same slot" means.
+ *
+ * **Fixed times** — match the slot by name. Two configured times are two separate slots and
+ * each may fire once, so 13:00 having run must not stop 19:00.
+ *
+ * **A window** — match any clock-time slot at all. A window produces exactly one photo slot
+ * per day by construction, and the name of that slot is *derived*, so editing the window at
+ * 20:00 renames a slot that has already published. An exact-name guard would look for the new
+ * name, find nothing, and post a second time; the only thing standing between that and a
+ * duplicate would be `max_posts_per_day`, which is a safety net and not a schedule.
+ *
+ * Occasion greetings (`slot = 'occasion'`) and "post now" (`slot = 'manual'`) are deliberately
+ * not clock times, so neither is counted here and neither can block the day's real post.
+ */
+async function slotAlreadyRan(
+  settings: SocialSettings,
+  slot: string,
+  source: ResolvedPhotoSchedule["source"],
+): Promise<boolean> {
   const sb = createAdminClient();
   const since = startOfLocalDayUtc(settings.timezone).toISOString();
-  const { count } = await sb
+
+  if (source === "fixed") {
+    const { count } = await sb
+      .from("social_post_log")
+      .select("id", { count: "exact", head: true })
+      .eq("slot", slot)
+      .gte("created_at", since);
+    return (count ?? 0) > 0;
+  }
+
+  const { data } = await sb
     .from("social_post_log")
-    .select("id", { count: "exact", head: true })
-    .eq("slot", slot)
+    .select("slot")
     .gte("created_at", since);
-  return (count ?? 0) > 0;
+
+  return (data ?? []).some((row) => /^\d{1,2}:\d{2}$/.test(String(row.slot ?? "")));
 }

@@ -17,6 +17,7 @@ import {
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
 import {
   Field, Pill, Toggle, Modal, CategoryPicker, SectionHeading, EmptyState, inputCls,
+  SlotWindowEditor,
 } from "@/components/admin/social/ui";
 import { useAct } from "@/components/admin/social/use-act";
 
@@ -423,6 +424,10 @@ function ScheduleSettings({
         : [...draft.categories, slug],
     );
 
+  // With a window on, the fixed list is dimmed rather than hidden: it is still what the
+  // scheduler falls back to if the window is switched off, so it should stay visible.
+  const usingWindow = Boolean(draft.slot_window_start && draft.slot_window_end);
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <AdminCard padded>
@@ -431,7 +436,7 @@ function ScheduleSettings({
           One post per slot, in {draft.timezone}. Evening slots perform best for this audience.
         </p>
 
-        <div className="space-y-2">
+        <div className={usingWindow ? "pointer-events-none space-y-2 opacity-40" : "space-y-2"}>
           {draft.slot_times.map((slot, i) => (
             <div key={i} className="flex items-center gap-2">
               <Clock size={16} className="shrink-0 text-[var(--admin-text-muted)]" />
@@ -455,12 +460,30 @@ function ScheduleSettings({
           ))}
         </div>
 
-        <button
-          onClick={() => set("slot_times", [...draft.slot_times, "13:00"])}
-          className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--admin-accent)]"
-        >
-          <Plus size={15} /> Add another slot
-        </button>
+        {!usingWindow && (
+          <button
+            onClick={() => set("slot_times", [...draft.slot_times, "13:00"])}
+            className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--admin-accent)]"
+          >
+            <Plus size={15} /> Add another slot
+          </button>
+        )}
+
+        <div className="mt-5 border-t border-[var(--admin-border)] pt-4">
+          <SlotWindowEditor
+            start={draft.slot_window_start}
+            end={draft.slot_window_end}
+            stepMinutes={draft.slot_window_step_minutes}
+            timezone={draft.timezone}
+            onChange={(start, end) =>
+              setDraft((d) => ({ ...d, slot_window_start: start, slot_window_end: end }))
+            }
+          />
+          <p className="mt-2 text-[13px] text-[var(--admin-text-muted)]">
+            An active plan writes this too — change it in the planner if you want it to survive
+            the next plan save.
+          </p>
+        </div>
 
         <div className="mt-5 grid gap-4 border-t border-[var(--admin-border)] pt-4 sm:grid-cols-2">
           <Field label="Timezone">

@@ -1,6 +1,42 @@
 import type { Tables } from "@/lib/supabase/types";
+import {
+  parseWindow,
+  pickSlotForDate,
+  REEL_COLLISION_GAP_MINUTES,
+  type SlotWindow,
+} from "./slot-window";
 
 export type PlanRow = Tables<"social_plans">;
+
+/**
+ * The plan's photo window, or null if it posts at fixed times.
+ *
+ * Everything downstream branches on this one function, so "does this plan use a window?" has
+ * exactly one answer and the planner, the validator and the calendar cannot disagree about it.
+ *
+ * The step is read from the plan rather than passed in. It used to be a constant defaulted in
+ * this module, which meant the planner previewed a window at one resolution while the
+ * scheduler ran it at another — the calendar could show times that would never fire. Keeping
+ * it on the row makes a plan self-describing, and `compilePlan` carries it across to
+ * `social_settings` exactly as it already does for days and times.
+ */
+export function planPhotoWindow(
+  plan: Pick<PlanRow, "photo_window_start" | "photo_window_end" | "photo_window_step_minutes">,
+): SlotWindow | null {
+  return parseWindow(
+    plan.photo_window_start,
+    plan.photo_window_end,
+    plan.photo_window_step_minutes,
+  );
+}
+
+/**
+ * Photo posts a window-driven plan produces per day.
+ *
+ * Always one. A window is a single draw, not a list — which is exactly why capacity arithmetic
+ * has to ask this rather than count `photo_times`, a list the window makes irrelevant.
+ */
+export const PHOTOS_PER_DAY_IN_WINDOW = 1;
 
 /**
  * Plans — targets in, schedule out.
@@ -48,6 +84,17 @@ export type CompiledSchedule = {
   post_days: number[];
   reel_times: string[];
   reel_days: number[];
+  /**
+   * Carried through so activating or saving a plan cannot silently drop the window.
+   *
+   * `writeScheduleFromPlan` overwrites `social_settings` wholesale. Before these two fields
+   * existed, the first save in the planner would have reverted a randomised schedule to a
+   * fixed time with nothing on screen to say it had happened.
+   */
+  slot_window_start: string | null;
+  slot_window_end: string | null;
+  /** Has to match the pg_cron tick, or a draw simply lands on the following one. */
+  slot_window_step_minutes: number;
 };
 
 /**
@@ -59,11 +106,18 @@ export type CompiledSchedule = {
  * posting altogether.
  */
 export function compilePlan(plan: PlanRow): CompiledSchedule {
+  const window = planPhotoWindow(plan);
   return {
+    // `slot_times` is still written even in window mode. It costs nothing, and it is what the
+    // scheduler falls back to if the window is ever cleared or fails to parse — so the
+    // fallback lands on the owner's own last fixed schedule rather than on a hardcoded guess.
     slot_times: normaliseTimes(plan.photo_times),
     post_days: normaliseDays(plan.photo_days),
     reel_times: normaliseTimes(plan.reel_times),
     reel_days: normaliseDays(plan.reel_days),
+    slot_window_start: window?.start ?? null,
+    slot_window_end: window?.end ?? null,
+    slot_window_step_minutes: plan.photo_window_step_minutes,
   };
 }
 
@@ -144,9 +198,16 @@ export function validatePlan(plan: PlanRow, ctx: PlanContext): PlanIssue[] {
 
     if (target <= 0) continue;
 
-    const capacity = weeklyCapacity(days, times);
+    /*
+     * A photo window replaces the times list entirely: one draw per posting day, so capacity
+     * is the day count. Counting `photo_times` here instead would report a plan as balanced
+     * while the scheduler published a different number — the exact class of quiet mismatch
+     * this validator exists to catch.
+     */
+    const window = isPhoto ? planPhotoWindow(plan) : null;
     const dayCount = normaliseDays(days).length;
-    const timeCount = normaliseTimes(times).length;
+    const timeCount = window ? PHOTOS_PER_DAY_IN_WINDOW : normaliseTimes(times).length;
+    const capacity = dayCount * timeCount;
 
     if (timeCount === 0) {
       issues.push({
@@ -164,20 +225,26 @@ export function validatePlan(plan: PlanRow, ctx: PlanContext): PlanIssue[] {
       issues.push({
         level: "error",
         field: kind,
-        message: `${dayCount} ${dayCount === 1 ? "day" : "days"} × ${timeCount} ${timeCount === 1 ? "time" : "times"} gives ${capacity} ${noun} a week, but the target is ${target}. Add a day or a second time — otherwise only ${capacity} will go out.`,
+        message: window
+          ? `A random time posts once a day, so ${dayCount} ${dayCount === 1 ? "day" : "days"} gives ${capacity} ${noun} a week, but the target is ${target}. Add a day — otherwise only ${capacity} will go out.`
+          : `${dayCount} ${dayCount === 1 ? "day" : "days"} × ${timeCount} ${timeCount === 1 ? "time" : "times"} gives ${capacity} ${noun} a week, but the target is ${target}. Add a day or a second time — otherwise only ${capacity} will go out.`,
       });
     } else if (capacity > target) {
       issues.push({
         level: "error",
         field: kind,
-        message: `This schedule posts ${capacity} ${noun} a week, more than the target of ${target}. The scheduler fires every chosen time on every chosen day, so it will publish ${capacity}, not ${target}.`,
+        message: window
+          ? `A random time posts once on each of ${dayCount} days, so this schedule publishes ${capacity} ${noun} a week, more than the target of ${target}. Remove a day or raise the target.`
+          : `This schedule posts ${capacity} ${noun} a week, more than the target of ${target}. The scheduler fires every chosen time on every chosen day, so it will publish ${capacity}, not ${target}.`,
       });
     }
   }
 
   // The hard daily ceiling is a safety net, not a target — a plan that exceeds it will be
   // silently truncated on the day rather than rejected.
-  const photosPerDay = normaliseTimes(plan.photo_times).length;
+  const photosPerDay = planPhotoWindow(plan)
+    ? PHOTOS_PER_DAY_IN_WINDOW
+    : normaliseTimes(plan.photo_times).length;
   if (photosPerDay > ctx.dailyCeiling) {
     issues.push({
       level: "error",
@@ -283,6 +350,13 @@ export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): Plann
   const photoTimes = normaliseTimes(plan.photo_times);
   const reelTimes = normaliseTimes(plan.reel_times);
 
+  /*
+   * In window mode the calendar shows the *actual* time each day will post, not a placeholder.
+   * That is the payoff of deriving the time from the date rather than rolling it at runtime:
+   * the planner can compute next Friday's slot today, and it will be the time that fires.
+   */
+  const window = planPhotoWindow(plan);
+
   const out: PlannedSlot[] = [];
   const start = Date.parse(`${fromISO}T12:00:00Z`);
   const end = Date.parse(`${toISO}T12:00:00Z`);
@@ -298,7 +372,18 @@ export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): Plann
 
     const weekday = day.getUTCDay();
     if (plan.photos_per_week > 0 && photoDays.has(weekday)) {
-      for (const time of photoTimes) out.push({ date, time, kind: "photo" });
+      if (window) {
+        // Same call the scheduler makes, including the reel-collision guard, so the calendar
+        // shows the time that will actually fire rather than one the guard later moves.
+        const drawn = pickSlotForDate(date, window, {
+          days: [...reelDays],
+          times: reelTimes,
+          gapMinutes: REEL_COLLISION_GAP_MINUTES,
+        });
+        if (drawn) out.push({ date, time: drawn, kind: "photo" });
+      } else {
+        for (const time of photoTimes) out.push({ date, time, kind: "photo" });
+      }
     }
     if (plan.reels_per_week > 0 && reelDays.has(weekday)) {
       for (const time of reelTimes) out.push({ date, time, kind: "reel" });
