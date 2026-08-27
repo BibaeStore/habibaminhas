@@ -29,11 +29,16 @@
  *     shortest possible gap between two uses of one time is floor(N/3) + 1
  *   - the average gap is N days
  *
- * For the 18:30–21:30 window at 15 minutes that is N = 13: every one of the 13 times is used
- * once before any repeats, and no time can recur inside 5 days. A calendar month with no
- * repeat at all is not reachable — 30 days cannot be covered by 13 distinct times — so this
- * is the most spread the window arithmetic allows. Widening the window or shortening the step
- * is the only way to buy more, and both are data changes rather than code ones.
+ * For the live 18:00–23:00 window at 3 minutes that is N = 101: every one of the 101 times is
+ * used once before any repeats, and none can recur inside 34 days. Measured over ten years,
+ * no rolling 30-day stretch contains a repeated time at all.
+ *
+ * N is what decides whether "a unique time every day for a month" is even reachable, and N is
+ * set by the *step*, not by the width of the window: five hours at 15-minute spacing holds
+ * only 21 times, and 21 values cannot cover 30 days. The step in turn cannot be finer than
+ * the pg_cron tick, because the scheduler only asks whether a slot is due when the job wakes
+ * it — at a 15-minute tick a 19:37 draw simply publishes at 19:45. Step and tick move
+ * together or not at all.
  *
  * The reel-collision rule is resolved by swapping two days inside the cycle rather than by
  * re-drawing, so the cycle stays an exact permutation and the spacing above survives it. The
@@ -136,7 +141,7 @@ export function parseWindow(
 /**
  * Every time the window can produce, in order.
  *
- * Both bounds are inclusive, so 18:30–21:30 at 15 minutes is 13 times, not 12. The step is
+ * Both bounds are inclusive, so 18:00–23:00 at 3 minutes is 101 times, not 100. The step is
  * the resolution of the pg_cron tick: asking for a finer one does not produce a finer
  * schedule, it produces a draw the cron rounds up to its next tick anyway.
  */

@@ -313,6 +313,7 @@ function PlanEditor({
                     photo_times: draft.photo_times,
                     photo_window_start: draft.photo_window_start,
                     photo_window_end: draft.photo_window_end,
+                    photo_window_step_minutes: draft.photo_window_step_minutes,
                     reels_per_week: draft.reels_per_week,
                     reel_days: draft.reel_days,
                     reel_times: draft.reel_times,
@@ -383,6 +384,7 @@ function PlanEditor({
         onTimes={(t) => set("photo_times", t)}
         windowStart={draft.photo_window_start}
         windowEnd={draft.photo_window_end}
+        windowStep={draft.photo_window_step_minutes}
         onWindow={(start, end) =>
           setDraft((d) => ({ ...d, photo_window_start: start, photo_window_end: end }))
         }
@@ -431,7 +433,7 @@ function IssueList({ issues }: { issues: PlanIssue[] }) {
 /** Target, days and times for one content type. */
 function CadenceEditor({
   kind, title, icon, perWeek, days, times, onTarget, onDays, onTimes,
-  windowStart = null, windowEnd = null, onWindow,
+  windowStart = null, windowEnd = null, windowStep = 3, onWindow,
 }: {
   kind: "photo" | "reel";
   title: string;
@@ -445,6 +447,7 @@ function CadenceEditor({
   /** Photos only — reels stay on fixed times, so a reel cadence cannot drift into a photo. */
   windowStart?: string | null;
   windowEnd?: string | null;
+  windowStep?: number;
   onWindow?: (start: string | null, end: string | null) => void;
 }) {
   // A window posts once per posting day, so capacity is the day count and the times list is
@@ -503,6 +506,7 @@ function CadenceEditor({
             <SlotWindowEditor
               start={windowStart}
               end={windowEnd}
+              stepMinutes={windowStep}
               onChange={onWindow}
             />
           )}

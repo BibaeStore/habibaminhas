@@ -39,20 +39,29 @@
 | `lib/social/plan.ts` | Window carried through `compilePlan`, capacity arithmetic, and the calendar preview |
 | `lib/actions/social-plans.ts` | Window survives duplicate + compile |
 | `components/admin/social/ui.tsx` | `SlotWindowEditor`, shared by all three schedule screens |
-| `supabase/migrations/20260827_social_random_slot_window.sql` | Additive columns + the 18:30–21:30 seed |
+| `supabase/migrations/20260827_social_random_slot_window.sql` | Additive columns + the first window seed |
+| `supabase/migrations/20260827_social_window_three_minute_step.sql` | 18:00–23:00 @ 3 min, plus the cron tick that makes it real |
 
-**Live config now:** `slot_window_start = 18:30`, `slot_window_end = 21:30`, step 15 min —
-13 possible times, every one used before any repeats, no repeat inside 5 days. Reels are
-untouched (Mon/Fri 20:00) and a photo drawn within 45 min of a reel slot is moved.
+**Live config now:** `slot_window_start = 18:00`, `slot_window_end = 23:00`, step **3 min**,
+`social-post-slots` on **`*/3`** — 101 possible times, every one used before any repeats,
+**minimum 34 days** between repeats. Measured over 10 years: **0 of 3,621 rolling 30-day
+stretches contains a repeated time**, which is the owner's actual requirement. Reels are
+untouched (Mon/Fri 20:00); a photo drawn within 45 min of a reel slot trades days.
 
 **The research question, answered:** a fixed daily time is *not* something Meta penalises.
 Publishing via the Content Publishing API is sanctioned, the documented ceiling is 100 API
 posts/24h, and Mosseri has stated scheduled posts are not down-ranked. The reason to vary
 the time is coverage and measurement, not ban risk. Detail in `03-CONTENT-AND-SCHEDULE.md`.
 
-**Not done, deliberately:** the pg_cron tick is still every 15 minutes. That caps the grid
-at 13 times for a 3-hour window, so a full month with no repeat is unreachable. Raising the
-job to `*/5` would give 37 — a one-line change, not yet requested.
+**The cron tick was the real constraint, and it moved.** The first pass kept `*/15`, which
+caps an evening window at 21 times — fewer than the 30 a month needs, so unique-times-per-month
+was unreachable no matter how wide the window. Widening does not help; only a finer step does,
+and the step is meaningless unless the job wakes up that often. `social-post-slots` is now
+`*/3` and the step is 3 minutes, which is what makes the 100% figure above true.
+
+⚠️ **The step and the cron schedule must always be changed together.** `slot_window_step_minutes`
+is displayed read-only in the admin for this reason. A finer step alone just rounds every draw
+up to the next tick.
 
 ## 🔴 Open right now — read first
 

@@ -780,11 +780,15 @@ export function relativeTime(iso: string | null): string {
  * over again: the scheduler treats a half-set window as no window at all.
  */
 export function SlotWindowEditor({
-  start, end, stepMinutes = 15, timezone, onChange, disabled,
+  start, end, stepMinutes = 3, timezone, onChange, disabled,
 }: {
   start: string | null;
   end: string | null;
-  /** Read-only here — it has to match the pg_cron tick, so it is not an admin-editable field. */
+  /**
+   * Shown, not editable. It has to match the pg_cron tick — the scheduler only decides
+   * whether a slot is due when the job wakes it, so a finer step here would just round every
+   * draw up to the next tick. Changing it means changing the cron job too.
+   */
   stepMinutes?: number;
   timezone?: string;
   onChange: (start: string | null, end: string | null) => void;
@@ -800,7 +804,7 @@ export function SlotWindowEditor({
           type="checkbox"
           checked={on}
           disabled={disabled}
-          onChange={(e) => (e.target.checked ? onChange("18:30", "21:30") : onChange(null, null))}
+          onChange={(e) => (e.target.checked ? onChange("18:00", "23:00") : onChange(null, null))}
           className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--admin-accent)]"
         />
         <span>
@@ -856,7 +860,7 @@ export function SlotWindowEditor({
 export function describeSlotWindow(
   start: string | null,
   end: string | null,
-  stepMinutes = 15,
+  stepMinutes = 3,
 ): string {
   const from = timeToMinutes(start);
   const to = timeToMinutes(end);

@@ -173,10 +173,13 @@ at Thursday around 09:00 local, but the Pakistan-specific pattern favours **13:0
 ### Current configuration — a window, not a time (from 2026-08-27)
 
 ```sql
-slot_window_start        = '18:30'   -- inclusive
-slot_window_end          = '21:30'   -- inclusive
-slot_window_step_minutes = 15        -- must match the pg_cron tick
+slot_window_start        = '18:00'   -- inclusive
+slot_window_end          = '23:00'   -- inclusive
+slot_window_step_minutes = 3         -- must match the pg_cron tick
 timezone                 = 'Asia/Karachi'
+
+-- and the job that reads it
+cron.job 'social-post-slots' = '*/3 * * * *'
 ```
 
 One post a day at a time **drawn from that window**, varying daily, rather than the same
@@ -204,16 +207,43 @@ state to keep in sync.
 
 Each cycle of N days is a seeded permutation of all N times in the grid, so:
 
-| Property | 18:30–21:30 @ 15 min |
+| Property | 18:00–23:00 @ 3 min |
 |---|---|
-| Possible times (N) | **13** |
-| Every time used before any repeats | yes, once per 13-day cycle |
-| Minimum gap before a time recurs | **5 days** (`floor(N/3) + 1`) |
-| Average gap | 13 days |
+| Possible times (N) | **101** |
+| Every time used before any repeats | yes, once per 101-day cycle |
+| Minimum gap before a time recurs | **34 days** (`floor(N/3) + 1`) |
+| Average gap | 101 days |
 
-Measured over 10 years against the live schedule: zero reel collisions, every time used
-280–282 times, and exactly **two** repeats closer than 5 days. Without reels the 5-day bound
-is exact — the two exceptions come from reel-day swaps landing on the cycle seam.
+Measured over 10 years against the live schedule: **zero** rolling 30-day stretches contain a
+repeated time (0 of 3,621), zero reel collisions, minimum gap 34 days, every time used 36–38
+times. The owner's requirement — a unique posting time on every day of a month — holds.
+
+### Why the step is 3 minutes and not 15
+
+This is arithmetic, not taste. A month needs at least 30 distinct clock times, and the step
+decides how many a window contains:
+
+| Window | Step | Cron | N | Repeat-free 30-day stretches |
+|---|---|---|---|---|
+| 18:30–21:30 | 15 min | `*/15` | 13 | 0% |
+| 18:00–23:00 | 15 min | `*/15` | 21 | 0% |
+| 18:00–23:00 | 10 min | `*/10` | 31 | 7% |
+| 18:00–23:00 | 5 min | `*/5` | 61 | 86% |
+| **18:00–23:00** | **3 min** | **`*/3`** | **101** | **100%** |
+
+**Widening the window alone never fixes it.** Five hours at 15-minute spacing holds 21 times,
+and 21 values cannot cover 30 days.
+
+**The cron tick is the real resolution limit.** The route only decides whether a slot is due
+when pg_cron wakes it, so at a 15-minute tick a 19:37 draw simply publishes at 19:45. The step
+and the tick must move together — which is why `slot_window_step_minutes` and the job's
+schedule are changed in the same migration, and why the step is displayed read-only in the
+admin.
+
+Cost of the finer tick: 480 wake-ups a day instead of 96. Each is an early exit — read
+settings, check the slot, answer `no_slot_due` — roughly three small queries, comfortably
+inside the Supabase and Vercel free tiers. `social-occasion-agent` stays at `*/15`; occasion
+greetings publish at a fixed 10:00 and gain nothing from a finer tick.
 
 > ⚠️ **A full month with no repeat is not reachable.** 30 days cannot be covered by 13
 > distinct times. This is the maximum spread the arithmetic allows. More requires a wider
@@ -225,9 +255,10 @@ never clash. A window makes a Monday/Friday clash possible, so a photo drawn wit
 minutes of a reel slot **trades times with another day in the same cycle**.
 
 > A trade, not a re-draw, and the distinction is the whole thing. 20:00 ± 45 min excludes 7
-> of the 13 times, so re-drawing pushed every displaced Monday and Friday onto the same 6
-> survivors — measured, that produced the same time on consecutive days 256 times in 10
-> years. A trade keeps the cycle an exact permutation, so it cannot concentrate anything.
+> of the times in the 13-slot window this was first built against, so re-drawing pushed every
+> displaced Monday and Friday onto the same 6 survivors — measured, that produced the same
+> time on consecutive days 256 times in 10 years. A trade keeps the cycle an exact
+> permutation, so it cannot concentrate anything.
 >
 > If reels ever move to *every* day at a time inside the window, there is no non-reel day
 > left to trade with and the guard stops being able to separate them. Two reel days a week

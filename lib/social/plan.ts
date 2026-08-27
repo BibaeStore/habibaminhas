@@ -9,25 +9,25 @@ import {
 export type PlanRow = Tables<"social_plans">;
 
 /**
- * The step the planner assumes when previewing a window.
- *
- * The authoritative value lives in `social_settings.slot_window_step_minutes`, because it has
- * to match the pg_cron tick. The planner only ever *previews* times, so it takes a default and
- * lets the caller pass the real one rather than reaching into settings from a pure module.
- */
-export const DEFAULT_WINDOW_STEP_MINUTES = 15;
-
-/**
  * The plan's photo window, or null if it posts at fixed times.
  *
  * Everything downstream branches on this one function, so "does this plan use a window?" has
  * exactly one answer and the planner, the validator and the calendar cannot disagree about it.
+ *
+ * The step is read from the plan rather than passed in. It used to be a constant defaulted in
+ * this module, which meant the planner previewed a window at one resolution while the
+ * scheduler ran it at another — the calendar could show times that would never fire. Keeping
+ * it on the row makes a plan self-describing, and `compilePlan` carries it across to
+ * `social_settings` exactly as it already does for days and times.
  */
 export function planPhotoWindow(
-  plan: Pick<PlanRow, "photo_window_start" | "photo_window_end">,
-  stepMinutes: number = DEFAULT_WINDOW_STEP_MINUTES,
+  plan: Pick<PlanRow, "photo_window_start" | "photo_window_end" | "photo_window_step_minutes">,
 ): SlotWindow | null {
-  return parseWindow(plan.photo_window_start, plan.photo_window_end, stepMinutes);
+  return parseWindow(
+    plan.photo_window_start,
+    plan.photo_window_end,
+    plan.photo_window_step_minutes,
+  );
 }
 
 /**
@@ -93,6 +93,8 @@ export type CompiledSchedule = {
    */
   slot_window_start: string | null;
   slot_window_end: string | null;
+  /** Has to match the pg_cron tick, or a draw simply lands on the following one. */
+  slot_window_step_minutes: number;
 };
 
 /**
@@ -115,6 +117,7 @@ export function compilePlan(plan: PlanRow): CompiledSchedule {
     reel_days: normaliseDays(plan.reel_days),
     slot_window_start: window?.start ?? null,
     slot_window_end: window?.end ?? null,
+    slot_window_step_minutes: plan.photo_window_step_minutes,
   };
 }
 
@@ -341,12 +344,7 @@ export type PlannedSlot = {
  * silently skips or repeats a day, and a calendar that loses a Wednesday is worse than no
  * calendar.
  */
-export function expandPlan(
-  plan: PlanRow,
-  fromISO: string,
-  toISO: string,
-  stepMinutes: number = DEFAULT_WINDOW_STEP_MINUTES,
-): PlannedSlot[] {
+export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): PlannedSlot[] {
   const photoDays = new Set(normaliseDays(plan.photo_days));
   const reelDays = new Set(normaliseDays(plan.reel_days));
   const photoTimes = normaliseTimes(plan.photo_times);
@@ -357,7 +355,7 @@ export function expandPlan(
    * That is the payoff of deriving the time from the date rather than rolling it at runtime:
    * the planner can compute next Friday's slot today, and it will be the time that fires.
    */
-  const window = planPhotoWindow(plan, stepMinutes);
+  const window = planPhotoWindow(plan);
 
   const out: PlannedSlot[] = [];
   const start = Date.parse(`${fromISO}T12:00:00Z`);

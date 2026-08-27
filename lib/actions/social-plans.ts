@@ -152,6 +152,7 @@ export async function duplicatePlan(id: string): Promise<PlanRow> {
     photo_times: source.photo_times,
     photo_window_start: source.photo_window_start,
     photo_window_end: source.photo_window_end,
+    photo_window_step_minutes: source.photo_window_step_minutes,
     reels_per_week: source.reels_per_week,
     reel_days: source.reel_days,
     reel_times: source.reel_times,

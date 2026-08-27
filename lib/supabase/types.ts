@@ -846,6 +846,7 @@ export type Database = {
           photo_times: string[]
           photo_window_end: string | null
           photo_window_start: string | null
+          photo_window_step_minutes: number
           photos_per_week: number
           reel_days: number[]
           reel_times: string[]
@@ -864,6 +865,7 @@ export type Database = {
           photo_times?: string[]
           photo_window_end?: string | null
           photo_window_start?: string | null
+          photo_window_step_minutes?: number
           photos_per_week?: number
           reel_days?: number[]
           reel_times?: string[]
@@ -882,6 +884,7 @@ export type Database = {
           photo_times?: string[]
           photo_window_end?: string | null
           photo_window_start?: string | null
+          photo_window_step_minutes?: number
           photos_per_week?: number
           reel_days?: number[]
           reel_times?: string[]
