@@ -81,6 +81,10 @@ export type SocialSettings = {
   approval_required: boolean;
   max_posts_per_day: number;
   platforms: string[];
+  /** Off => the deterministic caption builder, which is what has been publishing all along. */
+  ai_captions_enabled: boolean;
+  /** Owner asked for price out of captions on 2026-08-28. Reversible without a deploy. */
+  caption_include_price: boolean;
 };
 
 /** Loads the single settings row. Returns null if the migration has not been applied. */

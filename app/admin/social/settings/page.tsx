@@ -13,6 +13,7 @@ import {
   fetchCollaborators, addCollaborator, setCollaboratorEnabled, deleteCollaborator,
   fetchPostableCategories,
   type SocialSettingsRow, type SocialPlatformRow, type SocialCollaboratorRow,
+  previewAiCaption, type CaptionPreview,
 } from "@/lib/actions/social";
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
 import {
@@ -559,6 +560,41 @@ function ScheduleSettings({
           </label>
         </div>
 
+        {/*
+          * Written captions.
+          *
+          * Off by default and deliberately so: the assembled caption has published without a
+          * miss since 18 Aug, and switching to a model is a change of voice on a live brand
+          * account. Preview first, read what it writes, then switch it on.
+          */}
+        <div className="mt-5 space-y-3 border-t border-[var(--admin-border)] pt-4">
+          <h4 className="text-[14px] font-semibold text-[var(--admin-text)]">Caption writing</h4>
+
+          <label className="flex items-center gap-3 text-[14px] text-[var(--admin-text)]">
+            <Toggle
+              checked={draft.ai_captions_enabled}
+              onChange={(v) => set("ai_captions_enabled", v)}
+              label="Write captions with AI"
+            />
+            Write captions with AI instead of assembling them
+          </label>
+          <p className="text-[13px] text-[var(--admin-text-muted)]">
+            If the model is unreachable or writes something that repeats a recent caption, the
+            post still goes out — it falls back to the assembled caption automatically.
+          </p>
+
+          <label className="flex items-center gap-3 text-[14px] text-[var(--admin-text)]">
+            <Toggle
+              checked={draft.caption_include_price}
+              onChange={(v) => set("caption_include_price", v)}
+              label="Include the price"
+            />
+            Include the price in captions
+          </label>
+
+          <CaptionPreviewBox pending={pending} />
+        </div>
+
         <div className="mt-5">
           <AdminButton
             loading={pending}
@@ -568,6 +604,64 @@ function ScheduleSettings({
           </AdminButton>
         </div>
       </AdminCard>
+    </div>
+  );
+}
+
+/**
+ * Reads a caption out loud before it is trusted with the live account.
+ *
+ * Generates against the product that is genuinely up next, and marks clearly whether what you
+ * are reading came from the model or from the fallback — those look similar enough that
+ * without the label you could switch the feature on believing it works when the key is missing.
+ */
+function CaptionPreviewBox({ pending }: { pending: boolean }) {
+  const [result, setResult] = useState<CaptionPreview | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setError(null);
+    try {
+      setResult(await previewAiCaption());
+    } catch (e) {
+      setError((e as Error).message);
+      setResult(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border-2 border-slate-300 bg-[var(--admin-bg)] p-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <AdminButton variant="ghost" loading={busy} disabled={pending} onClick={run}>
+          Preview the next caption
+        </AdminButton>
+        <span className="text-[13px] text-[var(--admin-text-muted)]">
+          Writes one, shows it, publishes nothing.
+        </span>
+      </div>
+
+      {error && <p className="mt-3 text-[13px] font-medium text-red-700">{error}</p>}
+
+      {result && (
+        <div className="mt-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill tone="muted">{result.productTitle}</Pill>
+            {result.soldOut && <Pill tone="warn">Sold out</Pill>}
+            {result.usedFallback ? (
+              <Pill tone="bad">Fallback — the model did not answer</Pill>
+            ) : (
+              <Pill tone="ok">Written by AI · {result.ai?.angle}</Pill>
+            )}
+          </div>
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded border border-[var(--admin-border)] bg-white p-3 text-[13px] leading-relaxed text-[var(--admin-text)]">
+{result.instagram}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }

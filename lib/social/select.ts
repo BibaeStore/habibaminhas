@@ -29,7 +29,10 @@ export type ProductCandidate = {
   price: number;
   category: string;
   subcategory: string[] | null;
+  subtype: string | null;
   sku: string | null;
+  /** Units left. Zero is publishable when `require_in_stock` is off — see the query comment. */
+  stock: number | null;
   images: string[];
   palette: string[] | null;
   sizes_stock: Record<string, number> | null;
@@ -70,7 +73,10 @@ export async function selectNextProducts(
   let query = sb
     .from("products")
     .select(
-      "id, slug, title, short_description, description, price, category, subcategory, sku, images, palette, sizes_stock, seo_keywords, faqs, created_at",
+      // `stock` is read even though eligibility may ignore it: with require_in_stock off, a
+      // sold-out garment still posts, and the caption has to know so it does not claim
+      // availability it does not have.
+      "id, slug, title, short_description, description, price, category, subcategory, subtype, sku, stock, images, palette, sizes_stock, seo_keywords, faqs, created_at",
     )
     .eq("status", "active");
 

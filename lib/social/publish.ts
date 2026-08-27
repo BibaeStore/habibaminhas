@@ -13,7 +13,8 @@ import {
   type SocialSettings,
 } from "./config";
 import { selectNextProducts, clearManualOrder, type ProductCandidate } from "./select";
-import { buildCaption, buildPinContent } from "./caption";
+import { buildCaption, buildPinContent, type CaptionOptions } from "./caption";
+import { writeCarouselCaption } from "./ai-caption";
 import { prepareImages } from "./images";
 import { createInstagramAdapter, deleteInstagramMedia } from "./adapters/instagram";
 import { createFacebookAdapter, deleteFacebookPost } from "./adapters/facebook";
@@ -71,7 +72,11 @@ type PostContent = {
  * squeezed through `buildCaption`. Centralised here because the queue path and the repost
  * path must agree on it; when they did not, one of them silently produced a different post.
  */
-function buildContentFor(product: ProductCandidate, platform: PlatformName): PostContent {
+function buildContentFor(
+  product: ProductCandidate,
+  platform: PlatformName,
+  copy?: CaptionOptions,
+): PostContent {
   if (platform === "pinterest") {
     const pin = buildPinContent(product);
     return {
@@ -83,7 +88,7 @@ function buildContentFor(product: ProductCandidate, platform: PlatformName): Pos
     };
   }
 
-  const { caption, hashtags, altText } = buildCaption(product, platform);
+  const { caption, hashtags, altText } = buildCaption(product, platform, copy);
   return { caption, hashtags, altText, pinTitle: null, pinLink: null };
 }
 
@@ -226,9 +231,26 @@ async function processProduct(
 
   const collaborators = await getEnabledCollaborators("instagram");
 
+  /*
+   * One model call per post, not one per platform.
+   *
+   * Instagram, Facebook and Pinterest each get their own assembled caption, but they should
+   * be saying the same thing in different shapes — three independent generations would give
+   * three different hooks for one product, which reads as three different posts. It is also
+   * three times the cost for no benefit.
+   *
+   * `writeCarouselCaption` never throws and returns null on any failure, so a bad key, a rate
+   * limit or malformed JSON simply means today's post uses the assembled caption instead.
+   */
+  const ai = settings.ai_captions_enabled
+    ? await writeCarouselCaption(product, { soldOut: (product.stock ?? 0) <= 0 })
+    : null;
+
+  const copy: CaptionOptions = { ai, includePrice: settings.caption_include_price };
+
   const perPlatform = targets.map((platform) => ({
     platform,
-    ...buildContentFor(product, platform),
+    ...buildContentFor(product, platform, copy),
     // Facebook and Pinterest have no collaborator concept — the adapters ignore an empty list.
     collaborators: platform === "instagram" ? collaborators : [],
   }));

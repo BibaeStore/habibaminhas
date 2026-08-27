@@ -755,6 +755,74 @@ export type Database = {
         }
         Relationships: []
       }
+      social_generation_log: {
+        Row: {
+          angle: string | null
+          audio_mood: string | null
+          camera_signature: string | null
+          caption_hash: string | null
+          cost_cents: number | null
+          created_at: string
+          error: string | null
+          faq_topic: string | null
+          hook: string | null
+          id: string
+          input_tokens: number | null
+          model: string | null
+          ok: boolean
+          output_tokens: number | null
+          product_id: string | null
+          product_slug: string | null
+          stream: string
+        }
+        Insert: {
+          angle?: string | null
+          audio_mood?: string | null
+          camera_signature?: string | null
+          caption_hash?: string | null
+          cost_cents?: number | null
+          created_at?: string
+          error?: string | null
+          faq_topic?: string | null
+          hook?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          ok?: boolean
+          output_tokens?: number | null
+          product_id?: string | null
+          product_slug?: string | null
+          stream: string
+        }
+        Update: {
+          angle?: string | null
+          audio_mood?: string | null
+          camera_signature?: string | null
+          caption_hash?: string | null
+          cost_cents?: number | null
+          created_at?: string
+          error?: string | null
+          faq_topic?: string | null
+          hook?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          ok?: boolean
+          output_tokens?: number | null
+          product_id?: string | null
+          product_slug?: string | null
+          stream?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_generation_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_media_queue: {
         Row: {
           archived_at: string | null
@@ -1025,7 +1093,9 @@ export type Database = {
       }
       social_settings: {
         Row: {
+          ai_captions_enabled: boolean
           approval_required: boolean
+          caption_include_price: boolean
           categories: string[]
           enabled: boolean
           id: number
@@ -1047,7 +1117,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_captions_enabled?: boolean
           approval_required?: boolean
+          caption_include_price?: boolean
           categories?: string[]
           enabled?: boolean
           id?: number
@@ -1069,7 +1141,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_captions_enabled?: boolean
           approval_required?: boolean
+          caption_include_price?: boolean
           categories?: string[]
           enabled?: boolean
           id?: number
