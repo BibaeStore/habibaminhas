@@ -6,6 +6,22 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
 
   /*
+   * resvg is a native Rust addon and must not be bundled.
+   *
+   * `@resvg/resvg-js` loads a platform-specific `.node` binary, and Turbopack cannot place a
+   * non-ECMAScript asset in an ESM chunk — the build fails with "asset is not placeable in ESM
+   * chunks". Declaring it external leaves it as a runtime require, which is how every native
+   * addon has to be treated. sharp is externalised by Next automatically; this one is not,
+   * because it is not on Next's built-in list.
+   *
+   * The failure is invisible on an incremental build: if `.next` already holds a graph from
+   * before the import existed, the route is not re-traced and the build passes. It only appears
+   * on a clean build — which is what a deploy always is. Three deploys failed while local builds
+   * reported success for exactly that reason.
+   */
+  serverExternalPackages: ["@resvg/resvg-js"],
+
+  /*
    * The Amiri font files must reach the serverless bundle.
    *
    * Occasion posters render their Arabic with resvg, which is handed the .ttf by path and
