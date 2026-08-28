@@ -13,7 +13,7 @@ import {
   restoreArchivedPost,
 } from "@/lib/social/publish";
 import { getPublishingQuota } from "@/lib/social/adapters/instagram";
-import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
+import { MAX_ENABLED_COLLABORATORS, checkReelVideo } from "@/lib/social/limits";
 import {
   buildCaption, buildUploadCaption, uploadCaptionHook, UPLOAD_CAPTION_VARIANTS,
 } from "@/lib/social/caption";
@@ -763,6 +763,13 @@ export async function registerUploadedReel(input: {
   caption: string;
   durationSeconds?: number;
 }): Promise<{ ok: boolean; detail?: string }> {
+  /*
+   * Authoritative check, server side. The UI checks too, but a client-side guard is a courtesy
+   * to the person uploading, not a control -- this is the one that decides.
+   */
+  const problem = checkReelVideo({ durationSeconds: input.durationSeconds });
+  if (problem) return { ok: false, detail: problem };
+
   const sb = createAdminClient();
   const { data: inserted, error } = await sb
     .from("social_media_queue")

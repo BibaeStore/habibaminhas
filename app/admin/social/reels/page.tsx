@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { AdminCard } from "@/components/admin/ui/card";
 import { AdminButton } from "@/components/admin/ui/button";
+import { checkReelVideo } from "@/lib/social/limits";
 import {
   fetchReels, fetchReelUpNext, fetchReelProductTitles, fetchReelRotation, canGenerateReels,
   fetchPlatforms, approveReel, discardReel, restoreReel, generateReel, rebuildReel,
@@ -474,8 +475,17 @@ function UploadCard({
     probe.src = url;
   }
 
+  /*
+   * Checked before the upload starts, not after.
+   *
+   * Uploading half a gigabyte and only then being told the clip is four seconds too long is a
+   * bad way to find out. The server checks again on register -- that one is the control; this
+   * one is the courtesy.
+   */
+  const problem = file ? checkReelVideo({ durationSeconds: duration, bytes: file.size }) : null;
+
   function upload() {
-    if (!file) return;
+    if (!file || problem) return;
     setProgress("Preparing…");
     onAct(async () => {
       try {
@@ -530,7 +540,9 @@ function UploadCard({
         </span>
         <span className="text-[12px] text-[var(--admin-text-muted)]">
           {file
-            ? `${(file.size / 1024 / 1024).toFixed(1)} MB${duration ? ` · ${duration.toFixed(0)}s` : ""}`
+            ? `${(file.size / 1024 / 1024).toFixed(1)} MB${duration ? ` · ${duration.toFixed(0)}s` : ""}${
+                duration && !problem ? " · ✓ fits Instagram" : ""
+              }`
             : "MP4 or MOV, up to 100MB. Portrait 9:16 works best."}
         </span>
         <input
@@ -573,8 +585,17 @@ function UploadCard({
               className={`${inputCls} text-[13px] leading-relaxed`}
             />
           </Field>
+          {problem && (
+            <p className="mb-3 rounded-lg border-2 border-red-300 bg-red-50 px-3 py-2 text-[13px] font-medium text-red-800">
+              {problem}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
-            <AdminButton loading={progress !== null} disabled={pending} onClick={upload}>
+            <AdminButton
+              loading={progress !== null}
+              disabled={pending || Boolean(problem)}
+              onClick={upload}
+            >
               Upload for review
             </AdminButton>
             <AdminButton
