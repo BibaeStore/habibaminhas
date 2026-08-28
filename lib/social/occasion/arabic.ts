@@ -97,8 +97,17 @@ export function renderArabic(input: {
  * the spaces between words, which errs towards breaking early — a dua on three comfortable
  * lines reads better than one on two crowded ones.
  */
-export function wrapArabic(text: string, width: number, fontSize: number, maxLines = 3): string[] {
-  const perLine = Math.max(8, Math.floor(width / (fontSize * 0.5)));
+export function wrapArabic(text: string, width: number, fontSize: number): string[] {
+  /*
+   * 0.42em per character, not 0.5.
+   *
+   * The first estimate was measured against undiacriticised Arabic. A dua is fully
+   * vocalised — every fatha, kasra and shadda is a mark the shaper has to make room for — and
+   * at 0.5 the longest line of "Rabbana atina fid-dunya..." ran past the card's right edge in
+   * the render. Erring small costs a line break; erring large publishes text falling off a
+   * card.
+   */
+  const perLine = Math.max(8, Math.floor(width / (fontSize * 0.42)));
   const words = text.split(/\s+/).filter(Boolean);
 
   const lines: string[] = [];
@@ -110,14 +119,35 @@ export function wrapArabic(text: string, width: number, fontSize: number, maxLin
     } else {
       lines.push(line);
       line = word;
-      if (lines.length === maxLines - 1) break;
     }
   }
-  // Everything not yet placed goes on the final line rather than being dropped. A truncated
-  // dua must never be published, so the last line is allowed to be tight instead.
-  const placed = lines.join(" ").split(/\s+/).filter(Boolean).length;
-  const rest = words.slice(placed).join(" ");
-  if (rest) lines.push(rest);
+  if (line) lines.push(line);
 
-  return lines.filter(Boolean);
+  /*
+   * No line cap, and that is deliberate. The previous version stopped at three lines and
+   * dumped every remaining word onto the last one, which is exactly how a 40-character line
+   * ended up in a 27-character box. A dua must never be truncated *or* overflowed, so it takes
+   * as many lines as it needs and the caller shrinks the type to suit.
+   */
+  return lines;
+}
+
+/**
+ * Font size at which a dua fits the card in at most `maxLines`.
+ *
+ * Tried largest-first so a short supplication is still set at a comfortable size, and the long
+ * ones step down rather than spilling.
+ */
+export function fitArabic(
+  text: string,
+  width: number,
+  maxLines: number,
+  max = 40,
+  min = 26,
+): { fontSize: number; lines: string[] } {
+  for (let size = max; size > min; size -= 2) {
+    const lines = wrapArabic(text, width, size);
+    if (lines.length <= maxLines) return { fontSize: size, lines };
+  }
+  return { fontSize: min, lines: wrapArabic(text, width, min) };
 }

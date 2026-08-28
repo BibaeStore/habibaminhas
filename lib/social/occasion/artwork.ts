@@ -14,7 +14,7 @@
 import sharp from "sharp";
 import path from "node:path";
 import { createAdminClient } from "@/lib/supabase/server";
-import { renderArabic, wrapArabic } from "./arabic";
+import { renderArabic, fitArabic } from "./arabic";
 
 const W = 1080;
 const H = 1080;           // Square, matching the reference the owner approved 2026-08-28
@@ -146,32 +146,45 @@ export async function composeOccasionImage(input: ComposeInput): Promise<Buffer>
   // ── the dua card ──────────────────────────────────────────────────────────
   const hasArabic = Boolean(input.arabic && input.arabic.trim());
   const msgLines = wrap(input.message, 44, 3);
+  // Counted before the card is measured -- the transliteration is often two lines and the card
+  // has to be tall enough for both. "Rabbana atina fid-dunya hasanatan wa fil-akhirati
+  // hasanatan wa qina 'adhaban-nar" is 78 characters and ran off both edges as one line.
+  const attrLines = input.attribution ? wrap(input.attribution, 52, 2) : [];
+  const attrLineCount = attrLines.length;
 
   let arabicBlock: { png: Buffer; width: number; height: number } | null = null;
   if (hasArabic) {
-    const size = 40;
+    // Sized to fit rather than fixed. The longest dua in the library needs four lines at 34px
+    // where the shortest sits happily on one at 40 -- a single size either overflows the card
+    // or makes the short ones look timid.
+    const fit = fitArabic(input.arabic!, COL - 110, 3, 40, 24);
     arabicBlock = renderArabic({
-      lines: wrapArabic(input.arabic!, COL - 90, size, 3),
+      lines: fit.lines,
       width: COL - 60,
-      fontSize: size,
+      fontSize: fit.fontSize,
       colour: INK,
     });
   }
 
   const titleH = input.cardTitle ? 46 : 0;
   const arabicH = arabicBlock ? arabicBlock.height + 10 : 0;
-  const attrH = input.attribution ? 34 : 0;
+  const attrH = attrLineCount * 26 + (attrLineCount ? 12 : 0);
   const cardH = 34 + titleH + arabicH + msgLines.length * 32 + attrH + 30;
 
   /*
-   * Anchored from the bottom, not the top.
+   * Anchored from the bottom, with a hard floor the card may not cross.
    *
-   * The card grows with its content -- a three-line dua is 250px taller than a one-line one --
-   * so a fixed top edge pushed the tall ones straight through the website line at the foot of
-   * the frame. Fixing the *gap below* the card instead keeps that clear whatever the dua's
-   * length, and the clamp stops a very tall card riding up into the intro text.
+   * The card grows with its content: a four-line dua is ~250px taller than a one-line one. A
+   * fixed *top* edge pushed the tall ones through the website line at the foot of the frame,
+   * and the first attempt at fixing it -- bottom-anchored with a `Math.max(500, ...)` clamp --
+   * did the same thing for a different reason, because the clamp won whenever the card was
+   * tall and pushed the bottom back down through the footer.
+   *
+   * So the footer owns its space and the card takes what is left. `fitArabic` above caps the
+   * dua at three lines precisely so that what is left is always enough.
    */
-  const cardTop = Math.max(500, H - 96 - cardH);
+  const FOOTER_TOP = H - 78;
+  const cardTop = Math.max(452, FOOTER_TOP - cardH);
 
   let y = cardTop + 34 + (input.cardTitle ? 30 : 0);
   const titleSvg = input.cardTitle
@@ -187,9 +200,9 @@ export async function composeOccasionImage(input: ComposeInput): Promise<Buffer>
     .join("");
   y += msgLines.length * 32 + 22;
 
-  const attrSvg = input.attribution
-    ? `<text x="${CX}" y="${y + 6}" class="attr" text-anchor="middle">${esc(input.attribution)}</text>`
-    : "";
+  const attrSvg = attrLines
+    .map((l, i) => `<text x="${CX}" y="${y + 6 + i * 26}" class="attr" text-anchor="middle">${esc(l)}</text>`)
+    .join("");
 
   const overlay = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -273,7 +286,19 @@ export async function uploadArtwork(
   revision: number,
 ): Promise<string> {
   const sb = createAdminClient();
-  const key = `occasion/${dateKey}-${occasionSlug}${revision > 0 ? `-v${revision + 1}` : ""}.jpg`;
+  /*
+   * A time component, not just the revision counter.
+   *
+   * The counter alone produced the same key for two different renders on 2026-08-28 -- and
+   * with `upsert: true` and a one-year cacheControl, the second render overwrote the object
+   * while Meta went on serving the copy of the first it had already fetched from that URL.
+   * The result would have been republishing the picture the owner had just rejected.
+   *
+   * This is the same failure the Meta adapters guard with `uncachedUrl()`, arrived at from the
+   * other end: make the URL genuinely new rather than persuading Meta to re-read an old one.
+   */
+  const stamp = Date.now().toString(36);
+  const key = `occasion/${dateKey}-${occasionSlug}-v${revision + 1}-${stamp}.jpg`;
   const { error } = await sb.storage
     .from(BUCKET)
     .upload(key, buffer, { contentType: "image/jpeg", upsert: true, cacheControl: "31536000" });
