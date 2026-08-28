@@ -69,17 +69,27 @@ function briefs(p: { title: string; fabric: string; colour: string }) {
   ];
 }
 
-/** Actual pixel dimensions of the file, via ffprobe. The whole point of the trial. */
+/**
+ * Actual pixel dimensions of the file. The whole point of the trial.
+ *
+ * Read with ffmpeg, not ffprobe: `ffmpeg-static` ships only the one binary, and assuming
+ * ffprobe was there cost a run. ffmpeg writes stream info to stderr and exits non-zero when
+ * given no output file, so the "error" path is the success path here.
+ */
 async function dimensions(path: string): Promise<string> {
   try {
     const ffmpeg = (await import("ffmpeg-static")).default as unknown as string;
-    const probe = ffmpeg.replace(/ffmpeg(\.exe)?$/, (m) => m.replace("ffmpeg", "ffprobe"));
-    const { stdout } = await run(probe, [
-      "-v", "error", "-select_streams", "v:0",
-      "-show_entries", "stream=width,height,duration",
-      "-of", "csv=p=0", path,
-    ]);
-    return stdout.trim();
+    let text = "";
+    try {
+      await run(ffmpeg, ["-i", path]);
+    } catch (e) {
+      text = String((e as { stderr?: string }).stderr ?? "");
+    }
+    const stream = /Stream #.*Video:.*?(\d{3,4})x(\d{3,4})/.exec(text);
+    const dur = /Duration: ([0-9:.]+)/.exec(text);
+    if (!stream) return "could not read dimensions";
+    const [w, h] = [Number(stream[1]), Number(stream[2])];
+    return `${w}x${h} ${dur ? dur[1] : ""} ${h > w ? "✓ VERTICAL" : "✗ NOT VERTICAL"}`;
   } catch (e) {
     return `could not probe: ${(e as Error).message}`;
   }

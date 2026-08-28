@@ -160,7 +160,14 @@ export async function generateClip(req: VeoRequest): Promise<VeoResult> {
       parameters: {
         aspectRatio: "9:16",
         resolution,
-        durationSeconds: String(seconds),
+        /*
+         * A number, not a string. Google's own docs show `"durationSeconds": "4" | "6" | "8"`
+         * quoted, and the API rejects that outright:
+         *   400 The value type for `durationSeconds` needs to be a number.
+         * Documented behaviour and actual behaviour differ here, which is exactly why the probe
+         * came before the trial.
+         */
+        durationSeconds: seconds,
       },
     }),
   });
