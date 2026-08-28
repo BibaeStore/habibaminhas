@@ -163,12 +163,42 @@ function productBrief(product: ProductCandidate, soldOut: boolean): string {
     .join("\n\n");
 }
 
+/**
+ * Per-stream shape.
+ *
+ * The voice and every hard rule are shared; what differs is who is reading. A carousel reader
+ * is swiping through detail and will read four lines. A reel viewer is watching, sound on, and
+ * the caption is a caption — the video is doing the work, so the words get out of the way.
+ */
+const STREAM_SHAPE: Record<CaptionStream, { hookMax: number; tags: number; brief: string }> = {
+  carousel: {
+    hookMax: 125,
+    tags: 15,
+    brief: `This is a CAROUSEL. The reader is swiping through several photographs.
+- body: 3 to 4 short lines drawn from SPECS. Fabric, technique, how it is cut, how it wears.`,
+  },
+  reel: {
+    hookMax: 60,
+    tags: 10,
+    brief: `This is a REEL — a short video of the garment. The video is doing the work, so the caption stays out of its way.
+- body: ONE short line. Two at the very most. Do not describe what is visible on screen; add the thing the video cannot say.`,
+  },
+  static: {
+    hookMax: 80,
+    tags: 12,
+    brief: `This is a SINGLE IMAGE post. One photograph has to stop the scroll on its own.
+- body: 1 to 2 lines, atmospheric rather than a spec list.`,
+  },
+};
+
 function buildPrompt(
   product: ProductCandidate,
   recent: Recent,
   soldOut: boolean,
   retry: boolean,
+  stream: CaptionStream,
 ): string {
+  const shape = STREAM_SHAPE[stream];
   return `You write Instagram captions for Habiba Minhas, a small women's clothing studio in Karachi, Pakistan. Every garment is stitched in small runs.
 
 VOICE
@@ -177,12 +207,11 @@ VOICE
 - One natural Roman Urdu phrase, near the end. Good: "Dekhtay hi pasand aa jaye ga." "Rozana pehnne ke liye bilkul perfect." "Halka aur aaram dayak."
 - Warm, specific, unhurried. Never salesy, never breathless.
 
-STRUCTURE — this is a CAROUSEL. The reader is swiping through several photographs.
-- hook: max 125 characters. All most people ever see. Lead with the most distinctive CONCRETE fact — colour, fabric, technique, a real size range. Never a brand adjective. Never "Elevate your...". No emoji in the hook.
-- body: 3 to 4 short lines drawn from SPECS. Fabric, technique, how many pieces, made in Karachi.
+STRUCTURE — ${shape.brief}
+- hook: max ${shape.hookMax} characters. All most people ever see. Lead with the most distinctive CONCRETE fact — colour, fabric, technique, a real size range. Never a brand adjective. Never "Elevate your...". No emoji in the hook.
 - faqLine: one concrete sentence that answers something a real buyer wonders. Draw it from CUSTOMER QUESTIONS where one fits; where none does, write your own from the fabric, the cut or how the garment wears. This is what gets surfaced by search and AI assistants, so name concrete nouns. Give the ANSWER only — never restate the question. Skip anything about sizes, availability, delivery or price. NEVER leave this empty.
 - faqTopic: one or two words naming what that answer was about, e.g. "care", "fabric feel", "fit", "styling", "dupatta", "technique".
-- hashtags: exactly 15, tiered — 2-3 broad, 4-5 niche, 3-4 local/Karachi, 2-3 brand (#HabibaMinhas), 1-2 occasion only if genuinely true. Derive from SEO KEYWORDS, category, subtype and colour. A recycled block across posts is itself a spam signal.
+- hashtags: exactly ${shape.tags}, tiered — 2-3 broad, 4-5 niche, 3-4 local/Karachi, 2-3 brand (#HabibaMinhas), 1-2 occasion only if genuinely true. Derive from SEO KEYWORDS, category, subtype and colour. A recycled block across posts is itself a spam signal.
 - altText: one plain sentence describing the garment for a screen reader.
 - angle: three words labelling the angle you took, e.g. "fabric in light" or "real size range".
 
@@ -307,8 +336,9 @@ async function callModel(prompt: string, model: string, key: string) {
  * `social_generation_log`, because a silent fallback is exactly how "the AI captions stopped
  * working" goes unnoticed for a fortnight.
  */
-export async function writeCarouselCaption(
+export async function writeCaption(
   product: ProductCandidate,
+  stream: CaptionStream,
   options?: { soldOut?: boolean; dryRun?: boolean },
 ): Promise<AiCaption | null> {
   const key = process.env.OPENAI_API_KEY?.trim();
@@ -324,7 +354,6 @@ export async function writeCarouselCaption(
   const dryRun = options?.dryRun ?? false;
 
   const model = process.env.OPENAI_CAPTION_MODEL?.trim() || DEFAULT_MODEL;
-  const stream: CaptionStream = "carousel";
   const soldOut = options?.soldOut ?? (product.stock ?? 0) <= 0;
 
   const log = async (row: Record<string, unknown>) => {
@@ -357,7 +386,7 @@ export async function writeCarouselCaption(
 
   for (const attempt of [0, 1]) {
     try {
-      const prompt = buildPrompt(product, recent, soldOut, attempt > 0);
+      const prompt = buildPrompt(product, recent, soldOut, attempt > 0, stream);
       const { text, usage, error } = await callModel(prompt, model, key);
 
       if (error || !text) {
@@ -419,4 +448,27 @@ export async function writeCarouselCaption(
   }
 
   return null;
+}
+
+
+/** Carousel captions. Thin wrapper so call sites read as intent rather than configuration. */
+export function writeCarouselCaption(
+  product: ProductCandidate,
+  options?: { soldOut?: boolean; dryRun?: boolean },
+): Promise<AiCaption | null> {
+  return writeCaption(product, "carousel", options);
+}
+
+/**
+ * Reel captions.
+ *
+ * Its own stream, so its own hooks, angles and topics — a reel and a carousel of the same
+ * garment on the same day should not open the same way, and sharing one memory would make
+ * them fight for it.
+ */
+export function writeReelCaption(
+  product: ProductCandidate,
+  options?: { soldOut?: boolean; dryRun?: boolean },
+): Promise<AiCaption | null> {
+  return writeCaption(product, "reel", options);
 }

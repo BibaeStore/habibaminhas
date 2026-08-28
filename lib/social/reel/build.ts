@@ -5,6 +5,7 @@ import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/server";
 import { buildCaption, buildCollectionCaption } from "@/lib/social/caption";
 import { getSocialSettings } from "@/lib/social/config";
+import { writeReelCaption } from "@/lib/social/ai-caption";
 import type { ProductCandidate } from "@/lib/social/select";
 import { buildSlideFrame, buildEndCard, buildTitleCard, fetchImage, REEL_WIDTH, REEL_HEIGHT } from "./frames";
 import { encodeReel, plannedDuration, canEncodeHere } from "./encode";
@@ -125,9 +126,19 @@ export async function buildProductReel(options?: {
       framePaths.push(path);
     }
 
+    /*
+     * Price on the end card follows the same owner preference as the caption (2026-08-28):
+     * off unless `caption_include_price` says otherwise. Reading it from settings rather
+     * than hardcoding keeps the video and the words it publishes with in agreement — a reel
+     * whose last frame shows Rs. 5,500 under a caption that never mentions money is worse
+     * than either choice made consistently.
+     */
+    const settings = await getSocialSettings();
     const endCard = await buildEndCard({
       title: product.title.split(/[–—-]/)[0].trim(),
-      price: `Rs. ${product.price.toLocaleString("en-PK")}`,
+      price: settings?.caption_include_price
+        ? `Rs. ${product.price.toLocaleString("en-PK")}`
+        : undefined,
       background: product.palette?.[0],
     });
     const endPath = join(work, "frame-99-end.jpg");
@@ -165,7 +176,23 @@ export async function buildProductReel(options?: {
     const videoUrl = `${base}/storage/v1/object/public/${BUCKET}/${videoKey}`;
     const thumbnailUrl = `${base}/storage/v1/object/public/${BUCKET}/${thumbKey}`;
 
-    const { caption, hashtags } = buildCaption(product, "instagram");
+    /*
+     * A reel caption, not the carousel one.
+     *
+     * `writeReelCaption` keeps its own hook and angle memory, so the reel and the carousel of
+     * the same garment cannot open the same way. Null on any failure, and `buildCaption`
+     * then assembles the caption exactly as it did before — a reel is never blocked from
+     * being built because a model was slow.
+     */
+    say("Writing the caption");
+    const ai = settings?.ai_captions_enabled
+      ? await writeReelCaption(product, { soldOut: (product.stock ?? 0) <= 0 })
+      : null;
+
+    const { caption, hashtags } = buildCaption(product, "instagram", {
+      ai,
+      includePrice: settings?.caption_include_price ?? false,
+    });
     const { error } = await sb.from("social_media_queue").insert({
       kind: "product",
       product_ids: [product.id],

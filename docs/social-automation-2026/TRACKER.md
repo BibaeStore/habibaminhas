@@ -10,6 +10,52 @@ built for the carousel stream, switched off pending owner review)
 > **auto-publish** — they do not queue for review. Earlier updates in this file say the
 > opposite and are wrong; this line is the current one.
 
+## Session 2026-08-28b — the reel factory (phase 4)
+
+### 🔴 The finding that changed the plan
+
+`ffmpeg-static` is a **devDependency** and `canEncodeHere()` is literally
+`return !process.env.VERCEL`. **The posting cron has never been able to encode a reel.** It
+can only publish reels somebody already built by hand on their own machine.
+
+That is the actual reason six approved reels sat in the queue from 12 August, and the reason
+4 reels/week was unreachable — nothing was making them. The plan said "GPT writes the script,
+your existing encoder builds it automatically". The second half was wrong.
+
+### The fix: encode where ffmpeg lives
+
+| Piece | Where it runs |
+|---|---|
+| Deciding when to post, talking to Meta | Vercel cron, as before |
+| **Encoding reels** | **GitHub Actions runner** — has ffmpeg, 30-min clock, free minutes |
+| Approving a reel | Still a human, in `/admin/social` → Reels |
+
+**Built** — branch `feat/social-reel-factory` (on top of `feat/social-ai-captions`):
+
+| File | What |
+|---|---|
+| `scripts/fill-reel-queue.ts` | **New.** Tops the queue up to a target. Idempotent — counts what is waiting and builds only the shortfall, so a double run cannot flood it. One failure does not end the run |
+| `.github/workflows/reels.yml` | **New.** Mon + Thu 02:00 UTC (07:00 PKT) + manual trigger. `concurrency` group so two runs cannot race for the same next-in-rotation product |
+| `lib/social/ai-caption.ts` | Generalised over streams; `writeReelCaption` with its own hook/angle/topic memory |
+| `lib/social/reel/build.ts` | Reel captions from the model; **price off the end card**, following `caption_include_price` |
+
+**Verified against real data, not mocked:** built one reel end to end — Pearl Veil, 11s,
+3.69MB, queue 6 → 7, landed as `draft`, video and thumbnail in Storage,
+`price_in_caption = false` where the same product's live caption that morning carried
+"Rs. 5,500".
+
+### ⚠️ Needs the owner before it runs
+
+Three GitHub repository secrets: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+and optionally `OPENAI_API_KEY` (without it the reel still builds, the caption just falls
+back). Until they exist the workflow fails on the first run.
+
+**What this does NOT do:** publish or approve. Reels are reviewed regardless of
+`approval_required` — deliberate, and unchanged. The bottleneck removed is the encoding,
+not the judgement.
+
+---
+
 ## Session 2026-08-28 — scheduler merged, AI captions built (phase 2)
 
 **Merged to main:** `feat/social-random-slot-window`. Photos now draw one time a day from
