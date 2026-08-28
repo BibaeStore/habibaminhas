@@ -10,6 +10,54 @@ built for the carousel stream, switched off pending owner review)
 > **auto-publish** — they do not queue for review. Earlier updates in this file say the
 > opposite and are wrong; this line is the current one.
 
+## Session 2026-08-28c — occasion posters redesigned
+
+The owner deleted that morning's Jumma post: it was indistinguishable from the previous
+week's. They were right — and the cause was structural, not bad luck.
+
+### Why every Jumma looked the same
+
+`social_occasions.theme` is **one fixed string per occasion**, and `subtitle` is another. So
+every Jumma Mubarak asked the image model for "serene ivory and antique gold, fine arabesque
+border, faint mosque dome" and printed the same sentence beneath it. Same input, same poster,
+forever. No amount of image-model randomness fixes an identical prompt.
+
+### What changed
+
+| Before | Now |
+|---|---|
+| Product photo in a mihrab arch | **No product.** A greeting greets; it does not sell |
+| Logo 340px, below the arch, footer-sized | **Logo 460px, leading the frame** — on an occasion post the brand *is* the subject |
+| Fixed `theme` string | Art direction **written fresh each time**, shown the last 10 motifs and told to go elsewhere |
+| Fixed `subtitle` sentence | A **dua** (Islamic), advice (Mother's/Father's Day) or a considered line (international days) |
+| Fixed 10:00 every time | Drawn from a **10:00–13:00** window, 15-min grid, derived from the date |
+
+New file `lib/social/occasion/art-direction.ts`. Reuses `social_generation_log` under
+`stream = 'occasion'` — the question is identical to the caption one, so it should not have a
+second memory.
+
+**Category-aware messages.** An Islamic day wants a dua; Mother's Day wants warmth about
+mothers, not scripture; an international day wants a thought that respects what the day is
+for. Spelled out per category rather than left to the model to infer from a name. The dua
+brief explicitly bars sectarian material and Quranic verse references — a misattributed ayah
+on a brand account is far worse than a plain, well-known supplication.
+
+**The rule that did not change:** the image model still never renders text. Every word is
+drawn afterwards by sharp from strings we control.
+
+### Published live 2026-08-28 10:49 PKT
+
+Motif "lantern lattice pearls". Dua: *"O Allah, send blessings upon Muhammad and grant us ease
+in the days ahead."* with the transliteration beneath.
+
+- Instagram — https://www.instagram.com/p/DckpjzeDsTH/
+- Facebook — https://www.facebook.com/122129051318776991/posts/122133007550776991
+
+The 4 Sep post was already `ready` with old-design artwork; reset to `planned` so it
+regenerates. Future Fridays: 4 Sep 10:00 · 11 Sep 10:15 · 18 Sep 11:00 · 25 Sep 12:30.
+
+---
+
 ## Session 2026-08-28b — the reel factory (phase 4)
 
 ### 🔴 The finding that changed the plan

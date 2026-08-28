@@ -10,12 +10,28 @@
  * few days ahead, and are the only reason this feature needs the internet at all.
  */
 import type { OccasionRow } from "./types";
+import { parseWindow, pickSlotForDate } from "@/lib/social/slot-window";
 
 /** Pakistan does not observe DST, but this is derived rather than assumed. */
 export const TZ = "Asia/Karachi";
 
 /** The hour occasion greetings go out — before the 19:00 product post, never clashing. */
 export const OCCASION_HOUR = 10;
+
+/**
+ * The window an occasion post is drawn from, in Karachi time.
+ *
+ * Greetings used to publish at exactly 10:00, every single time. The owner asked for the same
+ * treatment the product posts got: somewhere between mid-morning and early afternoon, but not
+ * the same minute every Friday.
+ *
+ * A 3-hour window on a 15-minute grid is 13 slots — more than the ~4 Fridays in a month, so a
+ * Jumma time cannot recur inside a month. Occasions are far too sparse to need the 5-minute
+ * resolution the product streams use, and a coarser grid keeps the times readable.
+ */
+export const OCCASION_WINDOW_START = "10:00";
+export const OCCASION_WINDOW_END = "13:00";
+export const OCCASION_WINDOW_STEP = 15;
 
 /**
  * The UTC instant corresponding to a wall-clock time in `tz`.
@@ -141,8 +157,23 @@ export function occurrencesInRange(
   return out;
 }
 
-/** The UTC instant an occasion post for `dateKey` should publish at. */
+/**
+ * The UTC instant an occasion post for `dateKey` should publish at.
+ *
+ * Derived from the date rather than rolled, exactly as the product streams are: the planner
+ * writes `scheduled_for` days ahead, and it has to still agree with itself when the publisher
+ * reads it back. Same date in, same minute out.
+ *
+ * Falls back to a flat 10:00 if the window is somehow unusable — a greeting at a predictable
+ * hour is much better than a greeting that never goes out.
+ */
 export function scheduledForDate(dateKey: string): Date {
   const { year, month, day } = parseDateKey(dateKey);
-  return zonedTimeToUtc(year, month, day, OCCASION_HOUR, 0);
+
+  const window = parseWindow(OCCASION_WINDOW_START, OCCASION_WINDOW_END, OCCASION_WINDOW_STEP);
+  const drawn = window ? pickSlotForDate(dateKey, window, null) : null;
+  if (!drawn) return zonedTimeToUtc(year, month, day, OCCASION_HOUR, 0);
+
+  const [h, m] = drawn.split(":").map(Number);
+  return zonedTimeToUtc(year, month, day, h, m);
 }

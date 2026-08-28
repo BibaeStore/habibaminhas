@@ -1,6 +1,6 @@
 /**
- * Builds the occasion image: a generated themed backdrop, the product photograph in a
- * mihrab arch, the greeting, and the logo.
+ * Builds the occasion image: a generated themed backdrop, the logo large, the greeting, and a
+ * dua or quote worth reading. No product — see `composeOccasionImage`.
  *
  * The one rule worth stating loudly: **the image model never renders text.** It is asked
  * for a textless backdrop, and every word is drawn afterwards with sharp from strings held
@@ -8,8 +8,8 @@
  * account is not something you can quietly fix after the fact. Keeping type out of the
  * model's hands makes that failure impossible rather than unlikely.
  *
- * The composition is the one proven on the 2026-08-21 Jumma post — arch, greeting above,
- * logo below — generalised so the greeting, subtitle and art direction come from the row.
+ * The art direction is written fresh for every poster by `art-direction.ts` rather than read
+ * from a fixed column, which is what stopped consecutive Jumma cards looking identical.
  */
 import sharp from "sharp";
 import path from "node:path";
@@ -17,10 +17,6 @@ import { createAdminClient } from "@/lib/supabase/server";
 
 const W = 1080;
 const H = 1350;           // Instagram 4:5, the best-performing feed ratio
-const ARCH_W = 500;
-const ARCH_H = 680;
-const ARCH_X = (W - ARCH_W) / 2;
-const ARCH_Y = 232;
 const BUCKET = "social-media";
 
 const INK = "#3a3226";     // warm charcoal, matches the logo
@@ -102,67 +98,88 @@ Strictly forbidden: no text, no lettering, no letters, no words, no numbers, no 
 
 export type ComposeInput = {
   background: Buffer;
-  /** Public URL of the product hero shot. */
-  productImageUrl: string;
   greeting: string;
-  subtitle: string | null;
+  /** The dua, quote or line of advice. This is what makes the card worth keeping. */
+  message: string;
+  /** Transliteration or attribution, set smaller beneath the message. */
+  attribution: string;
 };
 
-/** Lays the backdrop, arch, type and logo into the final 1080×1350 JPEG. */
+/**
+ * Lays the backdrop, the logo, the greeting and the message into a 1080x1350 JPEG.
+ *
+ * Two changes the owner asked for on 2026-08-28, both of which change the composition rather
+ * than decorate it:
+ *
+ * **No product.** The old card put a garment photograph in a mihrab arch, which made a
+ * greeting look like an advertisement wearing a greeting's clothes. A Jumma card should greet.
+ * Everything that sold has been taken out.
+ *
+ * **The logo leads.** It was 340px wide, below the arch, doing the job of a footer. It is now
+ * 460px and the first thing in the frame, because on an occasion post the brand *is* the
+ * subject — there is nothing else on the card to be the subject instead.
+ *
+ * The rule that has not changed, and must not: **the image model never renders text.** Every
+ * word here is drawn by sharp from strings we control. Image models still misspell, and
+ * "JUMMA MUBRAK" on a brand account is not something you quietly fix afterwards.
+ */
 export async function composeOccasionImage(input: ComposeInput): Promise<Buffer> {
-  const r = ARCH_W / 2;
-
-  const productRes = await fetch(input.productImageUrl);
-  if (!productRes.ok) throw new Error(`Could not fetch product image (${productRes.status})`);
-  const productRaw = Buffer.from(await productRes.arrayBuffer());
-
-  // A mihrab-shaped mask: it echoes the arch motif in the backdrop and, unlike a plain
-  // rectangle, reads as designed rather than pasted.
-  const archPath = `M0,${r} A${r},${r} 0 0 1 ${ARCH_W},${r} L${ARCH_W},${ARCH_H} L0,${ARCH_H} Z`;
-  const maskSvg = `<svg width="${ARCH_W}" height="${ARCH_H}" xmlns="http://www.w3.org/2000/svg"><path d="${archPath}" fill="#fff"/></svg>`;
-
-  const panel = await sharp(productRaw)
-    .resize(ARCH_W, ARCH_H, { fit: "cover", position: "top" })
-    .composite([{ input: Buffer.from(maskSvg), blend: "dest-in" }])
-    .png()
-    .toBuffer();
-
   const greeting = input.greeting.toUpperCase();
-  const gSize = fitFontSize(greeting, W - 150, 62, 30, 11);
-  const subLines = input.subtitle ? wrap(input.subtitle, 58, 2) : [];
+  const gSize = fitFontSize(greeting, W - 170, 68, 32, 12);
 
-  const subSvg = subLines
+  // The message carries the card, so it gets room: up to four lines, and the type shrinks
+  // rather than the text being cut. A truncated dua would be worse than none.
+  const msgLines = wrap(input.message, 46, 4);
+  const mSize = msgLines.length > 3 ? 30 : 34;
+  const msgTop = 900;
+
+  const msgSvg = msgLines
     .map(
       (l, i) =>
-        `<text x="${W / 2}" y="${1055 + i * 34}" class="sub" text-anchor="middle">${esc(l)}</text>`,
+        `<text x="${W / 2}" y="${msgTop + i * (mSize + 14)}" class="msg" text-anchor="middle">${esc(l)}</text>`,
     )
     .join("");
 
+  const attrY = msgTop + msgLines.length * (mSize + 14) + 14;
+  const attrSvg = input.attribution
+    ? `<text x="${W / 2}" y="${attrY}" class="attr" text-anchor="middle">${esc(input.attribution)}</text>`
+    : "";
+
   const overlay = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
   <defs><style>
-    .g{font-family:Georgia,'Times New Roman',serif;font-size:${gSize}px;fill:${INK};letter-spacing:11px}
-    .sub{font-family:Georgia,'Times New Roman',serif;font-size:25px;fill:${MUTED};font-style:italic}
+    .g{font-family:Georgia,'Times New Roman',serif;font-size:${gSize}px;fill:${INK};letter-spacing:12px}
+    .msg{font-family:Georgia,'Times New Roman',serif;font-size:${mSize}px;fill:${INK};font-style:italic}
+    .attr{font-family:Georgia,'Times New Roman',serif;font-size:22px;fill:${MUTED};letter-spacing:1.5px}
+    .site{font-family:Georgia,'Times New Roman',serif;font-size:24px;fill:${MUTED};letter-spacing:5px}
   </style></defs>
-  <text x="${W / 2}" y="152" class="g" text-anchor="middle">${esc(greeting)}</text>
-  <g stroke="${GOLD}" stroke-width="1.3">
-    <line x1="${W / 2 - 130}" y1="190" x2="${W / 2 - 20}" y2="190"/>
-    <line x1="${W / 2 + 20}" y1="190" x2="${W / 2 + 130}" y2="190"/>
+
+  <text x="${W / 2}" y="700" class="g" text-anchor="middle">${esc(greeting)}</text>
+
+  <g stroke="${GOLD}" stroke-width="1.4">
+    <line x1="${W / 2 - 150}" y1="770" x2="${W / 2 - 26}" y2="770"/>
+    <line x1="${W / 2 + 26}" y1="770" x2="${W / 2 + 150}" y2="770"/>
   </g>
-  <circle cx="${W / 2}" cy="190" r="4" fill="${GOLD}"/>
-  <path d="M${ARCH_X},${ARCH_Y + r} A${r},${r} 0 0 1 ${ARCH_X + ARCH_W},${ARCH_Y + r} L${ARCH_X + ARCH_W},${ARCH_Y + ARCH_H} L${ARCH_X},${ARCH_Y + ARCH_H} Z" fill="none" stroke="${GOLD}" stroke-width="2"/>
-  ${subSvg}
+  <circle cx="${W / 2}" cy="770" r="4.5" fill="${GOLD}"/>
+
+  ${msgSvg}
+  ${attrSvg}
+
+  <text x="${W / 2}" y="1276" class="site" text-anchor="middle">HABIBAMINHAS.COM</text>
 </svg>`;
 
-  const bg = await sharp(input.background).resize(W, H, { fit: "cover", position: "centre" }).toBuffer();
+  const bg = await sharp(input.background)
+    .resize(W, H, { fit: "cover", position: "centre" })
+    .toBuffer();
+
+  const LOGO_W = 460;
   const logo = await sharp(path.join(process.cwd(), "public/logo/habiba-minhas-logo-t.png"))
-    .resize({ width: 340 })
+    .resize({ width: LOGO_W })
     .toBuffer();
 
   return sharp(bg)
     .composite([
-      { input: panel, top: ARCH_Y, left: Math.round(ARCH_X) },
+      { input: logo, top: 300, left: Math.round((W - LOGO_W) / 2) },
       { input: Buffer.from(overlay), top: 0, left: 0 },
-      { input: logo, top: 1140, left: Math.round((W - 340) / 2) },
     ])
     // Instagram's content-publishing API takes JPEG only; a PNG here fails at the container
     // step with an unhelpful error.

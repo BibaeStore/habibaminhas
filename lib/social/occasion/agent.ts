@@ -19,6 +19,7 @@ import { createInstagramAdapter } from "@/lib/social/adapters/instagram";
 import { addDays, localDateKey, occurrencesInRange, scheduledForDate } from "./calendar";
 import { isSafeOccasionName, resolveLunarDates, unresolvedLunar } from "./discover";
 import { composeOccasionImage, generateBackground, uploadArtwork } from "./artwork";
+import { writeArtDirection, logArtDirection } from "./art-direction";
 import { buildOccasionCaptions, isCaptionClean } from "./caption";
 import type { OccasionPostRow, OccasionRow } from "./types";
 
@@ -201,18 +202,35 @@ export async function generateFor(postId: string): Promise<{ ok: boolean; detail
     .eq("id", postId);
 
   try {
-    const product = await pickProduct();
-    if (!product) throw new Error("No active ladies product with an image is available");
+    /*
+     * Art direction is written fresh for this poster, not read from the row.
+     *
+     * `social_occasions.theme` is one fixed string, so every Jumma Mubarak used to ask the
+     * image model for the same backdrop and print the same sentence underneath. The owner
+     * deleted one on 2026-08-28 for being indistinguishable from the week before. The model
+     * is now shown the last ten motifs, messages and art directions for this occasion and
+     * told to go somewhere else.
+     *
+     * Falls back to the stored theme and subtitle, so an outage produces last week's poster
+     * rather than no poster.
+     */
+    const art = await writeArtDirection(occasion);
 
     const { buffer: background, prompt } = await generateBackground(
-      occasion.theme ?? "Elegant ivory and antique gold, fine ornamental border, refined and airy.",
+      art?.theme ??
+        occasion.theme ??
+        "Elegant ivory and antique gold, fine ornamental border, refined and airy.",
     );
+
+    // No product. An occasion post greets; it does not sell. Owner instruction 2026-08-28.
     const composed = await composeOccasionImage({
       background,
-      productImageUrl: product.image,
       greeting: occasion.greeting,
-      subtitle: occasion.subtitle,
+      message: art?.message ?? occasion.subtitle ?? "",
+      attribution: art?.attribution ?? "",
     });
+
+    if (art) await logArtDirection(occasion, art);
     const imageUrl = await uploadArtwork(
       composed, row.occasion_slug, row.occasion_date, row.regenerate_count,
     );
@@ -221,7 +239,8 @@ export async function generateFor(postId: string): Promise<{ ok: boolean; detail
 
     await sb.from("social_occasion_posts").update({
       status: "ready",
-      product_id: product.id,
+      // No product is involved in an occasion poster any more.
+      product_id: null,
       image_url: imageUrl,
       image_prompt: prompt,
       caption_instagram: captions.instagram,
