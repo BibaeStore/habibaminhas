@@ -758,6 +758,7 @@ export type Database = {
       social_generation_log: {
         Row: {
           angle: string | null
+          art_direction: string | null
           audio_mood: string | null
           camera_signature: string | null
           caption_hash: string | null
@@ -777,6 +778,7 @@ export type Database = {
         }
         Insert: {
           angle?: string | null
+          art_direction?: string | null
           audio_mood?: string | null
           camera_signature?: string | null
           caption_hash?: string | null
@@ -796,6 +798,7 @@ export type Database = {
         }
         Update: {
           angle?: string | null
+          art_direction?: string | null
           audio_mood?: string | null
           camera_signature?: string | null
           caption_hash?: string | null
