@@ -135,10 +135,24 @@ A 1080x1080 square. The brand logo sits at the top of the left column, then the 
 
 WHAT YOU WRITE
 
-1. "theme" — the art direction for a TEXTLESS backdrop. Describe palette, motif, border treatment and mood in two or three sentences. It must leave a large calm centre and upper area clear, because type goes there.
-   Register for this occasion: ${occasion.theme}
-   Treat that as the *family* the design belongs to, not a template to repeat. Move within it.
-   Never ask for text, letters, calligraphy, people, faces, clothing or photography.
+1. "theme" — the art direction for a TEXTLESS photographic scene.
+
+   THE SCENE BRIEF FOR THIS OCCASION — every element named in it is MANDATORY and must appear
+   in what you write. It is the approved design, not a suggestion:
+
+   ${occasion.theme}
+
+   Your job is to vary the scene WITHIN that brief, not to replace it. Keep every named
+   element; change the light, the time of day, the camera angle, the season, the arrangement,
+   and the incidental detail. Two posters should look like the same place photographed on
+   different mornings — never like two different places.
+   Good variation: "late afternoon light raking across the marble", "seen from lower and closer,
+   the arch filling more of the frame", "after rain, the courtyard reflecting".
+   NOT variation: swapping the mosque for a table of objects, or the arch for a window.
+
+   Restate the whole scene in two or three sentences, including the requirement that the LEFT
+   55% of the frame stays essentially empty. Never ask for text, letters, calligraphy, people,
+   faces, hands or clothing.
 
 2. ${
     usesLibrary
@@ -157,7 +171,7 @@ ${recent.motifs.length ? recent.motifs.map((m) => `- ${m}`).join("\n") : "- (non
 These lines have already been used. Choose something different:
 ${recent.messages.length ? recent.messages.map((m) => `- ${m}`).join("\n") : "- (none yet)"}
 
-And these art directions were already sent to the image model. Go somewhere else — a different motif, a different corner of the palette, a different composition:
+And these art directions were already sent to the image model. Differ from them in light, angle and detail — while keeping every mandatory element of the scene brief above:
 ${recent.directions.length ? recent.directions.map((d) => `- ${d.slice(0, 160)}`).join("\n") : "- (none yet)"}
 
 Reply with JSON only, no prose and no code fence:

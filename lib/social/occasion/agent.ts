@@ -226,6 +226,10 @@ export async function generateFor(postId: string): Promise<{ ok: boolean; detail
     const composed = await composeOccasionImage({
       background,
       greeting: occasion.greeting,
+      // Stored per occasion, not derived: "Jumma Mubarak" does not tell you whether the Arabic
+      // agrees as masculine or feminine, and deriving it got exactly that wrong once already.
+      // Null for national and international days, which have no established Arabic phrase.
+      greetingAr: occasion.greeting_ar,
       message: art?.message ?? occasion.subtitle ?? "",
       attribution: art?.attribution ?? "",
       arabic: art?.arabic,

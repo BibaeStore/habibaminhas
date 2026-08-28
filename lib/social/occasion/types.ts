@@ -14,6 +14,15 @@ export type OccasionRow = {
   day: number | null;
   nth: number | null;
   greeting: string;
+  /**
+   * The Arabic calligraphy headline, where a widely-used phrase exists.
+   *
+   * Stored rather than derived: "Jumma Mubarak" does not tell you whether the Arabic agrees as
+   * masculine or feminine, and deriving it produced جمعة مباركة where the correct form is
+   * جمعة مبارك. Null for national, international and seasonal days — inventing an Arabic
+   * greeting for Mother's Day would be worse than leaving the line out.
+   */
+  greeting_ar: string | null;
   subtitle: string | null;
   theme: string | null;
   hashtags: string[];
