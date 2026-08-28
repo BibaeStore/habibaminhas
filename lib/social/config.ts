@@ -75,6 +75,10 @@ export type SocialSettings = {
   /** Reels run on their own days and times so a reel cadence cannot disturb the photo one. */
   reel_days: number[];
   reel_times: string[];
+  /** Reels get their own window, on the same terms as photos. Null => the fixed `reel_times`. */
+  reel_window_start: string | null;
+  reel_window_end: string | null;
+  reel_window_step_minutes: number;
   categories: string[];
   require_in_stock: boolean;
   min_images: number;
@@ -195,6 +199,32 @@ export type ResolvedPhotoSchedule = {
  * a configuration mistake, and the correct response to one is to keep posting on the old
  * schedule and show the problem in the admin, not to silently take the account quiet.
  */
+/**
+ * The reel posting times for today.
+ *
+ * Same mechanism as photos, deliberately — one idea to understand rather than two that drift.
+ * Reels keep their own chain, so a reel time and a photo time on the same day are drawn
+ * independently and neither constrains the other's spacing.
+ */
+export function resolveReelSlots(
+  settings: SocialSettings,
+  now: Date = new Date(),
+): ResolvedPhotoSchedule {
+  const window = parseWindow(
+    settings.reel_window_start,
+    settings.reel_window_end,
+    settings.reel_window_step_minutes,
+  );
+  if (!window) return { slots: settings.reel_times, source: "fixed", window: null };
+
+  // Reels are drawn first and answer to nobody: the photo draw works around them, not the
+  // other way round. Passing no reel schedule here is what makes that ordering explicit.
+  const picked = pickSlotForDate(localDateKey(settings.timezone, now), window, null);
+  if (!picked) return { slots: settings.reel_times, source: "fixed", window };
+
+  return { slots: [picked], source: "window", window };
+}
+
 export function resolvePhotoSlots(
   settings: SocialSettings,
   now: Date = new Date(),
@@ -206,9 +236,21 @@ export function resolvePhotoSlots(
   );
   if (!window) return { slots: settings.slot_times, source: "fixed", window: null };
 
+  /*
+   * Steer around *today's actual reel time*, not a constant.
+   *
+   * While reels sat at a fixed 20:00 this could be `settings.reel_times`. Now that a reel time
+   * is drawn from its own window, the photo has to avoid the time the reel will really take —
+   * avoiding 20:00 while the reel goes out at 18:35 would guard the wrong minute entirely.
+   *
+   * In the shipped configuration the two windows do not overlap (reels 18:00-20:00, photos
+   * 20:00-23:00), so this guard has nothing to do. It stays because the windows are owner-
+   * editable, and the day someone widens one is the day it matters.
+   */
+  const reels = resolveReelSlots(settings, now);
   const picked = pickSlotForDate(localDateKey(settings.timezone, now), window, {
     days: settings.reel_days ?? [],
-    times: settings.reel_times ?? [],
+    times: reels.slots,
     gapMinutes: REEL_COLLISION_GAP_MINUTES,
   });
   if (!picked) return { slots: settings.slot_times, source: "fixed", window };

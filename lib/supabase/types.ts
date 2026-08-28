@@ -918,6 +918,9 @@ export type Database = {
           photos_per_week: number
           reel_days: number[]
           reel_times: string[]
+          reel_window_end: string | null
+          reel_window_start: string | null
+          reel_window_step_minutes: number
           reels_per_week: number
           updated_at: string
         }
@@ -937,6 +940,9 @@ export type Database = {
           photos_per_week?: number
           reel_days?: number[]
           reel_times?: string[]
+          reel_window_end?: string | null
+          reel_window_start?: string | null
+          reel_window_step_minutes?: number
           reels_per_week?: number
           updated_at?: string
         }
@@ -956,6 +962,9 @@ export type Database = {
           photos_per_week?: number
           reel_days?: number[]
           reel_times?: string[]
+          reel_window_end?: string | null
+          reel_window_start?: string | null
+          reel_window_step_minutes?: number
           reels_per_week?: number
           updated_at?: string
         }
@@ -1108,6 +1117,9 @@ export type Database = {
           products_per_post: number
           reel_days: number[]
           reel_times: string[]
+          reel_window_end: string | null
+          reel_window_start: string | null
+          reel_window_step_minutes: number
           require_in_stock: boolean
           slot_times: string[]
           slot_window_end: string | null
@@ -1132,6 +1144,9 @@ export type Database = {
           products_per_post?: number
           reel_days?: number[]
           reel_times?: string[]
+          reel_window_end?: string | null
+          reel_window_start?: string | null
+          reel_window_step_minutes?: number
           require_in_stock?: boolean
           slot_times?: string[]
           slot_window_end?: string | null
@@ -1156,6 +1171,9 @@ export type Database = {
           products_per_post?: number
           reel_days?: number[]
           reel_times?: string[]
+          reel_window_end?: string | null
+          reel_window_start?: string | null
+          reel_window_step_minutes?: number
           require_in_stock?: boolean
           slot_times?: string[]
           slot_window_end?: string | null
