@@ -194,6 +194,21 @@ export async function deletePlan(id: string): Promise<void> {
  * posting continues rather than stopping unexpectedly.
  */
 export async function activatePlan(id: string): Promise<PlanRow> {
+  const plan = await applyPlan(id);
+  revalidatePath("/admin/social/planner");
+  revalidatePath("/admin/social");
+  return plan;
+}
+
+/**
+ * The activation itself, without any cache invalidation.
+ *
+ * Split out because `revalidatePath` throws "static generation store missing" outside a request
+ * context, and the automatic renewal runs from a cron tick where a stale admin page matters not
+ * at all. Making the scheduler's correctness depend on Next's cache semantics would be the
+ * wrong coupling: the plan handover must happen whether or not anyone is looking at the admin.
+ */
+async function applyPlan(id: string): Promise<PlanRow> {
   const sb = createAdminClient();
 
   const { error: standDown } = await sb
@@ -212,9 +227,6 @@ export async function activatePlan(id: string): Promise<PlanRow> {
   if (error) throw new Error(error.message);
 
   await writeScheduleFromPlan(data);
-
-  revalidatePath("/admin/social/planner");
-  revalidatePath("/admin/social");
   return data;
 }
 
@@ -299,4 +311,61 @@ export async function fetchPlanProgress(): Promise<PlanProgress | null> {
     reels: { done: reels, target: plan.reels_per_week },
     summary,
   };
+}
+
+/**
+ * Activates the plan whose dates cover today, if it is not already the active one.
+ *
+ * Why this is needed
+ * ------------------
+ * `active_from` and `active_to` were descriptive only. Nothing read them at runtime: the
+ * scheduler follows whatever `social_settings` last compiled, so an expired plan kept running
+ * indefinitely and a future plan sat inert until someone pressed Activate. The August plan
+ * expires on 31 August and the September plan would simply never have started.
+ *
+ * Called from the posting cron, so it is checked every few minutes and the handover happens on
+ * the first tick of the new month without anyone being at a computer.
+ *
+ * Deliberately conservative in three ways:
+ *
+ *   - It only ever activates a plan whose window *covers today*. It will not resurrect an
+ *     expired one, and it will not start a future one early.
+ *   - If no plan covers today, it does nothing at all. An expired plan keeps posting on its
+ *     last compiled settings, which is the existing behaviour and far better than an account
+ *     that silently goes quiet because a date passed.
+ *   - Ties break on the later `active_from`, so a specific short campaign wins over a long
+ *     open-ended fallback rather than the other way round.
+ */
+export async function autoRenewPlan(today = new Date()): Promise<{
+  changed: boolean;
+  activated?: string;
+  reason?: string;
+}> {
+  const sb = createAdminClient();
+  const key = today.toISOString().slice(0, 10);
+
+  const { data: plans, error } = await sb
+    .from("social_plans")
+    .select("id, name, is_active, active_from, active_to")
+    .order("active_from", { ascending: false });
+  if (error) return { changed: false, reason: error.message };
+
+  const covers = (p: { active_from: string | null; active_to: string | null }) =>
+    (!p.active_from || p.active_from <= key) && (!p.active_to || p.active_to >= key);
+
+  const current = (plans ?? []).find((p) => p.is_active);
+  if (current && covers(current)) return { changed: false, reason: "active plan still in range" };
+
+  const next = (plans ?? []).find((p) => covers(p) && !p.is_active);
+  if (!next) {
+    return {
+      changed: false,
+      reason: current
+        ? `“${current.name}” has expired and no plan covers ${key} — its last compiled settings keep running`
+        : "no plan covers today",
+    };
+  }
+
+  await applyPlan(next.id);
+  return { changed: true, activated: next.name };
 }

@@ -31,6 +31,16 @@ import { publishQueuedReel } from "@/lib/social/reel/publish";
  * through these actions, which run on the server behind the admin login.
  */
 
+/**
+ * Which stream a page is showing.
+ *
+ * Both fetchers take it and default to the carousel, so the existing Posts page keeps behaving
+ * exactly as it did while the new Static page can ask for its own rows. Without this the two
+ * streams would be indistinguishable in the admin -- the owner's complaint on 2026-08-28 was
+ * precisely that they could not tell a carousel from a static anywhere in the UI.
+ */
+export type LogStream = "carousel" | "static";
+
 export type SocialLogRow = Tables<"social_post_log">;
 export type SocialSettingsRow = Tables<"social_settings">;
 export type SocialPlatformRow = Tables<"social_platforms">;
@@ -105,28 +115,37 @@ export async function saveSocialSettings(
 }
 
 /** Rotation position — "cycle 2 · 7 of 20 posted". */
-export async function fetchRotationStatus(): Promise<RotationStatus | null> {
+export async function fetchRotationStatus(
+  stream: LogStream = "carousel",
+): Promise<RotationStatus | null> {
   const settings = await getSocialSettings();
   if (!settings) return null;
-  const { status } = await selectNextProducts(settings, 1);
+  const { status } = await selectNextProducts(settings, 1, stream);
   return status;
 }
 
 /** The next products the rotation would pick, for the "up next" preview. */
-export async function fetchUpNext(limit = 5): Promise<
-  Array<{ id: string; slug: string; title: string; images: string[] }>
-> {
+export async function fetchUpNext(
+  limit = 5,
+  stream: LogStream = "carousel",
+): Promise<Array<{ id: string; slug: string; title: string; images: string[] }>> {
   const settings = await getSocialSettings();
   if (!settings) return [];
-  const { products } = await selectNextProducts(settings, limit);
+  // Per stream, because the two rotations sit at different points in the catalogue -- showing
+  // the carousel's next product on the Static page would be actively misleading.
+  const { products } = await selectNextProducts(settings, limit, stream);
   return products.map((p) => ({ id: p.id, slug: p.slug, title: p.title, images: p.images }));
 }
 
-export async function fetchPostHistory(limit = 200): Promise<SocialLogRow[]> {
+export async function fetchPostHistory(
+  limit = 200,
+  stream: LogStream = "carousel",
+): Promise<SocialLogRow[]> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("social_post_log")
     .select("*")
+    .eq("stream", stream)
     .in("status", ["posted", "failed", "skipped", "archived"])
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -134,11 +153,12 @@ export async function fetchPostHistory(limit = 200): Promise<SocialLogRow[]> {
   return data ?? [];
 }
 
-export async function fetchReviewQueue(): Promise<SocialLogRow[]> {
+export async function fetchReviewQueue(stream: LogStream = "carousel"): Promise<SocialLogRow[]> {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("social_post_log")
     .select("*")
+    .eq("stream", stream)
     .in("status", ["pending", "approved"])
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
@@ -260,9 +280,16 @@ export async function retryFailedPost(id: string): Promise<unknown> {
  * The daily ceiling still applies, so this cannot be used to accidentally burn through
  * the catalogue.
  */
-export async function triggerPostNow(productId?: string): Promise<unknown> {
-  const result = await runScheduledPost({ force: true, productId });
+export async function triggerPostNow(
+  productId?: string,
+  stream: LogStream = "carousel",
+): Promise<unknown> {
+  // Which stream the button belongs to. Without this, "Post now" on the Static page would
+  // publish a multi-image carousel -- the wrong format, from the wrong rotation, logged against
+  // the wrong stream.
+  const result = await runScheduledPost({ force: true, productId, stream });
   revalidatePath("/admin/social");
+  revalidatePath("/admin/social/static");
   return result;
 }
 

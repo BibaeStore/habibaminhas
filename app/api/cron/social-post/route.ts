@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { runScheduledPost } from "@/lib/social/publish";
 import { runScheduledReels } from "@/lib/social/reel/publish";
 import { getSocialSettings } from "@/lib/social/config";
+import { autoRenewPlan } from "@/lib/actions/social-plans";
 
 /**
  * Scheduled social posting.
@@ -57,6 +58,22 @@ async function handle(req: Request) {
   const force = url.searchParams.get("force") === "1";
   const productId = url.searchParams.get("productId") ?? undefined;
 
+  /*
+   * Hand over to the next plan if the current one has expired.
+   *
+   * Before the slot check, so a new month's schedule is in force on the first tick rather than
+   * one tick late. Its own try/catch: a plan handover failing must not stop the day's post --
+   * the previous plan's compiled settings are still perfectly valid.
+   */
+  let renewal: unknown = { changed: false, reason: "skipped on a forced run" };
+  if (!force) {
+    try {
+      renewal = await autoRenewPlan();
+    } catch (e) {
+      renewal = { changed: false, reason: (e as Error).message };
+    }
+  }
+
   try {
     const result = await runScheduledPost({ force, productId });
 
@@ -100,7 +117,7 @@ async function handle(req: Request) {
       }
     }
 
-    return NextResponse.json({ ...result, statics, reels });
+    return NextResponse.json({ ...result, renewal, statics, reels });
   } catch (e) {
     // A thrown error here means something outside the per-post error handling failed.
     // Answer 200 with the reason rather than 500: pg_net has no retry semantics, and a

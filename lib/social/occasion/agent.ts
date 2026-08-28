@@ -234,6 +234,10 @@ export async function generateFor(postId: string): Promise<{ ok: boolean; detail
       attribution: art?.attribution ?? "",
       arabic: art?.arabic,
       cardTitle: art?.cardTitle,
+      // The day's own colours. Jumma keeps the boutique gold; Defence Day is Pakistan green.
+      accent: occasion.accent,
+      ink: occasion.ink,
+      ground: occasion.ground,
     });
 
     if (art) await logArtDirection(occasion, art);

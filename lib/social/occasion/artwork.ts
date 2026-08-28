@@ -43,10 +43,41 @@ const LOGO_W = 460;
 const LOGO_RATIO = 2.47; // the lockup's own aspect ratio
 const LOGO_TOP = 52;
 
-const INK = "#2f2a20";
-const GOLD = "#b08d57";
-const GOLD_D = "#8d6d3c";
-const MUTED = "#6b6153";
+/**
+ * Fallbacks only. The real palette comes from the occasion row.
+ *
+ * These were hardcoded, which meant a Defence Day card came out in boutique gold on cream —
+ * indistinguishable from a Jumma card. The owner's point was precise: the brand palette is
+ * right for Jumma and wrong as a default for every day of the year. Colour belongs to the
+ * occasion, so it is passed in.
+ */
+const DEFAULT_INK = "#2f2a20";
+const DEFAULT_ACCENT = "#b08d57";
+const DEFAULT_GROUND = "#faf6ef";
+
+/** Darkens a hex colour. Used for the small-caps card title, which needs more weight than the rule. */
+function darken(hex: string, amount = 0.18): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map((v) => Math.max(0, Math.round(v * (1 - amount))))
+    .map((v) => v.toString(16).padStart(2, "0"))
+    .join("");
+  return `#${ch}`;
+}
+
+/** Mixes a colour towards grey for secondary text, keeping the day's hue rather than going flat. */
+function muted(ink: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(ink.trim());
+  if (!m) return "#6b6153";
+  const n = parseInt(m[1], 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map((v) => Math.round(v + (150 - v) * 0.42))
+    .map((v) => v.toString(16).padStart(2, "0"))
+    .join("");
+  return `#${ch}`;
+}
 
 const FONT_DIR = path.join(process.cwd(), "assets", "fonts");
 const FONTS = [
@@ -163,11 +194,23 @@ export type ComposeInput = {
   attribution: string;
   /** One or two lines. Held short so it supports the greeting rather than crowding it. */
   blessing?: string;
+  /** The day's palette, from the occasion row. Rules, dividers, the card title. */
+  accent?: string;
+  /** Body text. */
+  ink?: string;
+  /** The veil behind the type and the card fill. Must stay light enough for `ink` to read. */
+  ground?: string;
 };
 
 const DEFAULT_BLESSING = "May this blessed day bring peace and barakah to you and your family.";
 
 export async function composeOccasionImage(input: ComposeInput): Promise<Buffer> {
+  const INK = input.ink || DEFAULT_INK;
+  const GOLD = input.accent || DEFAULT_ACCENT;
+  const GOLD_D = darken(GOLD);
+  const MUTED = muted(INK);
+  const GROUND = input.ground || DEFAULT_GROUND;
+
   /*
    * "JUMMA MUBARAK" becomes JUMMA in serif caps with "Mubarak" in script beneath it — the
    * treatment the owner's reference used and the reason a script face had to be available at
@@ -254,9 +297,9 @@ export async function composeOccasionImage(input: ComposeInput): Promise<Buffer>
 
   const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
   <defs><linearGradient id="veil" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%" stop-color="#faf6ef" stop-opacity="0.97"/>
-    <stop offset="58%" stop-color="#faf6ef" stop-opacity="0.9"/>
-    <stop offset="100%" stop-color="#faf6ef" stop-opacity="0"/>
+    <stop offset="0%" stop-color="${GROUND}" stop-opacity="0.97"/>
+    <stop offset="58%" stop-color="${GROUND}" stop-opacity="0.9"/>
+    <stop offset="100%" stop-color="${GROUND}" stop-opacity="0"/>
   </linearGradient></defs>
 
   <!-- Softens the scene under the type. Without it a long line can land on a dome and stop
@@ -286,7 +329,7 @@ export async function composeOccasionImage(input: ComposeInput): Promise<Buffer>
   ${blessLines.map((l, i) => `<text x="${CX}" y="${yBless + i * 36}" text-anchor="middle" font-family="Cormorant Garamond" font-size="29" fill="${MUTED}">${esc(l)}</text>`).join("")}
 
   <rect x="${PAD}" y="${cardTop}" width="${COL}" height="${cardH}" rx="20"
-        fill="#fffdf8" fill-opacity="0.95" stroke="${GOLD}" stroke-opacity="0.55" stroke-width="1.3"/>
+        fill="${GROUND}" fill-opacity="0.96" stroke="${GOLD}" stroke-opacity="0.55" stroke-width="1.3"/>
   ${titleSvg}${arSvg}${msgSvg}${attrSvg}
 
   <text x="${CX}" y="${H - 38}" text-anchor="middle" font-family="Cormorant Garamond" font-size="21"

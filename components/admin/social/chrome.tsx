@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Images, Clapperboard, CalendarRange, Share2, Users, SlidersHorizontal,
+  Images, Image, Clapperboard, CalendarRange, Share2, Users, SlidersHorizontal,
   Power, Check, AlertTriangle, CalendarCheck, CalendarHeart,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -24,7 +24,13 @@ import { useAct } from "./use-act";
 /**
  * The frame every social page sits inside.
  *
- * Three pages — Posts, Reels, Planner — and nothing else at the top level. The things that
+ * One page per content stream, then Occasions and Planner. "Posts" was renamed to "Carousel"
+ * and Static given its own page on 2026-08-28: the static stream was publishing correctly but
+ * there was nowhere to see it, and nothing in the UI distinguished a carousel from a static.
+ * Ordered the way the evening runs — reels first, then statics, then the carousel — with the
+ * planning tools last.
+ *
+ * The things that
  * govern *both* content types (platforms, collaborators, posting rules) are header buttons
  * opening modals rather than a fourth page: they belong to neither side, they are touched
  * rarely, and as a page they buried the schedule underneath two long scrolling lists where
@@ -36,10 +42,11 @@ import { useAct } from "./use-act";
  */
 
 const NAV = [
-  { href: "/admin/social",         icon: Images,        label: "Posts",   badge: "photos" },
-  { href: "/admin/social/reels",   icon: Clapperboard,  label: "Reels",   badge: "reels"  },
-  { href: "/admin/social/planner", icon: CalendarRange, label: "Planner", badge: null     },
-  { href: "/admin/social/occasions", icon: CalendarHeart, label: "Occasions", badge: null  },
+  { href: "/admin/social",           icon: Images,        label: "Carousel",  badge: "photos" },
+  { href: "/admin/social/static",    icon: Image,         label: "Static",    badge: "static" },
+  { href: "/admin/social/reels",     icon: Clapperboard,  label: "Reels",     badge: "reels"  },
+  { href: "/admin/social/occasions", icon: CalendarHeart, label: "Occasions", badge: null     },
+  { href: "/admin/social/planner",   icon: CalendarRange, label: "Planner",   badge: null     },
 ] as const;
 
 type SharedModal = "platforms" | "collaborators" | "settings" | "plan" | null;

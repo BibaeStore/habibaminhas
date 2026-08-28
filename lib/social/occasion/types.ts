@@ -25,6 +25,10 @@ export type OccasionRow = {
   greeting_ar: string | null;
   subtitle: string | null;
   theme: string | null;
+  /** The day's palette. Hardcoded gold-on-cream made every poster look the same. */
+  accent: string;
+  ink: string;
+  ground: string;
   hashtags: string[];
   enabled: boolean;
   priority: number;

@@ -10,6 +10,60 @@ occasion posters redesigned; a broken-deploy chain found and fixed)
 > **auto-publish** — they do not queue for review. Earlier updates in this file say the
 > opposite and are wrong; this line is the current one.
 
+## Session 2026-08-28e — tabs, September plan, occasion calendar, Veo blocked
+
+### 🔴 The Gemini API key is blocked — owner action required
+
+The Veo trial ran and spent **$0.00**, because every call was refused:
+
+```
+403 API_KEY_SERVICE_BLOCKED
+Requests to this API generativelanguage.googleapis.com method
+google.ai.generativelanguage.v1beta.PredictionService.PredictLongRunning are blocked.
+```
+
+Not a Veo problem and not a billing problem. `ListModels` and a plain
+`gemini-2.5-flash:generateContent` are blocked too, so **the entire Generative Language API is
+unavailable to this key.** Almost always one of:
+
+1. The key has *API restrictions* that do not include **Generative Language API**
+2. **Generative Language API** is not enabled on the Cloud project
+3. The key belongs to a different project from the one with billing
+
+Fix in Google AI Studio / Cloud Console → Credentials → the key → API restrictions. Nothing on
+our side can work around it. The 9:16 question therefore remains **unanswered**.
+
+### Built
+
+**Admin tabs**, which the owner could not navigate: *Posts* was renamed **Carousel** and
+**Static** given its own page. The static stream had been publishing correctly with nowhere to
+look at it. Parametrised rather than copied — `ProductPostsPage({ stream })` behind two thin
+routes, because two 840-line pages would have drifted within a week. `triggerPostNow` takes the
+stream too; without it "Post now" on the Static page would have published a carousel.
+
+**September plan + auto-renewal.** `active_from`/`active_to` were purely descriptive — nothing
+read them, so the August plan would have expired on 31 Aug and September would have sat inert
+forever. `autoRenewPlan()` runs on every cron tick. Tested: 28 Aug no change, 1 Sep activates.
+Deliberately conservative — it never resurrects an expired plan, never starts a future one
+early, and if no plan covers today it leaves the last compiled settings running rather than
+letting the account go quiet.
+
+`activatePlan` was split from `applyPlan` because `revalidatePath` throws outside a request
+context. A cron's correctness should not depend on Next's cache semantics.
+
+**Occasion calendar.** September held nothing but Jumma. **6 September — Defence Day — did not
+exist**, nine days out. Added with Sisters', Daughters' and Teachers' Day.
+
+**Per-occasion palettes.** The owner's sharpest note: every poster came out boutique gold on
+cream because the palette was *hardcoded in the layout*. Colour now belongs to the occasion —
+Defence Day is Pakistan green, Mother's Day rose. Both rendered and approved.
+
+**Veo module** (`lib/social/reel/veo.ts`) with a hard monthly cap read from the log rather than
+a counter, so it cannot drift across redeploys. Refuses *before* calling out. Written and
+typechecked but never successfully exercised — see the block above.
+
+---
+
 ## Session 2026-08-28d — the static stream, and three failed deploys
 
 ### 🔴 Three deploys had been failing and I had not noticed
