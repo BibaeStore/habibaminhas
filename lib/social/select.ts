@@ -64,9 +64,26 @@ export type SelectionResult = {
  * queued and being posted is skipped, because stock is checked at selection time rather
  * than cached from an earlier run.
  */
+export type SelectStream = "carousel" | "static";
+
+/** Which manual-order table a stream pins into. */
+const ORDER_TABLE: Record<SelectStream, "social_queue_order" | "social_static_order"> = {
+  carousel: "social_queue_order",
+  static: "social_static_order",
+};
+
 export async function selectNextProducts(
   settings: SocialSettings,
   limit = settings.products_per_post,
+  /**
+   * Which rotation to advance.
+   *
+   * The two streams keep separate trackers and separate history, so a static post and a
+   * carousel on the same day are different garments and each walks the catalogue at its own
+   * pace. Sharing one rotation would have made them shadow each other -- which is precisely
+   * what the owner asked to avoid.
+   */
+  stream: SelectStream = "carousel",
 ): Promise<SelectionResult> {
   const sb = createAdminClient();
 
@@ -98,7 +115,7 @@ export async function selectNextProducts(
     };
   }
 
-  const history = await loadHistory(eligible.map((p) => p.id));
+  const history = await loadHistory(eligible.map((p) => p.id), stream);
 
   /*
    * A product already sitting in the review queue must not be selected again.
@@ -110,7 +127,7 @@ export async function selectNextProducts(
   const selectable = eligible.filter((p) => !history.inFlight.has(p.id));
 
   // Manual drag-and-drop overrides from the admin "Up next" list.
-  const pinned = await loadManualOrder();
+  const pinned = await loadManualOrder(stream);
 
   const ranked = [...selectable].sort((a, b) => {
     // 1. Anything the owner dragged into place wins, in the order they chose.
@@ -149,10 +166,10 @@ export async function selectNextProducts(
  * once the product posts, so the catalogue returns to even rotation instead of the pinned
  * product monopolising the queue forever.
  */
-async function loadManualOrder(): Promise<Map<string, number>> {
+async function loadManualOrder(stream: SelectStream): Promise<Map<string, number>> {
   const sb = createAdminClient();
   const { data, error } = await sb
-    .from("social_queue_order")
+    .from(ORDER_TABLE[stream])
     .select("product_id, position")
     .order("position");
 
@@ -163,9 +180,12 @@ async function loadManualOrder(): Promise<Map<string, number>> {
 }
 
 /** Removes a product's manual pin — called once it has actually been posted. */
-export async function clearManualOrder(productId: string): Promise<void> {
+export async function clearManualOrder(
+  productId: string,
+  stream: SelectStream = "carousel",
+): Promise<void> {
   const sb = createAdminClient();
-  await sb.from("social_queue_order").delete().eq("product_id", productId);
+  await sb.from(ORDER_TABLE[stream]).delete().eq("product_id", productId);
 }
 
 type History = {
@@ -174,11 +194,17 @@ type History = {
   inFlight: Set<string>;
 };
 
-async function loadHistory(productIds: string[]): Promise<History> {
+async function loadHistory(productIds: string[], stream: SelectStream): Promise<History> {
   const sb = createAdminClient();
+  /*
+   * History is per stream. A garment that went out as a carousel on Tuesday is still "unposted"
+   * as far as the static rotation is concerned -- otherwise the two streams would consume one
+   * shared runway and the second would run out of fresh products in half the time.
+   */
   const { data, error } = await sb
     .from("social_post_log")
     .select("product_id, status, posted_at")
+    .eq("stream", stream)
     .in("product_id", productIds);
 
   if (error) throw new Error(`Rotation history lookup failed: ${error.message}`);

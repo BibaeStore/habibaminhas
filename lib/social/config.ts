@@ -79,6 +79,12 @@ export type SocialSettings = {
   reel_window_start: string | null;
   reel_window_end: string | null;
   reel_window_step_minutes: number;
+  /** The single-image stream. Its own days, window and rotation. */
+  static_days: number[];
+  static_times: string[];
+  static_window_start: string | null;
+  static_window_end: string | null;
+  static_window_step_minutes: number;
   categories: string[];
   require_in_stock: boolean;
   min_images: number;
@@ -221,6 +227,32 @@ export function resolveReelSlots(
   // other way round. Passing no reel schedule here is what makes that ordering explicit.
   const picked = pickSlotForDate(localDateKey(settings.timezone, now), window, null);
   if (!picked) return { slots: settings.reel_times, source: "fixed", window };
+
+  return { slots: [picked], source: "window", window };
+}
+
+/**
+ * The static posting times for today.
+ *
+ * Third instance of the same pattern, deliberately: days, a window, fall back to fixed times.
+ * A static post answers to nobody either -- it runs on days the reel stream does not use, and
+ * in a window the carousel does not use, so no collision guard is needed between them. That
+ * separation is a schedule decision, not something enforced in code, which is why the settings
+ * seed 18:00-20:00 on Mon and Wed against the carousel's 20:15-23:00.
+ */
+export function resolveStaticSlots(
+  settings: SocialSettings,
+  now: Date = new Date(),
+): ResolvedPhotoSchedule {
+  const window = parseWindow(
+    settings.static_window_start,
+    settings.static_window_end,
+    settings.static_window_step_minutes,
+  );
+  if (!window) return { slots: settings.static_times, source: "fixed", window: null };
+
+  const picked = pickSlotForDate(localDateKey(settings.timezone, now), window, null);
+  if (!picked) return { slots: settings.static_times, source: "fixed", window };
 
   return { slots: [picked], source: "window", window };
 }

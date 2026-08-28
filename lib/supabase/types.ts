@@ -961,6 +961,12 @@ export type Database = {
           reel_window_start: string | null
           reel_window_step_minutes: number
           reels_per_week: number
+          static_days: number[]
+          static_times: string[]
+          static_window_end: string | null
+          static_window_start: string | null
+          static_window_step_minutes: number
+          statics_per_week: number
           updated_at: string
         }
         Insert: {
@@ -983,6 +989,12 @@ export type Database = {
           reel_window_start?: string | null
           reel_window_step_minutes?: number
           reels_per_week?: number
+          static_days?: number[]
+          static_times?: string[]
+          static_window_end?: string | null
+          static_window_start?: string | null
+          static_window_step_minutes?: number
+          statics_per_week?: number
           updated_at?: string
         }
         Update: {
@@ -1005,6 +1017,12 @@ export type Database = {
           reel_window_start?: string | null
           reel_window_step_minutes?: number
           reels_per_week?: number
+          static_days?: number[]
+          static_times?: string[]
+          static_window_end?: string | null
+          static_window_start?: string | null
+          static_window_step_minutes?: number
+          statics_per_week?: number
           updated_at?: string
         }
         Relationships: []
@@ -1078,6 +1096,7 @@ export type Database = {
           rotation_cycle: number
           slot: string | null
           status: string
+          stream: string
         }
         Insert: {
           alt_text?: string | null
@@ -1103,6 +1122,7 @@ export type Database = {
           rotation_cycle?: number
           slot?: string | null
           status: string
+          stream?: string
         }
         Update: {
           alt_text?: string | null
@@ -1128,12 +1148,39 @@ export type Database = {
           rotation_cycle?: number
           slot?: string | null
           status?: string
+          stream?: string
         }
         Relationships: [
           {
             foreignKeyName: "social_post_log_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_static_order: {
+        Row: {
+          position: number
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          position: number
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          position?: number
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_static_order_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -1164,6 +1211,11 @@ export type Database = {
           slot_window_end: string | null
           slot_window_start: string | null
           slot_window_step_minutes: number
+          static_days: number[]
+          static_times: string[]
+          static_window_end: string | null
+          static_window_start: string | null
+          static_window_step_minutes: number
           timezone: string
           updated_at: string
         }
@@ -1191,6 +1243,11 @@ export type Database = {
           slot_window_end?: string | null
           slot_window_start?: string | null
           slot_window_step_minutes?: number
+          static_days?: number[]
+          static_times?: string[]
+          static_window_end?: string | null
+          static_window_start?: string | null
+          static_window_step_minutes?: number
           timezone?: string
           updated_at?: string
         }
@@ -1218,6 +1275,11 @@ export type Database = {
           slot_window_end?: string | null
           slot_window_start?: string | null
           slot_window_step_minutes?: number
+          static_days?: number[]
+          static_times?: string[]
+          static_window_end?: string | null
+          static_window_start?: string | null
+          static_window_step_minutes?: number
           timezone?: string
           updated_at?: string
         }

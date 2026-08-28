@@ -668,15 +668,83 @@ export function SettingsModal({
               disabled={pending}
             />
           </Field>
+          {!(current.reel_window_start && current.reel_window_end) && (
+            <div className="mt-4">
+              <Field label="Times">
+                <TimeList
+                  times={current.reel_times ?? []}
+                  onChange={(t) => set("reel_times", t)}
+                  fallback="20:00"
+                  label="Reel time"
+                />
+              </Field>
+            </div>
+          )}
           <div className="mt-4">
-            <Field label="Times">
-              <TimeList
-                times={current.reel_times ?? []}
-                onChange={(t) => set("reel_times", t)}
-                fallback="20:00"
-                label="Reel time"
-              />
-            </Field>
+            <SlotWindowEditor
+              start={current.reel_window_start}
+              end={current.reel_window_end}
+              stepMinutes={current.reel_window_step_minutes}
+              timezone={current.timezone}
+              onChange={(start, end) =>
+                setDraft({
+                  ...(current as SocialSettingsRow),
+                  reel_window_start: start,
+                  reel_window_end: end,
+                })
+              }
+            />
+          </div>
+        </div>
+
+        {/*
+          * The single-image stream.
+          *
+          * Its own days and window because that separation is what keeps the three streams from
+          * colliding: statics run on the days reels do not, and in the window the carousel does
+          * not. Nothing in code enforces that — it is a schedule decision, which is exactly why
+          * it needs to be visible and editable here rather than buried in a migration.
+          */}
+        <div className="border-t border-[var(--admin-border)] pt-5">
+          <h4 className="mb-3 text-[15px] font-semibold text-[var(--admin-text)]">
+            When single-image posts go out
+          </h4>
+          <Field
+            label="Days"
+            hint="One photograph, not a carousel. Best on days with no reel, so no day carries three posts."
+          >
+            <DayPicker
+              days={current.static_days ?? []}
+              onChange={(d) => set("static_days", d)}
+              disabled={pending}
+            />
+          </Field>
+          {!(current.static_window_start && current.static_window_end) && (
+            <div className="mt-4">
+              <Field label="Times">
+                <TimeList
+                  times={current.static_times ?? []}
+                  onChange={(t) => set("static_times", t)}
+                  fallback="18:30"
+                  label="Single-image post time"
+                />
+              </Field>
+            </div>
+          )}
+          <div className="mt-4">
+            <SlotWindowEditor
+              start={current.static_window_start}
+              end={current.static_window_end}
+              stepMinutes={current.static_window_step_minutes}
+              timezone={current.timezone}
+              onChange={(start, end) =>
+                setDraft({
+                  ...(current as SocialSettingsRow),
+                  static_window_start: start,
+                  static_window_end: end,
+                })
+              }
+            />
           </div>
         </div>
 

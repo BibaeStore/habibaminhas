@@ -61,6 +61,26 @@ async function handle(req: Request) {
     const result = await runScheduledPost({ force, productId });
 
     /*
+     * The static stream, drained after the carousel and never able to affect it.
+     *
+     * Its own try/catch for the same reason reels have one: the carousel is the proven, daily
+     * half of this pipeline and a fault in a newer stream must not be able to stop it. By the
+     * time this runs the carousel has already published, so the worst case is that a static
+     * post waits for the next tick.
+     *
+     * Skipped on a forced run -- "post now" means post one carousel now, and quietly publishing
+     * a second post as a side effect of that button would be a surprise.
+     */
+    let statics: unknown = { action: "skipped", detail: "forced run" };
+    if (!force) {
+      try {
+        statics = await runScheduledPost({ stream: "static" });
+      } catch (e) {
+        statics = { ok: false, action: "error", detail: (e as Error).message };
+      }
+    }
+
+    /*
      * Reels are drained separately, after photos, and are never allowed to affect them.
      *
      * Their own try/catch is the whole point: a misconfigured reel schedule or a Meta
@@ -80,7 +100,7 @@ async function handle(req: Request) {
       }
     }
 
-    return NextResponse.json({ ...result, reels });
+    return NextResponse.json({ ...result, statics, reels });
   } catch (e) {
     // A thrown error here means something outside the per-post error handling failed.
     // Answer 200 with the reason rather than 500: pg_net has no retry semantics, and a

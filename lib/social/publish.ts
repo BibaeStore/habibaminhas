@@ -7,14 +7,18 @@ import {
   getEnabledCollaborators,
   findDueSlot,
   resolvePhotoSlots,
+  resolveStaticSlots,
   startOfLocalDayUtc,
   type MetaCredentials,
   type ResolvedPhotoSchedule,
   type SocialSettings,
 } from "./config";
-import { selectNextProducts, clearManualOrder, type ProductCandidate } from "./select";
+import {
+  selectNextProducts, clearManualOrder,
+  type ProductCandidate, type SelectStream,
+} from "./select";
 import { buildCaption, buildPinContent, type CaptionOptions } from "./caption";
-import { writeCarouselCaption } from "./ai-caption";
+import { writeCaption } from "./ai-caption";
 import { prepareImages } from "./images";
 import { createInstagramAdapter, deleteInstagramMedia } from "./adapters/instagram";
 import { createFacebookAdapter, deleteFacebookPost } from "./adapters/facebook";
@@ -101,7 +105,13 @@ function buildContentFor(
 export async function runScheduledPost(options?: {
   force?: boolean;
   productId?: string;
+  /**
+   * Which stream to run. Defaults to the carousel, so every existing caller -- the cron route,
+   * the admin "post now" button -- keeps its current behaviour untouched.
+   */
+  stream?: SelectStream;
 }): Promise<RunOutcome> {
+  const stream: SelectStream = options?.stream ?? "carousel";
   const settings = await getSocialSettings();
   if (!settings) return { ok: false, action: "skipped", detail: "social_settings row missing" };
 
@@ -128,19 +138,21 @@ export async function runScheduledPost(options?: {
    *    to look for, never whether to post.
    */
   const now = new Date();
-  const schedule = resolvePhotoSlots(settings, now);
+  const schedule = stream === "static" ? resolveStaticSlots(settings, now) : resolvePhotoSlots(settings, now);
+  const days = stream === "static" ? settings.static_days : settings.post_days;
   const slot = options?.force
     ? "manual"
-    : findDueSlot(schedule.slots, settings.timezone, now, 30, settings.post_days);
+    : findDueSlot(schedule.slots, settings.timezone, now, 30, days);
   if (!slot) {
     return {
       ok: true,
       action: "no_slot_due",
       detail: {
+        stream,
         drained,
         slots: schedule.slots,
         scheduleSource: schedule.source,
-        days: settings.post_days,
+        days,
         timezone: settings.timezone,
       },
     };
@@ -148,8 +160,8 @@ export async function runScheduledPost(options?: {
 
   // 3. Has this slot already produced a post today? Prevents the 15-minute cron from
   //    firing the same 19:00 slot twice inside the tolerance window.
-  if (!options?.force && (await slotAlreadyRan(settings, slot, schedule.source))) {
-    return { ok: true, action: "slot_already_ran", detail: { slot, drained } };
+  if (!options?.force && (await slotAlreadyRan(settings, slot, schedule.source, stream))) {
+    return { ok: true, action: "slot_already_ran", detail: { stream, slot, drained } };
   }
 
   // 4. Hard daily ceiling, independent of cadence — a scheduler misfire must not be able
@@ -164,7 +176,7 @@ export async function runScheduledPost(options?: {
   }
 
   // 5. Select and prepare.
-  const { products, status } = await selectNextProducts(settings);
+  const { products, status } = await selectNextProducts(settings, undefined, stream);
   const chosen = options?.productId
     ? products.filter((p) => p.id === options.productId)
     : products;
@@ -175,13 +187,13 @@ export async function runScheduledPost(options?: {
 
   const results: unknown[] = [];
   for (const product of chosen) {
-    results.push(await processProduct(product, settings, creds, slot));
+    results.push(await processProduct(product, settings, creds, slot, stream));
   }
 
   return {
     ok: true,
     action: settings.approval_required ? "queued_for_review" : "published",
-    detail: { slot, scheduleSource: schedule.source, rotation: status, drained, results },
+    detail: { stream, slot, scheduleSource: schedule.source, rotation: status, drained, results },
   };
 }
 
@@ -196,6 +208,7 @@ async function processProduct(
   settings: SocialSettings,
   creds: MetaCredentials,
   slot: string,
+  stream: SelectStream = "carousel",
 ): Promise<unknown> {
   const sb = createAdminClient();
 
@@ -206,7 +219,16 @@ async function processProduct(
 
   let imageUrls: string[];
   try {
-    imageUrls = await prepareImages(product.images, product.palette?.[0]);
+    /*
+     * A static post is one photograph, and that is the whole point of the format: one image has
+     * to stop the scroll on its own, so it gets the hero shot and nothing else. The carousel
+     * takes everything the product has.
+     *
+     * `images[0]` is the hero by existing convention -- it is already what the reel builder uses
+     * for its thumbnail -- so no new column is needed to express it.
+     */
+    const source = stream === "static" ? product.images.slice(0, 1) : product.images;
+    imageUrls = await prepareImages(source, product.palette?.[0]);
   } catch (e) {
     // Log the failure against the product so it is visible in the admin history rather
     // than disappearing into a server log.
@@ -218,6 +240,7 @@ async function processProduct(
       status: "failed",
       error_message: `Image preparation failed: ${(e as Error).message}`,
       slot,
+      stream,
       group_id: groupId,
     });
     return { product: product.slug, ok: false, reason: "image_prep_failed" };
@@ -243,7 +266,7 @@ async function processProduct(
    * limit or malformed JSON simply means today's post uses the assembled caption instead.
    */
   const ai = settings.ai_captions_enabled
-    ? await writeCarouselCaption(product, { soldOut: (product.stock ?? 0) <= 0 })
+    ? await writeCaption(product, stream, { soldOut: (product.stock ?? 0) <= 0 })
     : null;
 
   const copy: CaptionOptions = { ai, includePrice: settings.caption_include_price };
@@ -270,12 +293,13 @@ async function processProduct(
       pin_title: p.pinTitle,
       pin_link: p.pinLink,
       slot,
+      stream,
       group_id: groupId,
     }));
     const { error } = await sb.from("social_post_log").insert(rows);
     if (error) return { product: product.slug, ok: false, reason: "queue_insert_failed", message: error.message };
     // The pin has done its job — the product is queued, so let the rotation resume.
-    await clearManualOrder(product.id);
+    await clearManualOrder(product.id, stream);
     return { product: product.slug, ok: true, queued: rows.length };
   }
 
@@ -295,12 +319,13 @@ async function processProduct(
         pinTitle: p.pinTitle,
         pinLink: p.pinLink,
         slot,
+        stream,
         groupId,
         collaborators: p.collaborators,
       }),
     );
   }
-  await clearManualOrder(product.id);
+  await clearManualOrder(product.id, stream);
   return { product: product.slug, ok: true, outcomes };
 }
 
@@ -315,6 +340,8 @@ type PublishInput = {
   imageUrls: string[];
   altText: string | null;
   slot: string | null;
+  /** Recorded on the log row so `slotAlreadyRan` can scope to one stream. */
+  stream?: SelectStream;
   /** Shared across every platform row of one logical post. Only used on the insert path. */
   groupId?: string;
   /**
@@ -378,6 +405,7 @@ async function publishOne(creds: MetaCredentials, input: PublishInput): Promise<
       pin_title: input.pinTitle,
       pin_link: input.pinLink,
       slot: input.slot,
+      stream: input.stream ?? "carousel",
       posted_at: new Date().toISOString(),
       error: null,
       error_message: null,
@@ -417,6 +445,9 @@ async function publishOne(creds: MetaCredentials, input: PublishInput): Promise<
         pin_title: input.pinTitle,
         pin_link: input.pinLink,
         slot: input.slot,
+        // Failures carry the stream too. Without it a failed static post would be filed as a
+        // carousel, and the daily guard for the wrong stream would read it.
+        stream: input.stream ?? "carousel",
         ...(input.groupId ? { group_id: input.groupId } : {}),
         ...failure,
       });
@@ -722,6 +753,7 @@ async function slotAlreadyRan(
   settings: SocialSettings,
   slot: string,
   source: ResolvedPhotoSchedule["source"],
+  stream: SelectStream,
 ): Promise<boolean> {
   const sb = createAdminClient();
   const since = startOfLocalDayUtc(settings.timezone).toISOString();
@@ -730,14 +762,24 @@ async function slotAlreadyRan(
     const { count } = await sb
       .from("social_post_log")
       .select("id", { count: "exact", head: true })
+      .eq("stream", stream)
       .eq("slot", slot)
       .gte("created_at", since);
     return (count ?? 0) > 0;
   }
 
+  /*
+   * Scoped to the stream, and that scoping is load-bearing.
+   *
+   * Unscoped, this asked "has ANY clock-time slot published today?" -- correct while the
+   * carousel was the only stream drawing clock times, and silently fatal the moment a second
+   * one existed: a carousel at 21:40 on Monday would make the static post look already-done and
+   * skip it, every Monday and Wednesday, with no error anywhere.
+   */
   const { data } = await sb
     .from("social_post_log")
     .select("slot")
+    .eq("stream", stream)
     .gte("created_at", since);
 
   return (data ?? []).some((row) => /^\d{1,2}:\d{2}$/.test(String(row.slot ?? "")));

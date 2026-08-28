@@ -1,7 +1,7 @@
 # TRACKER — Social Automation
 
-**Last updated:** 2026-08-28 (ninth update — scheduler merged to main; AI caption engine
-built for the carousel stream, switched off pending owner review)
+**Last updated:** 2026-08-28 (tenth update — static stream built, all three streams live;
+occasion posters redesigned; a broken-deploy chain found and fixed)
 
 **Status:** ✅ **Phases 1, 1b and 2 (reels) built.** Planner built. `social-post-slots` is
 `active = true` and has published **10 consecutive days without a miss** (18–27 Aug).
@@ -9,6 +9,70 @@ built for the carousel stream, switched off pending owner review)
 > ⚠️ **`approval_required` is `false`, not `true`.** It was changed on 2026-08-18. Photos
 > **auto-publish** — they do not queue for review. Earlier updates in this file say the
 > opposite and are wrong; this line is the current one.
+
+## Session 2026-08-28d — the static stream, and three failed deploys
+
+### 🔴 Three deploys had been failing and I had not noticed
+
+The owner reported `/admin/login` not loading. The page was fine — **the last three deploys
+to production had failed**, so the live site was serving code from 05:52.
+
+```
+./node_modules/@resvg/resvg-js/js-binding.js
+non-ecmascript placeable asset
+asset is not placeable in ESM chunks, so it doesn't have a module id
+```
+
+`@resvg/resvg-js` loads a native `.node` binary and Turbopack cannot put one in an ESM chunk.
+Fix: `serverExternalPackages: ["@resvg/resvg-js"]`. sharp is externalised by Next
+automatically; resvg is not on that list.
+
+**Why local builds kept passing — the part worth remembering.** The failure is invisible on an
+*incremental* build: with a `.next` holding a route graph from before the import existed, the
+affected routes are not re-traced. `rm -rf .next` reproduced it first try. **A deploy is always
+a clean build, so "npm run build passed" was never evidence a deploy would.** Check
+`gh run list` after every push.
+
+### The static stream (the third and last)
+
+| Stream | Cadence | Days | Window |
+|---|---|---|---|
+| Reel | 4/week | Tue Thu Fri Sat | 17:30–20:00 |
+| **Static** | **2/week** | **Mon Wed** | **18:00–20:00** |
+| Carousel | daily | every day | 20:15–23:00 |
+
+Statics run on the days reels do not, in the window the carousel does not. Nothing in code
+enforces that — it is a schedule decision, which is why it is editable in Settings.
+
+**Built by parametrising, not duplicating.** `runScheduledPost({ stream })`,
+`selectNextProducts(settings, limit, stream)`, `resolveStaticSlots()`. Every existing caller
+defaults to `"carousel"`, so nothing that already worked changed behaviour.
+
+| File | What |
+|---|---|
+| `supabase/migrations/20260828_social_static_stream.sql` | `social_post_log.stream`, `social_static_order`, static schedule columns, cap 2 → 4 |
+| `lib/social/select.ts` | Rotation + history scoped per stream |
+| `lib/social/publish.ts` | Stream-parametrised; static gets `images[0]` only |
+| `lib/social/config.ts` | `resolveStaticSlots()` |
+| `app/api/cron/social-post/route.ts` | Drains statics after carousels, own try/catch |
+| `components/admin/social/shared-modals.tsx` | Static + reel window editors |
+
+### 🔴 Two bugs the design would have shipped
+
+1. **`slotAlreadyRan` would have skipped every static post.** In window mode it asked "has ANY
+   clock-time slot published today?" — correct for one stream, silently fatal for two. A
+   carousel at 21:40 would make Monday's static look already-done. Hence
+   `social_post_log.stream` and a per-stream guard.
+
+2. **`max_posts_per_day = 2` would have blocked whichever ran second.** A Monday now carries a
+   carousel *and* a static — exactly 2 — and the check is `today >= cap`. Raised to 4.
+
+**Verified:** 10-day projection shows all three streams on their own days and times with no
+overlap; the two rotations return different first products (Emerald Grace vs Pearl Veil), so
+they genuinely walk the catalogue independently; all 58 existing log rows backfilled to
+`carousel`, so a static-scoped lookup finds nothing and cannot be blocked.
+
+---
 
 ## Session 2026-08-28c — occasion posters redesigned
 
