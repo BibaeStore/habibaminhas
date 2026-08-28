@@ -1,7 +1,7 @@
 # TRACKER — Social Automation
 
-**Last updated:** 2026-08-27 (eighth update — audit of the live pipeline, and the fixed
-19:00 photo slot replaced with a randomised evening window)
+**Last updated:** 2026-08-28 (ninth update — scheduler merged to main; AI caption engine
+built for the carousel stream, switched off pending owner review)
 
 **Status:** ✅ **Phases 1, 1b and 2 (reels) built.** Planner built. `social-post-slots` is
 `active = true` and has published **10 consecutive days without a miss** (18–27 Aug).
@@ -9,6 +9,92 @@
 > ⚠️ **`approval_required` is `false`, not `true`.** It was changed on 2026-08-18. Photos
 > **auto-publish** — they do not queue for review. Earlier updates in this file say the
 > opposite and are wrong; this line is the current one.
+
+## Session 2026-08-28b — the reel factory (phase 4)
+
+### 🔴 The finding that changed the plan
+
+`ffmpeg-static` is a **devDependency** and `canEncodeHere()` is literally
+`return !process.env.VERCEL`. **The posting cron has never been able to encode a reel.** It
+can only publish reels somebody already built by hand on their own machine.
+
+That is the actual reason six approved reels sat in the queue from 12 August, and the reason
+4 reels/week was unreachable — nothing was making them. The plan said "GPT writes the script,
+your existing encoder builds it automatically". The second half was wrong.
+
+### The fix: encode where ffmpeg lives
+
+| Piece | Where it runs |
+|---|---|
+| Deciding when to post, talking to Meta | Vercel cron, as before |
+| **Encoding reels** | **GitHub Actions runner** — has ffmpeg, 30-min clock, free minutes |
+| Approving a reel | Still a human, in `/admin/social` → Reels |
+
+**Built** — branch `feat/social-reel-factory` (on top of `feat/social-ai-captions`):
+
+| File | What |
+|---|---|
+| `scripts/fill-reel-queue.ts` | **New.** Tops the queue up to a target. Idempotent — counts what is waiting and builds only the shortfall, so a double run cannot flood it. One failure does not end the run |
+| `.github/workflows/reels.yml` | **New.** Mon + Thu 02:00 UTC (07:00 PKT) + manual trigger. `concurrency` group so two runs cannot race for the same next-in-rotation product |
+| `lib/social/ai-caption.ts` | Generalised over streams; `writeReelCaption` with its own hook/angle/topic memory |
+| `lib/social/reel/build.ts` | Reel captions from the model; **price off the end card**, following `caption_include_price` |
+
+**Verified against real data, not mocked:** built one reel end to end — Pearl Veil, 11s,
+3.69MB, queue 6 → 7, landed as `draft`, video and thumbnail in Storage,
+`price_in_caption = false` where the same product's live caption that morning carried
+"Rs. 5,500".
+
+### ⚠️ Needs the owner before it runs
+
+Three GitHub repository secrets: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+and optionally `OPENAI_API_KEY` (without it the reel still builds, the caption just falls
+back). Until they exist the workflow fails on the first run.
+
+**What this does NOT do:** publish or approve. Reels are reviewed regardless of
+`approval_required` — deliberate, and unchanged. The bottleneck removed is the encoding,
+not the judgement.
+
+---
+
+## Session 2026-08-28 — scheduler merged, AI captions built (phase 2)
+
+**Merged to main:** `feat/social-random-slot-window`. Photos now draw one time a day from
+18:00–23:00 on a 5-minute grid; `social-post-slots` ticks `*/5`. Today's first randomised
+slot was 18:25 PKT.
+
+**Built** — branch `feat/social-ai-captions`:
+
+| File | What |
+|---|---|
+| `lib/social/ai-caption.ts` | **New.** Carousel captions written by `gpt-5.6-terra`. Returns null on any failure so the assembled caption still publishes |
+| `lib/social/caption.ts` | `buildCaption` takes optional AI copy; price behind a flag |
+| `lib/social/publish.ts` | One model call per post, shared across platforms |
+| `lib/actions/social.ts` | `previewAiCaption()` — writes one, shows it, publishes nothing |
+| `supabase/migrations/20260828_social_generation_log.sql` | The anti-repetition memory + two settings flags |
+
+**Live switches, both OFF by default:** `ai_captions_enabled`, `caption_include_price`.
+Nothing changes until the owner turns them on.
+
+### Three things the live test caught that review would not have
+
+1. **The model broke a standing owner instruction on its first run.** It wrote "available in
+   Small, Medium, and Large" and "Stitched in small runs in Karachi" — both forbidden since
+   2026-08-09 (no sizes, no piece counts, no place of manufacture). Sizes are now withheld
+   from the prompt entirely, and `INVENTORY_PATTERNS` rejects them at publish time.
+   **Instruction alone is not a control.**
+2. **The first guard was too blunt.** Bare `(small|medium|large)` would have rejected
+   "large floral motifs" and "medium-weight cotton". Narrowed to actual disclosure shapes —
+   size lists, "available in Medium", "made in Karachi".
+3. **Six consecutive captions all ended on washing instructions.** Care is the safest answer
+   in every product's FAQ list. `faq_topic` is now stored and fed back, and topics rotate:
+   fit, technique, styling, dupatta, fabric feel.
+
+**Measured after the fixes:** 6 products, 6/6 accepted, 6 distinct angles, 6 distinct FAQ
+topics, no price/size/origin leaks.
+
+**Cost:** ~$0.90/month at 31 carousels. Captions were never the expensive part.
+
+---
 
 ## Session 2026-08-27 — audit, and the randomised posting window
 

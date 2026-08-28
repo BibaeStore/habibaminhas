@@ -1,0 +1,70 @@
+# Builds reels on a schedule, so the queue never empties.
+#
+# Why this runs here and not on Vercel
+# ------------------------------------
+# Reels are encoded with ffmpeg. `ffmpeg-static` is a devDependency and is not in the
+# serverless bundle, so `canEncodeHere()` returns false in production and the posting cron can
+# only publish reels that already exist. That is why six approved reels sat in the queue from
+# 12 August and why four reels a week was not reachable — nothing was making them.
+#
+# A GitHub runner has ffmpeg, npm and a wall clock measured in minutes rather than seconds, so
+# it is the natural place for the encoding step. Vercel keeps doing what it is good at:
+# deciding when to post and talking to Meta.
+#
+# This workflow never publishes. Every reel lands as a `draft` for review in
+# /admin/social → Reels, exactly as the "Generate reel" button produces.
+
+name: Fill the reel queue
+
+on:
+  schedule:
+    # 02:00 UTC = 07:00 PKT, twice a week. Ahead of the evening reel slots either way, and
+    # early enough that a failed run can be noticed and re-run by hand the same day.
+    - cron: "0 2 * * 1,4"
+  # Kept so the queue can be topped up on demand without waiting for the schedule.
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "How many unpublished reels to keep on hand"
+        required: false
+        default: "10"
+      max_builds:
+        description: "Maximum to build in this run"
+        required: false
+        default: "3"
+
+# Two runs encoding at once would race for the same next-in-rotation product and produce
+# duplicate drafts of one garment.
+concurrency:
+  group: reel-queue
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      # `npm ci` rather than `npm ci --omit=dev`: ffmpeg-static and tsx are both
+      # devDependencies and both are exactly what this job needs.
+      - name: Install
+        run: npm ci
+
+      - name: Build reels
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Optional. Without it the reel still builds; the caption falls back to the
+          # assembled one rather than being written by the model.
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          npx tsx scripts/fill-reel-queue.ts \
+            --target "${{ github.event.inputs.target || '10' }}" \
+            --max-builds "${{ github.event.inputs.max_builds || '3' }}"

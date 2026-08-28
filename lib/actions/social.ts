@@ -15,8 +15,9 @@ import {
 import { getPublishingQuota } from "@/lib/social/adapters/instagram";
 import { MAX_ENABLED_COLLABORATORS } from "@/lib/social/limits";
 import {
-  buildUploadCaption, uploadCaptionHook, UPLOAD_CAPTION_VARIANTS,
+  buildCaption, buildUploadCaption, uploadCaptionHook, UPLOAD_CAPTION_VARIANTS,
 } from "@/lib/social/caption";
+import { writeCarouselCaption } from "@/lib/social/ai-caption";
 import { buildProductReel, buildCollectionReel } from "@/lib/social/reel/build";
 import { canEncodeHere } from "@/lib/social/reel/encode";
 import { ensureReelCover } from "@/lib/social/reel/cover";
@@ -40,6 +41,52 @@ export async function fetchSocialSettings(): Promise<SocialSettingsRow> {
   const { data, error } = await sb.from("social_settings").select("*").eq("id", 1).single();
   if (error) throw new Error(error.message);
   return data;
+}
+
+export type CaptionPreview = {
+  productTitle: string;
+  productSlug: string;
+  soldOut: boolean;
+  /** Null when the model was unreachable, refused, or the key is missing. */
+  ai: { hook: string; body: string; faqLine: string; hashtags: string[]; angle: string } | null;
+  /** What would actually publish — the AI copy assembled, or the fallback if `ai` is null. */
+  instagram: string;
+  usedFallback: boolean;
+};
+
+/**
+ * Writes a caption for the product that is up next, without publishing or remembering it.
+ *
+ * The point is to let the owner read the model's voice before switching it on for the live
+ * account. `dryRun` keeps it out of `social_generation_log`, so previewing does not poison the
+ * anti-repetition memory and cause the real post to be rejected as a duplicate minutes later.
+ */
+export async function previewAiCaption(): Promise<CaptionPreview> {
+  const settings = await getSocialSettings();
+  if (!settings) throw new Error("social_settings row missing");
+
+  const { products } = await selectNextProducts(settings, 1);
+  const product = products[0];
+  if (!product) throw new Error("No product is eligible right now — check the category and image filters.");
+
+  const soldOut = (product.stock ?? 0) <= 0;
+  const ai = await writeCarouselCaption(product, { soldOut, dryRun: true });
+
+  const built = buildCaption(product, "instagram", {
+    ai,
+    includePrice: settings.caption_include_price,
+  });
+
+  return {
+    productTitle: product.title,
+    productSlug: product.slug,
+    soldOut,
+    ai: ai
+      ? { hook: ai.hook, body: ai.body, faqLine: ai.faqLine, hashtags: ai.hashtags, angle: ai.angle }
+      : null,
+    instagram: built.caption,
+    usedFallback: ai === null,
+  };
 }
 
 export async function saveSocialSettings(

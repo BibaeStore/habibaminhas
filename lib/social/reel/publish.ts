@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import {
-  getMetaCredentials, getEnabledCollaborators, getSocialSettings, findDueSlot, productUrl,
+  getMetaCredentials, getEnabledCollaborators, getSocialSettings, findDueSlot, resolveReelSlots, productUrl,
 } from "@/lib/social/config";
 import { publishReel as publishToInstagram } from "@/lib/social/adapters/instagram";
 import { publishFacebookReel } from "@/lib/social/adapters/facebook";
@@ -347,8 +347,11 @@ export async function runScheduledReels(now: Date = new Date()): Promise<Schedul
   if (!settings) return { ok: false, action: "skipped", detail: "social_settings row missing" };
   if (!settings.enabled) return { ok: true, action: "skipped", detail: "automation disabled" };
 
+  // Same shape as the photo path: the window decides *which* time to look for, never whether
+  // to post. With no window configured this is `settings.reel_times`, exactly as before.
+  const reelSchedule = resolveReelSlots(settings, now);
   const slot = findDueSlot(
-    settings.reel_times,
+    reelSchedule.slots,
     settings.timezone,
     now,
     REEL_SLOT_TOLERANCE_MINUTES,
@@ -358,7 +361,7 @@ export async function runScheduledReels(now: Date = new Date()): Promise<Schedul
     return {
       ok: true,
       action: "no_slot_due",
-      detail: { slots: settings.reel_times, days: settings.reel_days },
+      detail: { slots: reelSchedule.slots, source: reelSchedule.source, days: settings.reel_days },
     };
   }
 

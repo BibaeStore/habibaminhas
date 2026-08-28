@@ -28,6 +28,28 @@ export type GeneratedCaption = {
   altText: string;
 };
 
+/**
+ * Copy written by a model, when one wrote it.
+ *
+ * Structural mirror of what `ai-caption.ts` returns, declared here rather than imported so
+ * this module stays free of the Supabase client that module needs — `caption.ts` is pure and
+ * several callers depend on that.
+ */
+export type AiCaptionContent = {
+  hook: string;
+  body: string;
+  faqLine: string;
+  hashtags: string[];
+  altText: string;
+};
+
+export type CaptionOptions = {
+  /** Null or absent falls back to the assembled caption. */
+  ai?: AiCaptionContent | null;
+  /** Owner preference, from `social_settings.caption_include_price`. Default off. */
+  includePrice?: boolean;
+};
+
 /** `short_description` is a newline-separated list of `Label: Value` lines. */
 function parseSpecs(short: string | null): Map<string, string> {
   const specs = new Map<string, string>();
@@ -147,7 +169,11 @@ function buildHook(product: ProductCandidate, specs: Map<string, string>): strin
 }
 
 /** Detail block — the specifics that make the post findable and the garment understandable. */
-function buildDetails(product: ProductCandidate, specs: Map<string, string>): string[] {
+function buildDetails(
+  product: ProductCandidate,
+  specs: Map<string, string>,
+  includePrice: boolean,
+): string[] {
   const lines: string[] = [];
 
   const pieces = pickSpec(specs, "pieces");
@@ -168,7 +194,10 @@ function buildDetails(product: ProductCandidate, specs: Map<string, string>): st
    * product page, where it is always current; a caption is permanent and goes stale the
    * moment something sells.
    */
-  lines.push(`• ${formatPrice(product.price)}`);
+  // Price is opt-in from 2026-08-28. The owner asked for it out of captions; kept behind a
+  // flag rather than deleted because it is a marketing preference, not an engineering fact,
+  // and reversing it should not need a deploy.
+  if (includePrice) lines.push(`• ${formatPrice(product.price)}`);
   return lines.slice(0, 5);
 }
 
@@ -387,14 +416,26 @@ function buildAltText(product: ProductCandidate, specs: Map<string, string>): st
 export function buildCaption(
   product: ProductCandidate,
   platform: "instagram" | "facebook",
+  options?: CaptionOptions,
 ): GeneratedCaption {
   const specs = parseSpecs(product.short_description);
+  const ai = options?.ai ?? null;
+  const includePrice = options?.includePrice ?? false;
 
-  const hook = buildHook(product, specs);
-  const details = buildDetails(product, specs);
-  const keywords = buildKeywordLine(product, specs);
+  /*
+   * When a model wrote the copy, it supplies the parts that carry voice — the hook, the
+   * detail lines, the answered question and the tags. Everything else stays with this
+   * function: the CTA, the Urdu line placement, the ordering, the 2,200-character clamp and
+   * the hashtag cap. Those are proven and platform-specific, and there is no reason to let a
+   * model near them.
+   *
+   * The fallback is not a degraded mode. It is what has been publishing for eleven days.
+   */
+  const hook = ai?.hook ?? buildHook(product, specs);
+  const details = ai ? ai.body.split("\n").filter(Boolean) : buildDetails(product, specs, includePrice);
+  const keywords = ai?.faqLine || buildKeywordLine(product, specs);
   const urdu = buildUrduLine(product);
-  const hashtags = buildHashtags(product, specs);
+  const hashtags = ai?.hashtags?.length ? ai.hashtags : buildHashtags(product, specs);
   const name = shortName(product.title);
 
   // Instagram captions are not clickable, so the CTA points at the bio and names the
@@ -412,7 +453,7 @@ export function buildCaption(
   const body = [hook, "", details.join("\n"), "", keywords, "", urdu, "", cta].join("\n");
   const caption = clampCaption(body, hashtags);
 
-  return { caption, hashtags, altText: buildAltText(product, specs) };
+  return { caption, hashtags, altText: ai?.altText || buildAltText(product, specs) };
 }
 
 /** Pinterest's hard field limits. Over-length fields are rejected, not trimmed. */
