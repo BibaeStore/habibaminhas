@@ -1,5 +1,34 @@
 /**
- * Video generation with Veo 3.1 Fast.
+ * Video generation with Veo 3.1 Fast. **SHELVED 2026-08-28 — do not wire this in.**
+ *
+ * WHY IT WAS STOPPED
+ * ------------------
+ * The trial ran, three clips, $1.92. Technically everything worked: true 9:16 at 1080x1920,
+ * eight seconds, audio included. The output was the problem.
+ *
+ *   A  fabric macro, no garment          usable, genuinely attractive
+ *   B  atelier scene                     muddy and dark, nothing like the brand palette
+ *   C  garment on a dress form           a plain draped shape with a deep V neckline — not the
+ *                                        product, and wrong for a Pakistani modest-wear brand
+ *
+ * C is the finding that matters. Its brief said "seen from the waist down only" and "stopping
+ * below the shoulder"; the model rendered a neckline regardless. A generative video model
+ * re-renders rather than reproduces, so it cannot show *this* garment — only something like it.
+ * For a clothing studio that is a returns-and-trust problem, not an aesthetic one.
+ *
+ * Some of the fault was the prompts — B asked for warm ivory and came back brown. But the
+ * garment problem is structural and no prompt fixes it.
+ *
+ * STATUS
+ * ------
+ * Nothing calls this. The only caller was `scripts/veo-trial.ts`, run by hand; no cron, no
+ * GitHub Action and no part of the reel builder touches it. The cap below now defaults to ZERO,
+ * so even a manual run refuses before spending. Kept rather than deleted because it is the
+ * record of what was tested and what it cost — deleting it invites someone to rediscover this
+ * at the same price.
+ *
+ * Reels continue to be built by the ffmpeg pipeline from real product photographs, which is
+ * free, accurate, and already running on a schedule.
  *
  * What this is for, and what it is not
  * ------------------------------------
@@ -33,8 +62,14 @@ const BASE = "https://generativelanguage.googleapis.com/v1beta";
 /** Published Veo 3.1 Fast rates, USD per second, audio included. */
 const RATE_PER_SECOND: Record<string, number> = { "720p": 0.10, "1080p": 0.12, "4k": 0.30 };
 
-/** The owner's monthly ceiling, in US cents. Overridable without a deploy. */
-const MONTHLY_CAP_CENTS = Number(process.env.VEO_MONTHLY_CAP_CENTS || 2500);
+/**
+ * Monthly ceiling in US cents. **Defaults to 0 — Veo is shelved.**
+ *
+ * Zero rather than a comment saying "do not use": a default that costs nothing is a control, a
+ * warning is not. Anyone deliberately resuming this sets VEO_MONTHLY_CAP_CENTS and thereby
+ * states the budget out loud.
+ */
+const MONTHLY_CAP_CENTS = Number(process.env.VEO_MONTHLY_CAP_CENTS || 0);
 
 /** Veo accepts 4, 6 or 8 seconds only — not an arbitrary duration. */
 export type VeoDuration = 4 | 6 | 8;
