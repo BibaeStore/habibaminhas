@@ -33,12 +33,24 @@ const TIMEOUT_MS = 45_000;
 export type ArtDirection = {
   /** Sent to the image model as the backdrop brief. Never contains text instructions. */
   theme: string;
-  /** The dua, quote or line of advice printed on the card. */
+  /** Heads the card: "Dua for Forgiveness", "For Mothers". */
+  cardTitle: string;
+  /** Arabic script, verbatim from the library. Empty for non-Islamic occasions. */
+  arabic: string;
+  /** The English meaning, verbatim from the library. */
   message: string;
-  /** Transliteration or attribution, printed smaller beneath. Empty when there is none. */
+  /** Roman transliteration, printed under the Arabic. */
   attribution: string;
   /** Two or three words naming the visual idea, stored and fed back. */
   motif: string;
+};
+
+type DuaRow = {
+  id: string;
+  title: string;
+  arabic: string | null;
+  transliteration: string | null;
+  meaning: string;
 };
 
 type Recent = { motifs: string[]; messages: string[]; directions: string[] };
@@ -63,33 +75,42 @@ async function loadRecent(slug: string): Promise<Recent> {
 }
 
 /**
- * What kind of line the day calls for.
+ * The vetted words this poster may use.
  *
- * An Islamic observance wants a dua. Mother's Day wants warmth about mothers, not scripture.
- * An international day wants a thought that earns its place rather than a slogan. Getting this
- * wrong is worse than saying nothing, so it is spelled out per category rather than left to
- * the model to infer from a name.
+ * The model does not write the dua. It picks one, by id, from what this returns — and the
+ * Arabic, transliteration and meaning are then read from the row rather than from the model's
+ * reply. That distinction is the entire safeguard.
+ *
+ * The reference poster the owner shared attributed a well-known istighfar to "Surah An-Nur:
+ * 24:31". It is not that verse. A model asked for a dua *and* its source will produce a
+ * confident source about as often as a correct one, and a misattributed ayah on a
+ * Muslim-audience account is a serious error rather than a typo. Taking the words out of the
+ * model's hands makes that class of mistake impossible instead of unlikely.
  */
-function messageBrief(occasion: OccasionRow): string {
+async function loadLibrary(category: string): Promise<DuaRow[]> {
+  const sb = createAdminClient();
+  const { data } = await sb
+    .from("social_dua_library")
+    .select("id, title, arabic, transliteration, meaning")
+    .eq("category", category)
+    .eq("enabled", true);
+  return (data ?? []) as DuaRow[];
+}
+
+/** Non-Islamic days have no dua, so the model writes the line itself under a tighter brief. */
+function freeformBrief(occasion: OccasionRow): string {
   switch (occasion.category) {
-    case "islamic":
-      return `A short, widely-known DUA appropriate to ${occasion.name}.
-- Give the English meaning as the message. Keep it to one or two lines.
-- Put the Roman transliteration in "attribution", e.g. "Allahumma inni as'aluka..."
-- Choose a dua that suits the day: Friday calls for durood, forgiveness, or ease for the week.
-- Nothing sectarian, nothing disputed, nothing political. Widely accepted only.
-- Do not quote Quranic verses with surah numbers — a misattributed reference on a brand
-  account is far worse than a plain, well-known supplication.`;
     case "national":
-      return `One dignified line about ${occasion.name} — the country, its people, gratitude.
-- No politics, no party, no military imagery, no triumphalism.
-- "attribution" stays empty.`;
+      return `Write ONE dignified line about ${occasion.name} — the country, its people, gratitude.
+No politics, no party, no military imagery, no triumphalism. "cardTitle" should be a short
+label such as "For Pakistan". Leave "arabic" and "attribution" empty.`;
     default:
-      return `One warm, genuinely useful line for ${occasion.name}.
-- For Mother's or Father's Day: something true about the relationship, not a greeting-card cliché.
-- For an international day: a thought that respects what the day is actually for.
-- A short quote is fine if it is real and correctly attributed; put the name in "attribution".
-  If you are not certain of the attribution, write the line yourself and leave it empty.`;
+      return `Write ONE warm, genuinely useful line for ${occasion.name}.
+For Mother's or Father's Day: something true about the relationship, not a greeting-card
+cliché. For an international day: a thought that respects what the day is actually for.
+"cardTitle" is a short label such as "For Mothers". Leave "arabic" empty. Put a real
+attribution in "attribution" only if you are quoting someone and are certain of the name;
+otherwise write the line yourself and leave it empty.`;
   }
 }
 
@@ -104,10 +125,13 @@ export async function writeArtDirection(occasion: OccasionRow): Promise<ArtDirec
     recent = { motifs: [], messages: [], directions: [] };
   }
 
+  const library = await loadLibrary(occasion.category);
+  const usesLibrary = library.length > 0;
+
   const prompt = `You art-direct greeting posters for Habiba Minhas, a women's clothing studio in Karachi. Today's poster is for ${occasion.name}.
 
 THE POSTER
-A 1080x1350 card. The brand logo sits large at the top. Below it: the greeting "${occasion.greeting}", then a line worth reading, then the website. There is NO product photograph and no clothing anywhere on it.
+A 1080x1080 square. The brand logo sits at the top of the left column, then the greeting "${occasion.greeting}", a short blessing, and ONE card carrying a single dua or message. The right of the frame is a photographic scene. There is NO product and no clothing anywhere on it.
 
 WHAT YOU WRITE
 
@@ -116,11 +140,15 @@ WHAT YOU WRITE
    Treat that as the *family* the design belongs to, not a template to repeat. Move within it.
    Never ask for text, letters, calligraphy, people, faces, clothing or photography.
 
-2. "message" — ${messageBrief(occasion)}
+2. ${
+    usesLibrary
+      ? `"duaId" — CHOOSE ONE entry from the vetted library below and give its id, exactly as written. Do not write the Arabic or the meaning yourself; they are taken from the row you pick. Prefer one that suits the day and that is not in the recently-used list.
 
-3. "attribution" — as described above, or "".
+${library.map((d) => `   ${d.id}  ${d.title} — ${d.meaning}`).join("\n")}`
+      : `"message", "cardTitle", "attribution" — ${freeformBrief(occasion)}`
+  }
 
-4. "motif" — two or three words naming the visual idea, e.g. "crescent and pearls".
+3. "motif" — two or three words naming the visual idea, e.g. "crescent and pearls".
 
 VARIETY IS THE POINT
 The last posters for this occasion used these motifs. Do NOT reuse them or anything close:
@@ -133,7 +161,11 @@ And these art directions were already sent to the image model. Go somewhere else
 ${recent.directions.length ? recent.directions.map((d) => `- ${d.slice(0, 160)}`).join("\n") : "- (none yet)"}
 
 Reply with JSON only, no prose and no code fence:
-{"theme":"...","message":"...","attribution":"...","motif":"..."}`;
+${
+    usesLibrary
+      ? `{"theme":"...","duaId":"...","motif":"..."}`
+      : `{"theme":"...","cardTitle":"...","message":"...","attribution":"...","motif":"..."}`
+  }`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -165,14 +197,35 @@ Reply with JSON only, no prose and no code fence:
     const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
     const theme = str(raw.theme);
-    const message = str(raw.message);
-    if (theme.length < 20 || message.length < 10) return null;
+    if (theme.length < 20) return null;
+    const motif = str(raw.motif) || "unlabelled";
 
+    if (usesLibrary) {
+      /*
+       * The model chose a row; the words come from the row. A hallucinated id falls back to a
+       * real entry rather than failing, because a valid dua from the wrong pick is a far
+       * better outcome than no poster.
+       */
+      const chosen = library.find((d) => d.id === str(raw.duaId)) ?? library[0];
+      return {
+        theme,
+        cardTitle: chosen.title,
+        arabic: chosen.arabic ?? "",
+        message: chosen.meaning,
+        attribution: chosen.transliteration ?? "",
+        motif,
+      };
+    }
+
+    const message = str(raw.message);
+    if (message.length < 10) return null;
     return {
       theme,
+      cardTitle: str(raw.cardTitle),
+      arabic: "",
       message,
       attribution: str(raw.attribution),
-      motif: str(raw.motif) || "unlabelled",
+      motif,
     };
   } catch {
     return null;

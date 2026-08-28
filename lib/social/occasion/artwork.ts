@@ -14,9 +14,10 @@
 import sharp from "sharp";
 import path from "node:path";
 import { createAdminClient } from "@/lib/supabase/server";
+import { renderArabic, wrapArabic } from "./arabic";
 
 const W = 1080;
-const H = 1350;           // Instagram 4:5, the best-performing feed ratio
+const H = 1080;           // Square, matching the reference the owner approved 2026-08-28
 const BUCKET = "social-media";
 
 const INK = "#3a3226";     // warm charcoal, matches the logo
@@ -99,88 +100,159 @@ Strictly forbidden: no text, no lettering, no letters, no words, no numbers, no 
 export type ComposeInput = {
   background: Buffer;
   greeting: string;
-  /** The dua, quote or line of advice. This is what makes the card worth keeping. */
+  /** The English meaning. Always present. */
   message: string;
-  /** Transliteration or attribution, set smaller beneath the message. */
+  /** Roman transliteration, set small beneath the Arabic. Empty when there is none. */
   attribution: string;
+  /** The dua in Arabic script. Empty for non-Islamic occasions. */
+  arabic?: string;
+  /** "Dua for Forgiveness", "For mothers", and so on. Heads the card. */
+  cardTitle?: string;
 };
 
 /**
- * Lays the backdrop, the logo, the greeting and the message into a 1080x1350 JPEG.
+ * Lays the scene, the logo, the greeting and one dua card into a 1080x1080 JPEG.
  *
- * Two changes the owner asked for on 2026-08-28, both of which change the composition rather
- * than decorate it:
+ * Composition follows the reference the owner approved on 2026-08-28: the generated scene
+ * occupies the right of the frame, type occupies the left, and a single rounded card carries
+ * the dua. Three rules came with it and all three are enforced here rather than requested of
+ * a model:
  *
- * **No product.** The old card put a garment photograph in a mihrab arch, which made a
- * greeting look like an advertisement wearing a greeting's clothes. A Jumma card should greet.
- * Everything that sold has been taken out.
+ * **Exactly one dua.** The reference the owner liked showed four, and their own brief said
+ * one. A list turns a greeting into a leaflet.
  *
- * **The logo leads.** It was 340px wide, below the arch, doing the job of a footer. It is now
- * 460px and the first thing in the frame, because on an occasion post the brand *is* the
- * subject — there is nothing else on the card to be the subject instead.
+ * **No invented references.** The reference image attributed a well-known istighfar to Surah
+ * An-Nur 24:31, which is wrong. Nothing here prints a surah or hadith reference at all — the
+ * only attribution shown is the transliteration, which cannot be wrong in that way.
  *
- * The rule that has not changed, and must not: **the image model never renders text.** Every
- * word here is drawn by sharp from strings we control. Image models still misspell, and
- * "JUMMA MUBRAK" on a brand account is not something you quietly fix afterwards.
+ * **The image model never renders text.** Unchanged, and now doubly true: the Arabic is
+ * rendered by resvg from a vetted string, so the model is not trusted with Latin *or* Arabic
+ * script. See arabic.ts for why sharp cannot do this part.
  */
 export async function composeOccasionImage(input: ComposeInput): Promise<Buffer> {
-  const greeting = input.greeting.toUpperCase();
-  const gSize = fitFontSize(greeting, W - 170, 68, 32, 12);
+  const PAD = 62;
+  const COL = 600;                 // left type column, ~56% of the frame
+  const CX = PAD + COL / 2;        // its centre
 
-  // The message carries the card, so it gets room: up to four lines, and the type shrinks
-  // rather than the text being cut. A truncated dua would be worse than none.
-  const msgLines = wrap(input.message, 46, 4);
-  const mSize = msgLines.length > 3 ? 30 : 34;
-  const msgTop = 900;
+  const greeting = input.greeting.toUpperCase();
+  const gSize = fitFontSize(greeting, COL - 20, 74, 34, 8);
+
+  const introLines = wrap(
+    "May this blessed day bring peace, barakah and countless blessings to you and your family.",
+    38,
+    3,
+  );
+
+  // ── the dua card ──────────────────────────────────────────────────────────
+  const hasArabic = Boolean(input.arabic && input.arabic.trim());
+  const msgLines = wrap(input.message, 44, 3);
+
+  let arabicBlock: { png: Buffer; width: number; height: number } | null = null;
+  if (hasArabic) {
+    const size = 40;
+    arabicBlock = renderArabic({
+      lines: wrapArabic(input.arabic!, COL - 90, size, 3),
+      width: COL - 60,
+      fontSize: size,
+      colour: INK,
+    });
+  }
+
+  const titleH = input.cardTitle ? 46 : 0;
+  const arabicH = arabicBlock ? arabicBlock.height + 10 : 0;
+  const attrH = input.attribution ? 34 : 0;
+  const cardH = 34 + titleH + arabicH + msgLines.length * 32 + attrH + 30;
+
+  /*
+   * Anchored from the bottom, not the top.
+   *
+   * The card grows with its content -- a three-line dua is 250px taller than a one-line one --
+   * so a fixed top edge pushed the tall ones straight through the website line at the foot of
+   * the frame. Fixing the *gap below* the card instead keeps that clear whatever the dua's
+   * length, and the clamp stops a very tall card riding up into the intro text.
+   */
+  const cardTop = Math.max(500, H - 96 - cardH);
+
+  let y = cardTop + 34 + (input.cardTitle ? 30 : 0);
+  const titleSvg = input.cardTitle
+    ? `<text x="${CX}" y="${y}" class="ct" text-anchor="middle">${esc(input.cardTitle.toUpperCase())}</text>`
+    : "";
+  if (input.cardTitle) y += 16;
+
+  const arabicTop = y + 6;
+  if (arabicBlock) y += arabicBlock.height + 10;
 
   const msgSvg = msgLines
-    .map(
-      (l, i) =>
-        `<text x="${W / 2}" y="${msgTop + i * (mSize + 14)}" class="msg" text-anchor="middle">${esc(l)}</text>`,
-    )
+    .map((l, i) => `<text x="${CX}" y="${y + 22 + i * 32}" class="msg" text-anchor="middle">${esc(l)}</text>`)
     .join("");
+  y += msgLines.length * 32 + 22;
 
-  const attrY = msgTop + msgLines.length * (mSize + 14) + 14;
   const attrSvg = input.attribution
-    ? `<text x="${W / 2}" y="${attrY}" class="attr" text-anchor="middle">${esc(input.attribution)}</text>`
+    ? `<text x="${CX}" y="${y + 6}" class="attr" text-anchor="middle">${esc(input.attribution)}</text>`
     : "";
 
   const overlay = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-  <defs><style>
-    .g{font-family:Georgia,'Times New Roman',serif;font-size:${gSize}px;fill:${INK};letter-spacing:12px}
-    .msg{font-family:Georgia,'Times New Roman',serif;font-size:${mSize}px;fill:${INK};font-style:italic}
-    .attr{font-family:Georgia,'Times New Roman',serif;font-size:22px;fill:${MUTED};letter-spacing:1.5px}
-    .site{font-family:Georgia,'Times New Roman',serif;font-size:24px;fill:${MUTED};letter-spacing:5px}
-  </style></defs>
+  <defs>
+    <style>
+      .g{font-family:Georgia,'Times New Roman',serif;font-size:${gSize}px;fill:${INK};letter-spacing:8px}
+      .intro{font-family:Georgia,'Times New Roman',serif;font-size:25px;fill:${MUTED}}
+      .ct{font-family:Georgia,serif;font-size:19px;fill:${GOLD};letter-spacing:3.5px}
+      .msg{font-family:Georgia,'Times New Roman',serif;font-size:24px;fill:${INK};font-style:italic}
+      .attr{font-family:Georgia,serif;font-size:19px;fill:${MUTED};letter-spacing:1px}
+      .site{font-family:Georgia,serif;font-size:21px;fill:${MUTED};letter-spacing:4.5px}
+    </style>
+    <linearGradient id="veil" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#faf6ef" stop-opacity="0.97"/>
+      <stop offset="62%" stop-color="#faf6ef" stop-opacity="0.93"/>
+      <stop offset="100%" stop-color="#faf6ef" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
 
-  <text x="${W / 2}" y="700" class="g" text-anchor="middle">${esc(greeting)}</text>
+  <!-- Softens the generated scene under the type. Without it the wrap of a long dua can land
+       on a dome or a minaret and the line stops being readable. -->
+  <rect x="0" y="0" width="${PAD + COL + 90}" height="${H}" fill="url(#veil)"/>
 
-  <g stroke="${GOLD}" stroke-width="1.4">
-    <line x1="${W / 2 - 150}" y1="770" x2="${W / 2 - 26}" y2="770"/>
-    <line x1="${W / 2 + 26}" y1="770" x2="${W / 2 + 150}" y2="770"/>
+  <text x="${CX}" y="332" class="g" text-anchor="middle">${esc(greeting)}</text>
+  <g stroke="${GOLD}" stroke-width="1.3">
+    <line x1="${CX - 120}" y1="372" x2="${CX - 22}" y2="372"/>
+    <line x1="${CX + 22}" y1="372" x2="${CX + 120}" y2="372"/>
   </g>
-  <circle cx="${W / 2}" cy="770" r="4.5" fill="${GOLD}"/>
+  <circle cx="${CX}" cy="372" r="4" fill="${GOLD}"/>
 
+  ${introLines.map((l, i) => `<text x="${CX}" y="${418 + i * 34}" class="intro" text-anchor="middle">${esc(l)}</text>`).join("")}
+
+  <rect x="${PAD}" y="${cardTop}" width="${COL}" height="${cardH}" rx="22"
+        fill="#fffdf9" fill-opacity="0.93" stroke="${GOLD}" stroke-opacity="0.5" stroke-width="1.4"/>
+  ${titleSvg}
   ${msgSvg}
   ${attrSvg}
 
-  <text x="${W / 2}" y="1276" class="site" text-anchor="middle">HABIBAMINHAS.COM</text>
+  <text x="${CX}" y="${H - 46}" class="site" text-anchor="middle">HABIBAMINHAS.COM</text>
 </svg>`;
 
   const bg = await sharp(input.background)
     .resize(W, H, { fit: "cover", position: "centre" })
     .toBuffer();
 
-  const LOGO_W = 460;
+  const LOGO_W = 300;
   const logo = await sharp(path.join(process.cwd(), "public/logo/habiba-minhas-logo-t.png"))
     .resize({ width: LOGO_W })
     .toBuffer();
 
+  const layers: sharp.OverlayOptions[] = [
+    { input: Buffer.from(overlay), top: 0, left: 0 },
+    { input: logo, top: 96, left: Math.round(CX - LOGO_W / 2) },
+  ];
+  if (arabicBlock) {
+    layers.push({
+      input: arabicBlock.png,
+      top: Math.round(arabicTop),
+      left: Math.round(PAD + 30),
+    });
+  }
+
   return sharp(bg)
-    .composite([
-      { input: logo, top: 300, left: Math.round((W - LOGO_W) / 2) },
-      { input: Buffer.from(overlay), top: 0, left: 0 },
-    ])
+    .composite(layers)
     // Instagram's content-publishing API takes JPEG only; a PNG here fails at the container
     // step with an unhelpful error.
     .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })

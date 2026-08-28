@@ -755,6 +755,42 @@ export type Database = {
         }
         Relationships: []
       }
+      social_dua_library: {
+        Row: {
+          arabic: string | null
+          category: string
+          created_at: string
+          enabled: boolean
+          id: string
+          meaning: string
+          reference: string | null
+          title: string
+          transliteration: string | null
+        }
+        Insert: {
+          arabic?: string | null
+          category: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          meaning: string
+          reference?: string | null
+          title: string
+          transliteration?: string | null
+        }
+        Update: {
+          arabic?: string | null
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          meaning?: string
+          reference?: string | null
+          title?: string
+          transliteration?: string | null
+        }
+        Relationships: []
+      }
       social_generation_log: {
         Row: {
           angle: string | null

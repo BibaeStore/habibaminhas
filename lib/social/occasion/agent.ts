@@ -228,6 +228,8 @@ export async function generateFor(postId: string): Promise<{ ok: boolean; detail
       greeting: occasion.greeting,
       message: art?.message ?? occasion.subtitle ?? "",
       attribution: art?.attribution ?? "",
+      arabic: art?.arabic,
+      cardTitle: art?.cardTitle,
     });
 
     if (art) await logArtDirection(occasion, art);

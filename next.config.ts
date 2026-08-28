@@ -5,6 +5,20 @@ import { legacyProductRedirects } from "./lib/legacy-product-redirects";
 const nextConfig: NextConfig = {
   trailingSlash: true,
 
+  /*
+   * The Amiri font files must reach the serverless bundle.
+   *
+   * Occasion posters render their Arabic with resvg, which is handed the .ttf by path and
+   * loads no system fonts — deliberately, so a Linux runner with no Arabic fonts installed
+   * produces the identical image to a Windows laptop. Next's tracer cannot see a file
+   * referenced only as a runtime string, so without this the dua renders as empty space in
+   * production and nowhere else.
+   */
+  outputFileTracingIncludes: {
+    "/api/cron/social-occasion": ["./assets/fonts/**"],
+    "/admin/social/**": ["./assets/fonts/**"],
+  },
+
   // Enable CSS optimization and compression
   experimental: {
     optimizeCss: true,
