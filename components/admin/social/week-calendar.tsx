@@ -31,8 +31,6 @@ export type CalendarItem = {
   /** Product title or headline, when something is actually assigned to the slot. */
   label?: string | null;
   thumb?: string | null;
-  /** Already published, rather than still to come. */
-  done?: boolean;
 };
 
 /**
@@ -48,20 +46,38 @@ const KIND_STYLE = {
   occasion: { label: "Occasion", border: "border-violet-300",  bg: "bg-violet-50",  text: "text-violet-900",  icon: "text-violet-800",  dot: "bg-violet-400" },
 } as const;
 
-export function CalendarLegend() {
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** "Monday and Wednesday", "Monday, Wednesday and Friday", "every day". */
+function listDays(days: number[]): string {
+  const sorted = [...new Set(days)].sort((a, b) => a - b);
+  if (sorted.length === 7) return "every day";
+  if (sorted.length === 0) return "no days";
+  const names = sorted.map((d) => DAY_NAMES[d]);
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
+/**
+ * Which days this stream runs, and whether today is one of them.
+ *
+ * The owner asked, reasonably, why the Static tab showed Saturday as a posting day when
+ * statics only run Monday and Wednesday. Half the answer was a bug — the tab was drawing the
+ * carousel's schedule — and the other half was that the cadence was written down nowhere they
+ * could see it, so the only way to find out was to ask. Now the page says it.
+ */
+export function CadenceNote({ noun, days }: { noun: string; days: number[] | null }) {
+  const today = new Date().getDay();
+  if (!days) return null;
+
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--admin-border)] pt-3">
-      {(Object.keys(KIND_STYLE) as Array<keyof typeof KIND_STYLE>).map((k) => (
-        <span key={k} className="inline-flex items-center gap-1.5 text-[11.5px] text-[var(--admin-text-muted)]">
-          <span className={`h-2.5 w-2.5 rounded-sm ${KIND_STYLE[k].dot}`} />
-          {KIND_STYLE[k].label}
-        </span>
-      ))}
-      <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[var(--admin-text-muted)]">
-        <span className="h-2.5 w-2.5 rounded-sm bg-emerald-400" />
-        Already published
-      </span>
-    </div>
+    <p className="mb-4 rounded-lg border border-[var(--admin-border)] bg-slate-50 px-3 py-2 text-[12.5px] text-[var(--admin-text-muted)]">
+      <span className="font-medium text-[var(--admin-text)]">
+        {noun} run {listDays(days)}.
+      </span>{" "}
+      {days.includes(today)
+        ? "Today is " + DAY_NAMES[today] + ", so one is scheduled."
+        : "Today is " + DAY_NAMES[today] + " \u2014 none is scheduled. Use \u201CPost now\u201D to send one anyway."}
+    </p>
   );
 }
 
@@ -160,12 +176,8 @@ export function WeekCalendar({
                     key={i}
                     title={`${KIND_STYLE[item.kind].label} at ${item.time}${
                       item.label ? ` — ${item.label}` : ""
-                    }${item.done ? " (published)" : ""}`}
-                    className={`rounded-lg border px-1.5 py-1 ${
-                      item.done
-                        ? "border-emerald-300 bg-emerald-50"
-                        : `${KIND_STYLE[item.kind].border} ${KIND_STYLE[item.kind].bg}`
                     }`}
+                    className={`rounded-lg border px-1.5 py-1 ${KIND_STYLE[item.kind].border} ${KIND_STYLE[item.kind].bg}`}
                   >
                     <div className="flex items-center gap-1">
                       {item.kind === "reel"
@@ -207,10 +219,6 @@ export function WeekCalendar({
             {KIND_STYLE[k].label}
           </span>
         ))}
-        <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[var(--admin-text-muted)]">
-          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-400" />
-          Published
-        </span>
         <span className="ml-auto text-[11.5px] text-[var(--admin-text-muted)]">
           {items.length === 0 ? (emptyHint ?? "Nothing scheduled") : `${items.length} this week`}
         </span>

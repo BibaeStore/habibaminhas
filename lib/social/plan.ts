@@ -391,13 +391,25 @@ export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): Plann
     if (plan.active_to && date > plan.active_to) continue;
 
     const weekday = day.getUTCDay();
+
+    /*
+     * This date's real reel time, resolved before the photo draw because the photo has to
+     * steer around the minute the reel will actually take.
+     *
+     * This used to pass the fixed `reel_times` list into the guard while the scheduler passed
+     * the time drawn from the reel window. Same date, two different constraints, so the
+     * calendar advertised a time the scheduler never used — 21:10 against an actual 22:40 on
+     * 29 August. A calendar that disagrees with the scheduler is worse than none.
+     */
+    const reelToday = reelWindow ? pickSlotForDate(date, reelWindow, null) : null;
+
     if (plan.photos_per_week > 0 && photoDays.has(weekday)) {
       if (window) {
         // Same call the scheduler makes, including the reel-collision guard, so the calendar
         // shows the time that will actually fire rather than one the guard later moves.
         const drawn = pickSlotForDate(date, window, {
           days: [...reelDays],
-          times: reelTimes,
+          times: reelToday ? [reelToday] : reelTimes,
           gapMinutes: REEL_COLLISION_GAP_MINUTES,
         });
         if (drawn) out.push({ date, time: drawn, kind: "photo" });
@@ -413,8 +425,7 @@ export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): Plann
      */
     if (plan.reels_per_week > 0 && reelDays.has(weekday)) {
       if (reelWindow) {
-        const drawn = pickSlotForDate(date, reelWindow, null);
-        if (drawn) out.push({ date, time: drawn, kind: "reel" });
+        if (reelToday) out.push({ date, time: reelToday, kind: "reel" });
       } else {
         for (const time of reelTimes) out.push({ date, time, kind: "reel" });
       }
