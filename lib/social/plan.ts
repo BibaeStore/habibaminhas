@@ -107,6 +107,11 @@ export type CompiledSchedule = {
  */
 export function compilePlan(plan: PlanRow): CompiledSchedule {
   const window = planPhotoWindow(plan);
+  const reelWindow = parseWindow(
+    plan.reel_window_start,
+    plan.reel_window_end,
+    plan.reel_window_step_minutes,
+  );
   return {
     // `slot_times` is still written even in window mode. It costs nothing, and it is what the
     // scheduler falls back to if the window is ever cleared or fails to parse — so the
@@ -333,7 +338,8 @@ export type PlannedSlot = {
   /** Local calendar date, YYYY-MM-DD. */
   date: string;
   time: string;
-  kind: "photo" | "reel";
+  /** "photo" is the carousel, for continuity with the calendar that predates the split. */
+  kind: "photo" | "static" | "reel";
 };
 
 /**
@@ -347,8 +353,17 @@ export type PlannedSlot = {
 export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): PlannedSlot[] {
   const photoDays = new Set(normaliseDays(plan.photo_days));
   const reelDays = new Set(normaliseDays(plan.reel_days));
+  const staticDays = new Set(normaliseDays(plan.static_days));
   const photoTimes = normaliseTimes(plan.photo_times);
   const reelTimes = normaliseTimes(plan.reel_times);
+  const staticTimes = normaliseTimes(plan.static_times);
+
+  // The static stream draws from its own window, exactly as the other two do.
+  const staticWindow = parseWindow(
+    plan.static_window_start,
+    plan.static_window_end,
+    plan.static_window_step_minutes,
+  );
 
   /*
    * In window mode the calendar shows the *actual* time each day will post, not a placeholder.
@@ -356,6 +371,11 @@ export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): Plann
    * the planner can compute next Friday's slot today, and it will be the time that fires.
    */
   const window = planPhotoWindow(plan);
+  const reelWindow = parseWindow(
+    plan.reel_window_start,
+    plan.reel_window_end,
+    plan.reel_window_step_minutes,
+  );
 
   const out: PlannedSlot[] = [];
   const start = Date.parse(`${fromISO}T12:00:00Z`);
@@ -385,8 +405,28 @@ export function expandPlan(plan: PlanRow, fromISO: string, toISO: string): Plann
         for (const time of photoTimes) out.push({ date, time, kind: "photo" });
       }
     }
+    /*
+     * Reels and statics resolve their windows the same way the scheduler does, so the calendar
+     * shows the time that will actually fire. Before this they fell back to the fixed
+     * `reel_times` / `static_times` while the scheduler used the window — the calendar was
+     * quietly showing a different schedule from the one running.
+     */
     if (plan.reels_per_week > 0 && reelDays.has(weekday)) {
-      for (const time of reelTimes) out.push({ date, time, kind: "reel" });
+      if (reelWindow) {
+        const drawn = pickSlotForDate(date, reelWindow, null);
+        if (drawn) out.push({ date, time: drawn, kind: "reel" });
+      } else {
+        for (const time of reelTimes) out.push({ date, time, kind: "reel" });
+      }
+    }
+
+    if (plan.statics_per_week > 0 && staticDays.has(weekday)) {
+      if (staticWindow) {
+        const drawn = pickSlotForDate(date, staticWindow, null);
+        if (drawn) out.push({ date, time: drawn, kind: "static" });
+      } else {
+        for (const time of staticTimes) out.push({ date, time, kind: "static" });
+      }
     }
   }
 
