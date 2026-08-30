@@ -32,7 +32,7 @@ export type TrackedEvent = {
 };
 
 export const META_EVENT_MAP: TrackedEvent[] = [
-  { action: "Opens any page",          metaEvent: "PageView",             status: "partial", helper: "app/layout.tsx",      why: "Retargeting base. Fires everywhere, but every hit is currently attributed to the homepage URL." },
+  { action: "Opens any page",          metaEvent: "PageView",             status: "live",    helper: "app/layout.tsx",      why: "Retargeting base. Carries the page path as event data, because Meta truncates the URL it reports." },
   { action: "Views a product",         metaEvent: "ViewContent",          status: "live",    helper: "trackViewItem",       why: "Warm audience and catalog ads." },
   { action: "Adds to bag",             metaEvent: "AddToCart",            status: "live",    helper: "trackAddToCart",      why: "Highest-value retargeting pool." },
   { action: "Starts checkout",         metaEvent: "InitiateCheckout",     status: "live",    helper: "trackBeginCheckout",  why: "Abandoned-cart campaigns." },

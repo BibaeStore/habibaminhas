@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: August 9, 2026 - Entity fix: Organization `sameAs` Instagram handle ✅  
+**Last Updated**: August 30, 2026 - Meta Pixel Phase 02: event data enrichment ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -20,6 +20,34 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### August 30, 2026 - Meta Pixel Phase 02: page identity sent as event data
+
+**Changed**:
+- `lib/analytics.ts` — every Meta event now carries `page_path` and `page_title`, plus Meta's
+  per-line `contents` array (quantity + item price), `num_items`, and `content_name` /
+  `content_category` for single-product events.
+- `app/layout.tsx` — one line inside the existing `<Script>` body: the PageView beacon now
+  carries the path. **This is the only edit to a file that renders on indexed pages.**
+- `lib/tracking/event-map.ts` — PageView row moved `partial` → `live` (admin-only).
+
+**Reason**: Meta's own script truncates the reported address to the bare origin, so every event
+looked like it happened on the homepage — "viewed this product" retargeting could not be built
+by URL, URL-rule Custom Conversions never fired, and landing-page reporting showed 100% of
+traffic landing on `/`. The truncation is inside Meta's code, so we stop depending on the URL
+and send the path explicitly instead.
+
+**SEO impact**: none measurable. No markup, metadata, canonical, robots, sitemap, structured
+data, heading, link or image change. LCP/CLS unaffected — nothing renders. INP: two property
+reads inside handlers that already ran; no new listeners, renders, scripts or requests.
+Bundle measured before/after on a full production build: **63 chunks both sides, +298 bytes
+(+0.012%)**.
+
+**Approval**: requested and granted by the owner *before* implementation, per the standing rule.
+
+**Full record**: `docs/seo-optimization-2026/META-PIXEL-PHASE-02-EVENT-DATA.md`
+
+---
 
 ### August 9, 2026 - Entity Fix: wrong Instagram handle in Organization `sameAs`
 

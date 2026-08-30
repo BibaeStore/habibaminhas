@@ -45,6 +45,19 @@ type GA4Item = {
   item_variant?: string;
 };
 
+/**
+ * Meta's richer per-line format. `content_ids` alone tells Meta *which* products were involved;
+ * `contents` also tells it how many and at what price, which is what catalog ads and
+ * value-based (ROAS) campaigns need in order to bid on anything.
+ */
+function toMetaContents(items: AnalyticsItem[]) {
+  return items.map((i) => ({
+    id: i.id,
+    quantity: i.qty ?? 1,
+    item_price: i.price,
+  }));
+}
+
 function toGA4Items(items: AnalyticsItem[]): GA4Item[] {
   return items.map((i) => ({
     item_id: i.id,
@@ -65,9 +78,29 @@ function ga(eventName: string, params: Record<string, unknown>) {
   window.gtag("event", eventName, params);
 }
 
+/**
+ * Page identity as ordinary event data.
+ *
+ * Meta's own script truncates the address it reports to the bare origin and marks it with its
+ * privacy-mode flags, so without this every event on this site looks like it happened on the
+ * homepage: "people who viewed this product" cannot be built by URL, URL-rule Custom
+ * Conversions never fire, and landing-page reporting shows 100% of traffic landing on `/`.
+ * The truncation happens inside Meta's code and cannot be switched off from here — so we stop
+ * depending on the URL and send the path explicitly instead. This is more reliable than a URL
+ * rule even on sites where URL rules work.
+ */
+function pageContext(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  return {
+    page_path: window.location.pathname,
+    page_title: document.title,
+  };
+}
+
 function meta(eventName: string, params: Record<string, unknown>) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") return;
-  window.fbq("track", eventName, params);
+  // Page context first, so a caller can always override it deliberately.
+  window.fbq("track", eventName, { ...pageContext(), ...params });
 }
 
 /** Fires both tags with a matching GA4 / Meta event pair. */
@@ -82,11 +115,18 @@ function track(
   ga(ga4Event, { currency: CURRENCY, value, items: toGA4Items(items), ...extra });
 
   if (metaEvent) {
+    // `content_name` / `content_category` describe a single product. For a basket the per-line
+    // detail is in `contents`, and a single name would be actively misleading, so it is omitted.
+    const single = items.length === 1 ? items[0] : null;
     meta(metaEvent, {
       currency: CURRENCY,
       value,
       content_type: "product",
       content_ids: items.map((i) => i.id),
+      contents: toMetaContents(items),
+      num_items: items.reduce((n, i) => n + (i.qty ?? 1), 0),
+      ...(single?.title ? { content_name: single.title } : {}),
+      ...(single?.category ? { content_category: single.category } : {}),
     });
   }
 }
