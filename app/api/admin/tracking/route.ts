@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
-import { getAdminSession } from "@/lib/actions/auth";
 import {
   normalizeTrackingSettings,
   activePixels,
@@ -12,19 +11,10 @@ import {
 } from "@/lib/tracking/config";
 import { META_EVENT_MAP, eventMapSummary } from "@/lib/tracking/event-map";
 import { isCapiConfigured } from "@/lib/tracking/capi";
+import { requireAdmin } from "@/lib/api/require-admin";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://habibaminhas.com";
 const VERIFY_TIMEOUT_MS = 8000;
-
-/**
- * `/api/admin/**` is NOT covered by the middleware admin gate — that gate matches paths
- * starting with `/admin`, and these start with `/api`. Every handler here must therefore
- * check the session itself. Do not remove.
- */
-async function requireAdmin() {
-  const admin = await getAdminSession();
-  return admin ? null : NextResponse.json({ error: "Not authorised." }, { status: 401 });
-}
 
 export type CapiStatus = {
   /** A Meta access token is present in the environment. */

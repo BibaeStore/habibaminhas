@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api/require-admin";
 
 const MIN_ORDERS = 20;
 
 export async function POST() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   // Guard: API key must be configured
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(

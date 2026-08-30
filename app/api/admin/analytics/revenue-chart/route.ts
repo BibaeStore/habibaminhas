@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api/require-admin";
 
 const toPKTDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Karachi" });
@@ -19,6 +20,9 @@ function generateDates(fromISO: string, toISO: string): string[] {
 }
 
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const url      = new URL(req.url);
   const fromParam = url.searchParams.get("from");
   const toParam   = url.searchParams.get("to");
