@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { useWishlistStore } from "@/lib/wishlist-store";
+import { trackAddToWishlist } from "@/lib/analytics";
 import { useCartStore } from "@/lib/cart-store";
 
 const motifs = ["lattice", "floral", "ogee", "stripes", "arch"] as const;
@@ -70,6 +71,16 @@ export function ProductCard({
   function handleWishlist(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    // Read before the toggle, while `isWishlisted` still describes the old state. Only adding
+    // is reported - removing is not a signal Meta has a standard name for.
+    if (!isWishlisted) {
+      trackAddToWishlist({
+        id: String(product.id),
+        title: product.title,
+        price: product.price,
+        category: product.category,
+      });
+    }
     toggle(product.slug);
   }
 

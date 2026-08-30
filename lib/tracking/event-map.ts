@@ -38,13 +38,13 @@ export const META_EVENT_MAP: TrackedEvent[] = [
   { action: "Starts checkout",         metaEvent: "InitiateCheckout",     status: "live",    helper: "trackBeginCheckout",  why: "Abandoned-cart campaigns." },
   { action: "Picks a payment method",  metaEvent: "AddPaymentInfo",       status: "live",    helper: "trackAddPaymentInfo", why: "Late-funnel intent." },
   { action: "Places an order",         metaEvent: "Purchase",             status: "live",    helper: "trackPurchase",       why: "The conversion you bid on." },
-  { action: "Searches the site",       metaEvent: "Search",               status: "missing", helper: null,                  why: "Strong intent; feeds interest targeting." },
-  { action: "Saves to wishlist",       metaEvent: "AddToWishlist",        status: "missing", helper: null,                  why: "Buy-later audience." },
-  { action: "Signs up for an account", metaEvent: "CompleteRegistration", status: "missing", helper: null,                  why: "Lookalike seed audience." },
-  { action: "Joins the newsletter",    metaEvent: "Subscribe",            status: "missing", helper: null,                  why: "Lead capture." },
-  { action: "Contact form or WhatsApp",metaEvent: "Contact",              status: "missing", helper: null,                  why: "Enquiry conversions." },
-  { action: "Browses a collection",    metaEvent: "ViewCategory",         status: "missing", helper: null,                  why: "Category-level retargeting." },
-  { action: "Uses Virtual Try Room",   metaEvent: "CustomizeProduct",     status: "missing", helper: null,                  why: "The strongest buying signal on this site, and unique to it. Nobody tries a garment on unless they are seriously considering it." },
+  { action: "Searches the site",       metaEvent: "Search",               status: "live", helper: "trackSearch",                  why: "Strong intent; feeds interest targeting." },
+  { action: "Saves to wishlist",       metaEvent: "AddToWishlist",        status: "live", helper: "trackAddToWishlist",                  why: "Buy-later audience." },
+  { action: "Signs up for an account", metaEvent: "CompleteRegistration", status: "live", helper: "trackCompleteRegistration",                  why: "Lookalike seed audience." },
+  { action: "Joins the newsletter",    metaEvent: "Subscribe",            status: "live", helper: "trackSubscribe",                  why: "Lead capture." },
+  { action: "Contact form or WhatsApp",metaEvent: "Contact",              status: "live", helper: "trackContact",                  why: "Enquiry conversions." },
+  { action: "Browses a collection",    metaEvent: "ViewCategory",         status: "live", helper: "trackViewCategory",                  why: "Category-level retargeting." },
+  { action: "Uses Virtual Try Room",   metaEvent: "CustomizeProduct",     status: "live", helper: "trackCustomizeProduct",                  why: "The strongest buying signal on this site, and unique to it. Nobody tries a garment on unless they are seriously considering it." },
 ];
 
 /** Counts for the "Events firing — n of m" status row. */

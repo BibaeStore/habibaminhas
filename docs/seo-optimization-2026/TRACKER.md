@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: August 30, 2026 - Meta Pixel Phase 02: event data enrichment ✅  
+**Last Updated**: August 30, 2026 - Meta Pixel Phase 03: missing events + Advanced Matching ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -20,6 +20,33 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### August 30, 2026 - Meta Pixel Phase 03: the seven missing events + Advanced Matching
+
+**Changed** (13 files): `lib/analytics.ts` (7 new standard events, shared `eventID` on every
+event, `setCustomerMatch`), `app/layout.tsx` (exposes the pixel ID so Advanced Matching can
+re-init the same pixel), plus wiring in `app/search`, `app/contact`, `app/account/signup`,
+`app/checkout/shipping`, `components/collection/*`, `components/product/*`,
+`components/layout/newsletter.tsx`, `components/common/whatsapp-button.tsx`.
+
+**Reason**: Search, wishlist, registration, newsletter, contact, collection browsing and the
+Virtual Try Room were tracked nowhere. All seven now fire under standard Meta names, which is
+what makes them usable as campaign objectives and audience rules. Event IDs are the
+prerequisite for the Conversions API in Phase 04.
+
+**Advanced Matching**: enabled on the owner's explicit instruction, after being shown exactly
+what is transmitted. Checkout only - never on browsing pages. Meta's pixel hashes with SHA-256
+in the browser, so Meta receives codes it can match but not read.
+
+**SEO impact**: none measurable. No markup, metadata, canonical, robots, sitemap, structured
+data, heading, link or image change. The crawlable all-products `<nav>` in
+`collection-template.tsx` was not touched. LCP/CLS unaffected - every change is a handler or a
+null-rendering effect. Bundle: **63 chunks unchanged, +2,829 bytes (+0.11%)**; cumulative across
+phases 02-03 is +3,127 bytes (+0.13%).
+
+**Full record**: `docs/seo-optimization-2026/META-PIXEL-PHASE-03-EVENTS-AND-MATCHING.md`
+
+---
 
 ### August 30, 2026 - Meta Pixel Phase 02: page identity sent as event data
 

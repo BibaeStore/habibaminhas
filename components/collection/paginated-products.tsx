@@ -1,13 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductGrid } from "@/components/product/product-grid";
 import type { CardProduct } from "@/components/product/product-card";
+import { trackViewCategory } from "@/lib/analytics";
 
 const PRODUCTS_PER_PAGE = 9;
 
-export function PaginatedProducts({ products }: { products: CardProduct[] }) {
+export function PaginatedProducts({
+  products,
+  category,
+}: {
+  products: CardProduct[];
+  /** Collection name, for the Meta ViewCategory event. Omitted where there is no category. */
+  category?: string;
+}) {
   const [displayCount, setDisplayCount] = useState(PRODUCTS_PER_PAGE);
+
+  /* ViewCategory - once per collection view. This component backs every collection page and
+     nothing else, so it is the one place the event belongs; putting it on the pages instead
+     would mean twelve copies that drift apart. */
+  useEffect(() => {
+    if (!category) return;
+    trackViewCategory(
+      category,
+      products.slice(0, PRODUCTS_PER_PAGE).map((p) => ({
+        id: String(p.id), title: p.title, price: p.price, category: p.category,
+      })),
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
 
   const displayedProducts = products.slice(0, displayCount);
   const hasMore = displayCount < products.length;

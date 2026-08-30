@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Minus, Plus, Heart, Share2, Sparkles, Lock } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useWishlistStore } from "@/lib/wishlist-store";
-import { trackViewItem, trackAddToCart } from "@/lib/analytics";
+import { trackViewItem, trackAddToCart, trackAddToWishlist, trackCustomizeProduct } from "@/lib/analytics";
 import Image from "next/image";
 
 const TryOnModal = dynamic(
@@ -115,10 +115,20 @@ export function AddToCartSection({
 
   const canAdd = !hasSizes || !!selectedSize;
 
+  function handleWishlist() {
+    // Only on adding; see the note in product-card.tsx.
+    if (!isWished) trackAddToWishlist({ id, title, price, category });
+    toggle(slug);
+  }
+
   function handleTryOnClick() {
     // Silently add product to bag (badge updates), then open modal
     // Drawer opens AFTER the modal closes so the overlay covers the full screen
     addItem({ id, slug, category, title, image, palette, price, compare_at, size: hasSizes ? selectedSize : null, sku });
+    /* The strongest buying signal on this site - nobody opens a virtual try-on unless they
+       are seriously considering the garment. Fired on open rather than on generate, because
+       this is where the full product data lives. */
+    trackCustomizeProduct({ id, title, price, category });
     setIsTryOnOpen(true);
   }
 
@@ -233,7 +243,7 @@ export function AddToCartSection({
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => toggle(slug)}
+            onClick={handleWishlist}
             className={`flex h-12 flex-1 items-center justify-center gap-2 border text-[12px] uppercase tracking-[0.26em] transition-colors ${
               isWished ? "border-ink bg-ink text-ivory" : "border-ink text-ink hover:bg-ink hover:text-ivory"
             }`}
@@ -361,7 +371,7 @@ export function AddToCartSection({
           <button
             type="button"
             aria-label={isWished ? "Remove from wishlist" : "Add to wishlist"}
-            onClick={() => toggle(slug)}
+            onClick={handleWishlist}
             className={`flex h-12 w-12 shrink-0 items-center justify-center border transition-colors ${
               isWished ? "border-ink bg-ink text-ivory" : "border-border-soft text-ink hover:border-ink"
             }`}

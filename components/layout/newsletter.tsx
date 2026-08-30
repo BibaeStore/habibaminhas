@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
+import { trackSubscribe } from "@/lib/analytics";
 
 export function Newsletter() {
   const [email, setEmail] = useState("");
@@ -25,6 +26,7 @@ export function Newsletter() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!email) return;
+            trackSubscribe("footer-newsletter");
             setSent(true);
             setEmail("");
           }}
