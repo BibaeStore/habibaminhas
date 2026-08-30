@@ -44,16 +44,54 @@ const inputSmCls =
 const textareaCls =
   "w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2.5 text-[15px] outline-none focus:border-[var(--admin-primary)] resize-none";
 
-function SectionSaveButton({ label = "Save changes", onSave }: { label?: string; onSave: () => void }) {
+type SeoForm = {
+  siteTitle: string;
+  metaDesc: string;
+  ogTitle: string;
+  ogDesc: string;
+  robotsTxt: boolean;
+  sitemap: boolean;
+  structuredData: boolean;
+  ga4: string;
+  fbPixel: string;
+};
+
+/**
+ * Saving replaces the whole `seo_settings` JSON block, so it must carry every key the
+ * storefront reads. The storefront goes through `getStorefrontSettings()`, which looks
+ * for snake_case (`fb_pixel`, `ga4_id`); this form's state is camelCase. Writing only
+ * the camelCase spelling dropped `fb_pixel` on every save, which silently removed the
+ * Meta Pixel from every page — no deploy, no error. Write both spellings.
+ */
+function buildSeoSettings(seo: SeoForm) {
+  return {
+    site_title: seo.siteTitle,
+    siteTitle: seo.siteTitle,
+    meta_description: seo.metaDesc,
+    metaDesc: seo.metaDesc,
+    ga4_id: seo.ga4,
+    ga4: seo.ga4,
+    fb_pixel: seo.fbPixel,
+    fbPixel: seo.fbPixel,
+    ogTitle: seo.ogTitle,
+    ogDesc: seo.ogDesc,
+    robotsTxt: seo.robotsTxt,
+    sitemap: seo.sitemap,
+    structuredData: seo.structuredData,
+  };
+}
+
+function SectionSaveButton({ label = "Save changes", onSave, disabled = false }: { label?: string; onSave: () => void; disabled?: boolean }) {
   const [saved, setSaved] = useState(false);
   const handle = () => {
+    if (disabled) return;
     onSave();
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
   return (
     <div className="mt-6 flex">
-      <AdminButton variant="primary" onClick={handle} leadingIcon={saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}>
+      <AdminButton variant="primary" onClick={handle} disabled={disabled} leadingIcon={saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}>
         {saved ? "Saved!" : label}
       </AdminButton>
     </div>
@@ -167,12 +205,12 @@ export default function AdminSettingsPage() {
       if (ss) {
         setSeo((prev) => ({
           ...prev,
-          siteTitle: String(ss.siteTitle ?? prev.siteTitle),
-          metaDesc: String(ss.metaDesc ?? prev.metaDesc),
+          siteTitle: String(ss.site_title ?? ss.siteTitle ?? prev.siteTitle),
+          metaDesc: String(ss.meta_description ?? ss.metaDesc ?? prev.metaDesc),
           ogTitle: String(ss.ogTitle ?? prev.ogTitle),
           ogDesc: String(ss.ogDesc ?? prev.ogDesc),
-          ga4: String(ss.ga4 ?? prev.ga4),
-          fbPixel: String(ss.fbPixel ?? prev.fbPixel),
+          ga4: String(ss.ga4_id ?? ss.ga4 ?? prev.ga4),
+          fbPixel: String(ss.fb_pixel ?? ss.fbPixel ?? prev.fbPixel),
           robotsTxt: Boolean(ss.robotsTxt ?? prev.robotsTxt),
           sitemap: Boolean(ss.sitemap ?? prev.sitemap),
           structuredData: Boolean(ss.structuredData ?? prev.structuredData),
@@ -208,7 +246,7 @@ export default function AdminSettingsPage() {
   const [showPw, setShowPw] = useState(false);
 
   // ── SEO state ──
-  const [seo, setSeo] = useState({
+  const [seo, setSeo] = useState<SeoForm>({
     siteTitle: "Habiba Minhas — Luxury Fashion Brand Pakistan",
     metaDesc: "Premium ladies suits, kids festive wear, baby bedding, and handcrafted accessories — made with love in Pakistan.",
     ogTitle: "Habiba Minhas", ogDesc: "Shop handcrafted fashion & nursery essentials.",
@@ -289,7 +327,7 @@ export default function AdminSettingsPage() {
                       </Field>
                     </div>
                   </div>
-                  <SectionSaveButton onSave={() => saveSettings({ store_name: store.name, store_email: store.email, store_phone: store.phone, store_city: store.city, description: store.desc, currency: store.currency, timezone: store.timezone }).catch(() => {})} />
+                  <SectionSaveButton disabled={!settingsData} onSave={() => saveSettings({ store_name: store.name, store_email: store.email, store_phone: store.phone, store_city: store.city, description: store.desc, currency: store.currency, timezone: store.timezone }).catch(() => {})} />
                 </AdminCard>
 
                 <AdminCard>
@@ -356,7 +394,7 @@ export default function AdminSettingsPage() {
                     sub="Allow customers to pay when their order arrives"
                   />
                 </div>
-                <SectionSaveButton label="Update rates" onSave={() => saveSettings({ shipping_rates: { standard: Number(shipping.standard), express: Number(shipping.express), freeThreshold: Number(shipping.freeThreshold), carrier: shipping.carrier, estimatedStd: shipping.estimatedStd, estimatedExp: shipping.estimatedExp, codEnabled: shipping.codEnabled } }).catch(() => {})} />
+                <SectionSaveButton disabled={!settingsData} label="Update rates" onSave={() => saveSettings({ shipping_rates: { standard: Number(shipping.standard), express: Number(shipping.express), freeThreshold: Number(shipping.freeThreshold), carrier: shipping.carrier, estimatedStd: shipping.estimatedStd, estimatedExp: shipping.estimatedExp, codEnabled: shipping.codEnabled } }).catch(() => {})} />
               </AdminCard>
             )}
 
@@ -400,7 +438,7 @@ export default function AdminSettingsPage() {
                   <Toggle checked={notif.dailySummary}  onChange={(v) => setNotif({ ...notif, dailySummary: v })}  label="Daily sales summary"  sub="Receive a daily digest email each morning" />
                   <Toggle checked={notif.weeklySummary} onChange={(v) => setNotif({ ...notif, weeklySummary: v })} label="Weekly performance"   sub="Receive a weekly analytics summary on Mondays" />
                 </div>
-                <SectionSaveButton label="Save preferences" onSave={() => saveSettings({ notification_settings: { newOrder: notif.newOrder, orderShipped: notif.orderShipped, orderDelivered: notif.orderDelivered, lowStock: notif.lowStock, newCustomer: notif.newCustomer, payment: notif.payment, dailySummary: notif.dailySummary, weeklySummary: notif.weeklySummary } }).catch(() => {})} />
+                <SectionSaveButton disabled={!settingsData} label="Save preferences" onSave={() => saveSettings({ notification_settings: { newOrder: notif.newOrder, orderShipped: notif.orderShipped, orderDelivered: notif.orderDelivered, lowStock: notif.lowStock, newCustomer: notif.newCustomer, payment: notif.payment, dailySummary: notif.dailySummary, weeklySummary: notif.weeklySummary } }).catch(() => {})} />
               </AdminCard>
             )}
 
@@ -498,7 +536,7 @@ export default function AdminSettingsPage() {
                       </Field>
                     </div>
                   </div>
-                  <SectionSaveButton onSave={() => saveSettings({ seo_settings: { siteTitle: seo.siteTitle, metaDesc: seo.metaDesc, ogTitle: seo.ogTitle, ogDesc: seo.ogDesc, ga4: seo.ga4, fbPixel: seo.fbPixel, robotsTxt: seo.robotsTxt, sitemap: seo.sitemap, structuredData: seo.structuredData } }).catch(() => {})} />
+                  <SectionSaveButton disabled={!settingsData} onSave={() => saveSettings({ seo_settings: buildSeoSettings(seo) }).catch(() => {})} />
                 </AdminCard>
 
                 <AdminCard>
@@ -508,7 +546,7 @@ export default function AdminSettingsPage() {
                     <Toggle checked={seo.sitemap}        onChange={(v) => setSeo({ ...seo, sitemap: v })}        label="XML Sitemap"       sub="Auto-generate and submit sitemap to Google" />
                     <Toggle checked={seo.structuredData} onChange={(v) => setSeo({ ...seo, structuredData: v })} label="Structured Data"   sub="Enable JSON-LD schema for products and breadcrumbs" />
                   </div>
-                  <SectionSaveButton label="Save SEO settings" onSave={() => saveSettings({ seo_settings: { siteTitle: seo.siteTitle, metaDesc: seo.metaDesc, ogTitle: seo.ogTitle, ogDesc: seo.ogDesc, ga4: seo.ga4, fbPixel: seo.fbPixel, robotsTxt: seo.robotsTxt, sitemap: seo.sitemap, structuredData: seo.structuredData } }).catch(() => {})} />
+                  <SectionSaveButton disabled={!settingsData} label="Save SEO settings" onSave={() => saveSettings({ seo_settings: buildSeoSettings(seo) }).catch(() => {})} />
                 </AdminCard>
               </>
             )}
