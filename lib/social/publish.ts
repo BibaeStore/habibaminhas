@@ -716,9 +716,21 @@ export async function restoreArchivedPost(groupId: string): Promise<void> {
 async function countToday(settings: SocialSettings): Promise<number> {
   const sb = createAdminClient();
   const since = startOfLocalDayUtc(settings.timezone).toISOString();
+  /*
+   * PRODUCT posts only. Occasion greetings do not count against this ceiling.
+   *
+   * They did, and it cost a day. On 2026-08-28 the Jumma poster was republished four times
+   * while its design was being revised; each republish is a group, the cap was 4, the check is
+   * `>=`, and so the evening carousel was refused with `daily_cap_reached` and never went out.
+   *
+   * The ceiling exists to stop a scheduler misfire emptying the catalogue in an afternoon. It
+   * was never meant to make a greeting compete with the day's product, and a greeting is not
+   * drawn from the catalogue at all.
+   */
   const { data } = await sb
     .from("social_post_log")
     .select("group_id")
+    .in("stream", ["carousel", "static"])
     .in("status", ["posted", "pending", "approved"])
     .gte("created_at", since);
 

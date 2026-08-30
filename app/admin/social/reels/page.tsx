@@ -17,15 +17,11 @@ import {
   suggestUploadCaption,
   type SocialReelRow,
 } from "@/lib/actions/social";
-import { fetchActivePlan } from "@/lib/actions/social-plans";
-import { expandPlan, type PlanRow } from "@/lib/social/plan";
 import {
   Field, Pill, Modal, EmptyState, StatePill, PlatformChip, PublishTargets, PlatformPicker, SubTabs,
   Toast, InlineProgress, inputCls, relativeTime,
 } from "@/components/admin/social/ui";
-import {
-  WeekCalendar, mondayOf, shiftWeek, type CalendarItem,
-} from "@/components/admin/social/week-calendar";
+import { ScheduleCalendar } from "@/components/admin/social/schedule-calendar";
 import { useAct } from "@/components/admin/social/use-act";
 
 /**
@@ -42,18 +38,17 @@ const PER_PAGE = 10;
 type Tab = "upcoming" | "upload" | "review" | "published";
 
 async function load() {
-  const [rows, upNext, rotation, canGenerate, platforms, plan] = await Promise.all([
+  const [rows, upNext, rotation, canGenerate, platforms] = await Promise.all([
     fetchReels(),
     fetchReelUpNext(10),
     fetchReelRotation(),
     canGenerateReels(),
     fetchPlatforms(),
-    fetchActivePlan(),
   ]);
   const titles = await fetchReelProductTitles([
     ...new Set(rows.flatMap((r) => r.product_ids ?? [])),
   ]);
-  return { rows, upNext, rotation, canGenerate, platforms, titles, plan };
+  return { rows, upNext, rotation, canGenerate, platforms, titles };
 }
 
 export default function SocialReelsPage() {
@@ -70,7 +65,7 @@ export default function SocialReelsPage() {
   }
   if (!data) return <EmptyState message="Loading…" />;
 
-  const { rows, upNext, rotation, canGenerate, platforms, titles, plan } = data;
+  const { rows, upNext, rotation, canGenerate, platforms, titles } = data;
   const targets = platforms.filter((p) => p.supports_video && p.video_enabled).map((p) => p.key);
 
   const drafts = rows.filter((r) => r.status === "draft");
@@ -94,8 +89,6 @@ export default function SocialReelsPage() {
 
       {tab === "upcoming" && (
         <UpcomingTab
-          plan={plan}
-          rows={rows}
           upNext={upNext}
           rotation={rotation}
           targets={targets}
@@ -165,10 +158,8 @@ function DiscardedSection({
 // ─── Upcoming ─────────────────────────────────────────────────────────────────
 
 function UpcomingTab({
-  plan, rows, upNext, rotation, targets, canGenerate, pending, onAct,
+  upNext, rotation, targets, canGenerate, pending, onAct,
 }: {
-  plan: PlanRow | null;
-  rows: SocialReelRow[];
   upNext: Array<{ id: string; slug: string; title: string; images: string[] }>;
   rotation: { made: number; eligible: number; awaitingReview: number; published: number };
   targets: string[];
@@ -176,58 +167,16 @@ function UpcomingTab({
   pending: boolean;
   onAct: (fn: () => Promise<unknown>, message?: string) => void;
 }) {
-  const [weekStart, setWeekStart] = useState(() => mondayOf());
-  const today = new Date().toISOString().slice(0, 10);
-
-  const items: CalendarItem[] = [];
-  if (plan) {
-    const horizon = shiftWeek(mondayOf(), 8);
-    const approved = rows.filter((r) => r.status === "approved");
-    expandPlan(plan, today, horizon)
-      .filter((s) => s.kind === "reel")
-      .forEach((slot, i) => {
-        items.push({
-          date: slot.date,
-          time: slot.time,
-          kind: "reel",
-          // Only what is genuinely approved and queued can be promised for a slot.
-          label: approved[i] ? "Approved reel" : "Nothing approved yet",
-        });
-      });
-  }
-  for (const row of rows.filter((r) => r.status === "posted")) {
-    const when = row.posted_at ?? row.created_at;
-    items.push({
-      date: when.slice(0, 10),
-      time: new Date(when).toISOString().slice(11, 16),
-      kind: "reel",
-      label: row.kind === "upload" ? "Uploaded video" : "Reel",
-      done: true,
-    });
-  }
-
   return (
     <div className="space-y-5">
       <AdminCard padded>
-        <div className="mb-4"><PublishTargets targets={targets} /></div>
+        <PublishTargets targets={targets} />
+      </AdminCard>
 
-        {!plan && (
-          <div className="mb-4 rounded-lg border-2 border-amber-300 bg-amber-50 px-3 py-2.5">
-            <p className="text-[13px] text-amber-900">
-              No plan is active, so nothing is laid out on the calendar. Create one on the
-              Planner page.
-            </p>
-          </div>
-        )}
+      <ScheduleCalendar />
 
-        <WeekCalendar
-          items={items}
-          weekStart={weekStart}
-          onShift={(w) => setWeekStart(w === "today" ? mondayOf() : shiftWeek(weekStart, w))}
-          emptyHint={plan ? "No reel slots this week" : "No active plan"}
-        />
-
-        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[12px] text-[var(--admin-text-muted)]">
+      <AdminCard padded>
+        <p className="text-[12.5px] leading-relaxed text-[var(--admin-text-muted)]">
           Reels publish automatically at their slot, but they are not{" "}
           <em>made</em> automatically — video encoding runs on your computer. Generate a
           batch below and approve them; the schedule sends them out one at a time.

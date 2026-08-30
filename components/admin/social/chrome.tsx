@@ -107,14 +107,25 @@ export function SocialChrome({ children }: { children: React.ReactNode }) {
 
         <WeekStrip summary={summary} />
 
-        {/* ── Three pages ─────────────────────────────────────────────────── */}
+        {/* ── One page per stream, then the planning tools ──────────────────── */}
         <nav className="mb-5 flex flex-wrap gap-1 border-b border-[var(--admin-border)]">
           {NAV.map((item) => {
-            // Posts is the index route, so it would otherwise match every child path.
-            const active =
-              item.href === "/admin/social"
-                ? pathname === "/admin/social"
-                : pathname.startsWith(item.href);
+            /*
+             * Trailing slashes are stripped from both sides before comparing.
+             *
+             * `next.config.ts` sets `trailingSlash: true`, so the live pathname is
+             * "/admin/social/" and the exact match against "/admin/social" was always false —
+             * the Carousel tab never highlighted while Static and Reels did, because those use
+             * startsWith and a trailing slash does not break a prefix test. Reported by the
+             * owner as "no indication which tab is open".
+             *
+             * Carousel is the index route, so it must match exactly or it would light up on
+             * every child path.
+             */
+            const strip = (v: string) => (v.length > 1 ? v.replace(/\/+$/, "") : v);
+            const here = strip(pathname);
+            const target = strip(item.href);
+            const active = target === "/admin/social" ? here === target : here.startsWith(target);
             const badge =
               item.badge === "photos" ? summary?.needsYou.photos ?? 0
               : item.badge === "reels" ? summary?.needsYou.reels ?? 0

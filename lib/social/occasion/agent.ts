@@ -372,6 +372,15 @@ export async function publishDue(now = new Date()): Promise<{ published: number;
           alt_text: `${raw.occasion_name} greeting from Habiba Minhas.`,
           rotation_cycle: 1,
           slot: "occasion",
+          /*
+           * Its own stream, not the 'carousel' default.
+           *
+           * Left as the default these rows were counted against the product-post daily ceiling,
+           * and on 2026-08-28 four Jumma republishes used the whole cap of 4 — the evening
+           * carousel was refused and never went out. A greeting is not a product post and must
+           * not compete with one.
+           */
+          stream: "occasion",
           posted_at: new Date().toISOString(),
           group_id: groupId,
           deleted_from: [],

@@ -15,14 +15,12 @@ import {
   saveQueueOrder, clearQueueOrder, deletePost, repostPost, restorePost,
   type SocialLogRow, type SocialPlatformRow, type LogStream,
 } from "@/lib/actions/social";
-import { fetchActivePlan } from "@/lib/actions/social-plans";
-import { expandPlan, type PlanRow } from "@/lib/social/plan";
 import {
   Pill, Modal, EmptyState, StatePill, PlatformChip, PublishTargets, PlatformPicker,
   CheckBox, SubTabs, Toast, inputCls, relativeTime,
 } from "@/components/admin/social/ui";
 import { PlatformIcon, platformLabel, platformBrand } from "@/components/admin/platform-icons";
-import { WeekCalendar, mondayOf, shiftWeek, type CalendarItem } from "@/components/admin/social/week-calendar";
+import { ScheduleCalendar } from "@/components/admin/social/schedule-calendar";
 import { useAct } from "@/components/admin/social/use-act";
 
 /**
@@ -47,15 +45,14 @@ const PER_PAGE = 10;
 type Tab = "upcoming" | "review" | "published";
 
 async function load(stream: LogStream) {
-  const [rotation, upNext, queue, history, platforms, plan] = await Promise.all([
+  const [rotation, upNext, queue, history, platforms] = await Promise.all([
     fetchRotationStatus(stream),
     fetchUpNext(24, stream),
     fetchReviewQueue(stream),
     fetchPostHistory(200, stream),
     fetchPlatforms(),
-    fetchActivePlan(),
   ]);
-  return { rotation, upNext, queue, history, platforms, plan };
+  return { rotation, upNext, queue, history, platforms };
 }
 
 function describeRun(result: unknown): string {
@@ -95,9 +92,8 @@ export function ProductPostsPage({ stream }: { stream: LogStream }) {
   }
   if (!data) return <EmptyState message="Loading…" />;
 
-  const { rotation, upNext, queue, history, platforms, plan } = data;
+  const { rotation, upNext, queue, history, platforms } = data;
   const targets = platforms.filter((p) => p.supports_photo && p.photo_enabled).map((p) => p.key);
-  const published = history.filter((r) => r.status === "posted");
   /*
    * One card per logical post, not per platform row — the owner approves a post, once.
    *
@@ -123,9 +119,7 @@ export function ProductPostsPage({ stream }: { stream: LogStream }) {
 
       {tab === "upcoming" && (
         <UpcomingTab
-          plan={plan}
           upNext={upNext}
-          published={published}
           rotation={rotation}
           targets={targets}
           pending={pending}
@@ -166,64 +160,19 @@ export function ProductPostsPage({ stream }: { stream: LogStream }) {
  * actually published, so one grid answers both "what went out" and "what is coming".
  */
 function UpcomingTab({
-  plan, upNext, published, rotation, targets, pending, onAct, onPostNow,
+  upNext, rotation, targets, pending, onAct, onPostNow,
 }: {
-  plan: PlanRow | null;
   upNext: Array<{ id: string; slug: string; title: string; images: string[] }>;
-  published: SocialLogRow[];
   rotation: { cycle: number; postedThisCycle: number; eligibleTotal: number } | null;
   targets: string[];
   pending: boolean;
   onAct: (fn: () => Promise<unknown>, message?: string) => void;
   onPostNow: () => void;
 }) {
-  const [weekStart, setWeekStart] = useState(() => mondayOf());
-  const today = new Date().toISOString().slice(0, 10);
-
-  /*
-   * Products are matched to slots in rotation order, starting from the next future slot —
-   * computed across the whole horizon rather than per displayed week, so paging forward
-   * does not reshuffle which product lands where.
-   */
-  const items: CalendarItem[] = [];
-  if (plan) {
-    const horizon = shiftWeek(mondayOf(), 8);
-    const future = expandPlan(plan, today, horizon).filter((s) => s.kind === "photo");
-    future.forEach((slot, i) => {
-      const product = upNext[i];
-      items.push({
-        date: slot.date,
-        time: slot.time,
-        kind: "photo",
-        label: product?.title ?? null,
-      });
-    });
-    // Reels are shown too, so the week reads as the whole schedule rather than half of it.
-    for (const slot of expandPlan(plan, today, horizon).filter((s) => s.kind === "reel")) {
-      items.push({ date: slot.date, time: slot.time, kind: "reel" });
-    }
-  }
-
-  // What actually went out, on the days it went out.
-  const seen = new Set<string>();
-  for (const row of published) {
-    const key = row.group_id ?? row.id;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const when = row.posted_at ?? row.created_at;
-    items.push({
-      date: when.slice(0, 10),
-      time: new Date(when).toISOString().slice(11, 16),
-      kind: "photo",
-      label: row.product_title,
-      done: true,
-    });
-  }
-
   return (
     <div className="space-y-5">
       <AdminCard padded>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <PublishTargets targets={targets} />
           <AdminButton
             size="sm" variant="outline" leadingIcon={<Send size={15} />}
@@ -232,23 +181,9 @@ function UpcomingTab({
             Post now
           </AdminButton>
         </div>
-
-        {!plan && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border-2 border-amber-300 bg-amber-50 px-3 py-2.5">
-            <p className="text-[13px] text-amber-900">
-              No plan is active, so the calendar has nothing to lay out. Create one on the
-              Planner page — posting still runs on the saved times in the meantime.
-            </p>
-          </div>
-        )}
-
-        <WeekCalendar
-          items={items}
-          weekStart={weekStart}
-          onShift={(w) => setWeekStart(w === "today" ? mondayOf() : shiftWeek(weekStart, w))}
-          emptyHint={plan ? "Nothing scheduled this week" : "No active plan"}
-        />
       </AdminCard>
+
+      <ScheduleCalendar />
 
       <UpNextQueue
         items={upNext}

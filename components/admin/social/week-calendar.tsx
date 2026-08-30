@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Images, Clapperboard } from "lucide-react";
+import { ChevronLeft, ChevronRight, Images, Image, Clapperboard, CalendarHeart } from "lucide-react";
 import { DAY_LABELS } from "./ui";
 
 /**
@@ -20,13 +20,66 @@ export type CalendarItem = {
   /** Local calendar date, YYYY-MM-DD. */
   date: string;
   time: string;
-  kind: "photo" | "reel";
+  /**
+   * Which stream the entry belongs to.
+   *
+   * "photo" predates the split and means the carousel. "static" was added on 2026-08-29: the
+   * static stream had been publishing for a day with no way to tell its entries apart from a
+   * carousel's on the calendar, which the owner reported as not being able to see what was what.
+   */
+  kind: "photo" | "static" | "reel" | "occasion";
   /** Product title or headline, when something is actually assigned to the slot. */
   label?: string | null;
   thumb?: string | null;
-  /** Already published, rather than still to come. */
-  done?: boolean;
 };
+
+/**
+ * Colour, icon and label per stream, defined once.
+ *
+ * A legend is only honest if the swatch and the entry are drawn from the same source; two
+ * lists drift and then the key lies about the calendar.
+ */
+const KIND_STYLE = {
+  photo:    { label: "Carousel", border: "border-sky-300",     bg: "bg-sky-50",     text: "text-sky-900",     icon: "text-sky-800",     dot: "bg-sky-400" },
+  static:   { label: "Static",   border: "border-amber-300",   bg: "bg-amber-50",   text: "text-amber-900",   icon: "text-amber-800",   dot: "bg-amber-400" },
+  reel:     { label: "Reel",     border: "border-fuchsia-300", bg: "bg-fuchsia-50", text: "text-fuchsia-900", icon: "text-fuchsia-800", dot: "bg-fuchsia-400" },
+  occasion: { label: "Occasion", border: "border-violet-300",  bg: "bg-violet-50",  text: "text-violet-900",  icon: "text-violet-800",  dot: "bg-violet-400" },
+} as const;
+
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** "Monday and Wednesday", "Monday, Wednesday and Friday", "every day". */
+function listDays(days: number[]): string {
+  const sorted = [...new Set(days)].sort((a, b) => a - b);
+  if (sorted.length === 7) return "every day";
+  if (sorted.length === 0) return "no days";
+  const names = sorted.map((d) => DAY_NAMES[d]);
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
+/**
+ * Which days this stream runs, and whether today is one of them.
+ *
+ * The owner asked, reasonably, why the Static tab showed Saturday as a posting day when
+ * statics only run Monday and Wednesday. Half the answer was a bug — the tab was drawing the
+ * carousel's schedule — and the other half was that the cadence was written down nowhere they
+ * could see it, so the only way to find out was to ask. Now the page says it.
+ */
+export function CadenceNote({ noun, days }: { noun: string; days: number[] | null }) {
+  const today = new Date().getDay();
+  if (!days) return null;
+
+  return (
+    <p className="mb-4 rounded-lg border border-[var(--admin-border)] bg-slate-50 px-3 py-2 text-[12.5px] text-[var(--admin-text-muted)]">
+      <span className="font-medium text-[var(--admin-text)]">
+        {noun} run {listDays(days)}.
+      </span>{" "}
+      {days.includes(today)
+        ? "Today is " + DAY_NAMES[today] + ", so one is scheduled."
+        : "Today is " + DAY_NAMES[today] + " \u2014 none is scheduled. Use \u201CPost now\u201D to send one anyway."}
+    </p>
+  );
+}
 
 export function WeekCalendar({
   items, weekStart, onShift, emptyHint,
@@ -121,27 +174,26 @@ export function WeekCalendar({
                 {day.items.map((item, i) => (
                   <div
                     key={i}
-                    title={`${item.kind === "photo" ? "Photo post" : "Reel"} at ${item.time}${
+                    title={`${KIND_STYLE[item.kind].label} at ${item.time}${
                       item.label ? ` — ${item.label}` : ""
                     }`}
-                    className={`rounded-lg border px-1.5 py-1 ${
-                      item.done
-                        ? "border-emerald-300 bg-emerald-50"
-                        : item.kind === "photo"
-                          ? "border-sky-300 bg-sky-50"
-                          : "border-fuchsia-300 bg-fuchsia-50"
-                    }`}
+                    className={`rounded-lg border px-1.5 py-1 ${KIND_STYLE[item.kind].border} ${KIND_STYLE[item.kind].bg}`}
                   >
                     <div className="flex items-center gap-1">
-                      {item.kind === "photo"
-                        ? <Images size={10} className="shrink-0 text-sky-800" />
-                        : <Clapperboard size={10} className="shrink-0 text-fuchsia-800" />}
-                      <span
-                        className={`text-[10px] font-bold ${
-                          item.kind === "photo" ? "text-sky-900" : "text-fuchsia-900"
-                        }`}
-                      >
+                      {item.kind === "reel"
+                        ? <Clapperboard size={10} className={`shrink-0 ${KIND_STYLE[item.kind].icon}`} />
+                        : item.kind === "occasion"
+                          ? <CalendarHeart size={10} className={`shrink-0 ${KIND_STYLE[item.kind].icon}`} />
+                          : item.kind === "static"
+                            ? <Image size={10} className={`shrink-0 ${KIND_STYLE[item.kind].icon}`} />
+                            : <Images size={10} className={`shrink-0 ${KIND_STYLE[item.kind].icon}`} />}
+                      <span className={`text-[10px] font-bold ${KIND_STYLE[item.kind].text}`}>
                         {item.time}
+                      </span>
+                      {/* The stream named on the card itself, not only in the legend — the owner
+                          should not have to match a colour to a key to read their own week. */}
+                      <span className={`ml-auto text-[9px] font-semibold uppercase tracking-wide ${KIND_STYLE[item.kind].text} opacity-70`}>
+                        {KIND_STYLE[item.kind].label}
                       </span>
                     </div>
                     {item.label && (
@@ -160,14 +212,14 @@ export function WeekCalendar({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-[var(--admin-text-muted)]">
-        <span className="inline-flex items-center gap-1.5">
-          <Images size={12} className="text-sky-700" /> Photo post
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Clapperboard size={12} className="text-fuchsia-700" /> Reel
-        </span>
-        <span className="ml-auto">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--admin-border)] pt-3">
+        {(Object.keys(KIND_STYLE) as Array<keyof typeof KIND_STYLE>).map((k) => (
+          <span key={k} className="inline-flex items-center gap-1.5 text-[11.5px] text-[var(--admin-text-muted)]">
+            <span className={`h-2.5 w-2.5 rounded-sm ${KIND_STYLE[k].dot}`} />
+            {KIND_STYLE[k].label}
+          </span>
+        ))}
+        <span className="ml-auto text-[11.5px] text-[var(--admin-text-muted)]">
           {items.length === 0 ? (emptyHint ?? "Nothing scheduled") : `${items.length} this week`}
         </span>
       </div>
