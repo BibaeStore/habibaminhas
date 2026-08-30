@@ -602,6 +602,7 @@ export type Database = {
           store_name: string
           store_phone: string
           timezone: string
+          tracking_settings: Json
           updated_at: string
           virtual_try_on_settings: Json
         }
@@ -619,6 +620,7 @@ export type Database = {
           store_name?: string
           store_phone?: string
           timezone?: string
+          tracking_settings?: Json
           updated_at?: string
           virtual_try_on_settings?: Json
         }
@@ -636,6 +638,7 @@ export type Database = {
           store_name?: string
           store_phone?: string
           timezone?: string
+          tracking_settings?: Json
           updated_at?: string
           virtual_try_on_settings?: Json
         }
