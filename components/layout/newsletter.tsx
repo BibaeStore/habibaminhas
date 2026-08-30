@@ -3,10 +3,13 @@
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { trackSubscribe } from "@/lib/analytics";
+import { subscribeToNewsletter } from "@/lib/actions/newsletter";
 
 export function Newsletter() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   return (
     <div className="px-4 py-16 sm:px-8 sm:py-20">
@@ -23,9 +26,20 @@ export function Newsletter() {
         </p>
 
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            if (!email) return;
+            if (!email || busy) return;
+            setBusy(true);
+            setError("");
+            /* This used to set `sent` and clear the box without saving anything. Report
+               success only once the address is actually stored, so the tick means what a
+               person reading it assumes it means. */
+            const res = await subscribeToNewsletter(email, "footer");
+            setBusy(false);
+            if (!res.ok) {
+              setError(res.error ?? "Could not subscribe.");
+              return;
+            }
             trackSubscribe("footer-newsletter");
             setSent(true);
             setEmail("");
@@ -41,12 +55,20 @@ export function Newsletter() {
           />
           <button
             type="submit"
+            disabled={busy || sent}
             className="group flex h-12 w-full shrink-0 items-center justify-center gap-2 bg-gold-dark px-8 text-[11px] uppercase tracking-[0.28em] text-ivory transition-colors hover:bg-ivory hover:text-ink sm:w-auto"
           >
-            {sent ? "Subscribed ✓" : "Subscribe"}
-            {!sent && <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />}
+            {sent ? "Subscribed ✓" : busy ? "Subscribing…" : "Subscribe"}
+            {!sent && !busy && <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />}
           </button>
         </form>
+
+        {/* Renders nothing unless a submit failed, so the server-rendered HTML is unchanged. */}
+        {error && (
+          <p className="mt-3 text-[13px] text-gold-dark" role="alert">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
