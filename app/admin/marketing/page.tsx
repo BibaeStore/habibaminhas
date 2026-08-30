@@ -350,7 +350,7 @@ export default function AdminMarketingPage() {
                 <div className="mt-6 border-t border-[var(--admin-border)] pt-5">
                   <Field
                     label="Test event code — optional"
-                    hint="From Meta Events Manager › Test Events. Paste it, save, then browse the site and watch events arrive in real time. Clear it when you are done."
+                    hint="Routes SERVER events (Conversions API) to Meta’s Test Events screen instead of live reporting. It does NOT affect browser events — test those with the Test Events button in Events Manager, which opens your site with a tracking cookie. ⚠️ Clear this when you are done, or real sales report to the test screen instead of your live figures."
                   >
                     <input
                       value={testCode}
