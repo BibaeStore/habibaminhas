@@ -56,7 +56,7 @@ curl -s https://habibaminhas.com/ | grep -oiE '<title>[^<]*</title>|<meta name="
 # structured data still emitting
 curl -s https://habibaminhas.com/product/<any-slug>/ | grep -o '"@type":"[^"]*"' | sort | uniq -c
 
-# sitemap URL count did not drop (baseline: 134 URLs — 2026-08-01)
+# sitemap URL count did not drop (baseline: 182 URLs — 2026-08-30)
 curl -s -L https://habibaminhas.com/sitemap.xml | grep -c '<loc>'
 
 # per-section breakdown — catches "one category vanished" better than the total alone
@@ -69,20 +69,26 @@ curl -s -L https://habibaminhas.com/sitemap.xml | grep -o '<loc>[^<]*</loc>' \
 summarises through a small model and returns approximations. It reported "188 URLs / 44 journal
 posts" for a sitemap that actually contains 134 / 37.
 
-**Baseline verified 2026-08-01 (raw counts, local build matched production exactly):**
+**Baseline re-verified 2026-08-30 against live production (raw `grep -c`, not WebFetch):**
 
-| Section | Count |
-|---|---|
-| **Total `<loc>`** | **134** |
-| `/product/` | 54 |
-| `/journal/` | 37 |
-| `/baby/` | 7 |
-| `/ladies/` | 5 |
-| `/kids/` | 5 |
-| `/help/` | 4 |
-| `/accessories/` | 4 |
-| `/content/` | 3 |
-| `/legal/`, `/about/` | 2 each |
+| Section | Count | Was (2026-08-01) |
+|---|---|---|
+| **Total `<loc>`** | **182** | 134 |
+| `/product/` | 71 | 54 |
+| `/journal/` | 66 | 37 |
+| `/ladies/` | 7 | 5 |
+| `/baby/` | 7 | 7 |
+| `/kids/` | 5 | 5 |
+| `/help/` | 4 | 4 |
+| `/accessories/` | 4 | 4 |
+| `/content/` | 3 | 3 |
+| `/legal/`, `/about/` | 2 each | 2 each |
+| single pages | 1 each: `/`, `/shop/`, `/new/`, `/offers/`, `/search/`, `/stores/`, `/track/`, `/contact/`, `/wishlist/`, `/wholesale/`, `/virtual-try-room/` | — |
+
+Growth, not drift: products added and the blog queue publishing daily. **No section fell.** The
+old 134 figure had gone stale enough that a real regression could have hidden inside "more than
+baseline" — re-measure and update this table whenever it drifts, or the check stops meaning
+anything.
 
 Homepage, `/ladies/` and product pages all `index, follow` with canonicals; product pages emit
 `Product`, `Offer`, `Brand`, `AggregateRating`, `BreadcrumbList`; homepage emits `Organization`,
