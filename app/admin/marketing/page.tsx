@@ -59,15 +59,28 @@ const ROW_WORD: Record<RowState, string> = {
   yes: "Verified", no: "Not found", unknown: "Unknown", pending: "Checking…",
 };
 
-/** One line of the live-status panel. `state` drives both the pill and the wording. */
-function StatusRow({ label, state, detail }: { label: string; state: RowState; detail: string }) {
+/**
+ * One line of the live-status panel.
+ *
+ * `state` picks the colour; `word` overrides the label for rows that are not
+ * verification checks — "Checking…" is nonsense on a field that is simply unset, and
+ * "Verified" overstates a token whose pixel permission has never been exercised.
+ */
+function StatusRow({
+  label, state, detail, word,
+}: {
+  label: string;
+  state: RowState;
+  detail: string;
+  word?: string;
+}) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-[var(--admin-border)] py-3 last:border-b-0">
       <div className="min-w-0">
         <div className="text-[14px] font-medium text-[var(--admin-text)]">{label}</div>
         <div className="mt-0.5 text-[13px] text-[var(--admin-text-soft)]">{detail}</div>
       </div>
-      <StatusPill tone={ROW_TONE[state]}>{ROW_WORD[state]}</StatusPill>
+      <StatusPill tone={ROW_TONE[state]}>{word ?? ROW_WORD[state]}</StatusPill>
     </div>
   );
 }
@@ -198,7 +211,9 @@ export default function AdminMarketingPage() {
 
   return (
     <AdminShell>
-      <div className="flex flex-col gap-6">
+      {/* AdminShell adds no padding of its own; every page supplies it. Matches the
+          spacing used by Analytics, Categories and the rest. */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6">
         <PageHeader
           title="Marketing &amp; Tracking"
           subtitle="Meta Pixels, verified against the live site — stored separately from SEO settings so neither screen can overwrite the other."
@@ -392,6 +407,7 @@ export default function AdminMarketingPage() {
               <StatusRow
                 label="Saved in settings"
                 state={primary ? "yes" : "no"}
+                word={primary ? "Saved" : "Missing"}
                 detail={
                   primary
                     ? `${primary.label || "Unlabelled"} — ${primary.pixel_id}`
@@ -419,32 +435,38 @@ export default function AdminMarketingPage() {
               <StatusRow
                 label="Test event code"
                 state={testCode.trim() ? "yes" : "pending"}
+                word={testCode.trim() ? "Set" : "Not set"}
                 detail={
                   testCode.trim()
-                    ? "Set — Meta's Test Events screen will light up."
-                    : "Not set. Optional."
+                    ? "Set — Meta's Test Events screen will light up while you browse."
+                    : "Optional. Paste one to watch events arrive in real time."
                 }
               />
               <StatusRow
                 label="Conversions API"
-                state={!capi ? "pending" : capi.configured ? "yes" : "no"}
+                /* A token being present is NOT proof it works: the pixel is a separate
+                   grant from the Page/Instagram publishing this token was made for.
+                   Amber until a sale has actually been accepted by Meta. */
+                state={!capi ? "pending" : !capi.configured ? "no" : capi.lastPurchaseAt ? "yes" : "unknown"}
+                word={!capi ? "Checking…" : !capi.configured ? "No token" : capi.lastPurchaseAt ? "Sending" : "Untested"}
                 detail={
                   !capi
                     ? "Checking…"
                     : !capi.configured
-                      ? "No Meta access token. Browser-only events are lost to ad-blockers and iOS."
+                      ? "No Meta access token. Server events are off, so ad-blockers and iOS lose your data."
                       : capi.lastPurchaseAt
-                        ? `Sending. Last sale reported ${fmt(capi.lastPurchaseAt)}.`
-                        : "Token present. No sale has been reported from the server yet."
+                        ? `Working. Last sale reported from the server ${fmt(capi.lastPurchaseAt)}.`
+                        : "A token is set, but no sale has been reported yet — so its permission on the pixel is unproven. Place a test order to confirm."
                 }
               />
               <StatusRow
                 label="Delivery signal"
-                state={!capi ? "pending" : capi.lastDeliveredAt ? "yes" : "unknown"}
+                state={!capi ? "pending" : capi.lastDeliveredAt ? "yes" : "pending"}
+                word={capi?.lastDeliveredAt ? "Sending" : "Waiting"}
                 detail={
                   capi?.lastDeliveredAt
-                    ? `Last delivery reported ${fmt(capi.lastDeliveredAt)}. Meta sees revenue you actually collected.`
-                    : "No delivery reported yet. Fires when PostEx confirms a parcel was handed over."
+                    ? `Last delivery reported ${fmt(capi.lastDeliveredAt)}. Meta sees revenue you actually collected, not just orders placed.`
+                    : "Nothing yet. Fires when PostEx confirms a parcel was genuinely handed over."
                 }
               />
             </div>
