@@ -10,7 +10,15 @@
  * screen-share, or a security trade-off.
  *
  * `helper` names the exact function in `lib/analytics.ts` that fires the event, so any claim
- * here is one grep away from being checked. Rows marked `missing` are wired in a later phase;
+ * here is one grep away from being checked.
+ *
+ * ⚠️ MOST of these are Meta STANDARD event names, which work immediately. Two are NOT:
+ * `ViewCategory` here, and `OrderDelivered` sent by the Conversions API. Meta treats an
+ * unrecognised name as a custom event, parks it in Events Manager under "Action required"
+ * and refuses to let it feed custom conversions, audiences or campaigns until a human
+ * confirms it is genuinely from the business. That confirmation is a ONE-OFF manual step in
+ * Events Manager — it cannot be done from code. Adding another non-standard name here means
+ * adding another trip to that screen, so prefer a standard name wherever one fits. Rows marked `missing` are wired in a later phase;
  * they are listed deliberately, because the gaps are the useful half of this table.
  *
  * ⚠️ When you add or rename a tracking call in `lib/analytics.ts`, update the matching row.
