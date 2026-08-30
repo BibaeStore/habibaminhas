@@ -22,9 +22,16 @@ type Verification = {
   pixels: { pixel_id: string; inPageSource: boolean }[];
 };
 
+type CapiStatus = {
+  configured: boolean;
+  lastPurchaseAt: string | null;
+  lastDeliveredAt: string | null;
+};
+
 type TrackingResponse = {
   settings: TrackingSettings;
   verification: Verification | null;
+  capi: CapiStatus;
   siteUrl: string;
   eventMap: TrackedEvent[];
   eventSummary: { total: number; live: number; partial: number; missing: number };
@@ -65,6 +72,13 @@ function StatusRow({ label, state, detail }: { label: string; state: RowState; d
   );
 }
 
+/** Short, local date-time for the status panel. */
+function fmt(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+}
+
 const EVENT_TONE: Record<EventStatus, StatusTone> = {
   live: "success", partial: "warning", missing: "danger",
 };
@@ -101,6 +115,7 @@ export default function AdminMarketingPage() {
   }, [data?.settings, dirty]);
 
   const verification = data?.verification ?? null;
+  const capi = data?.capi ?? null;
   const loadError = queryError instanceof Error ? queryError.message : "";
 
   function edit(next: MetaPixel[]) {
@@ -412,8 +427,25 @@ export default function AdminMarketingPage() {
               />
               <StatusRow
                 label="Conversions API"
-                state="unknown"
-                detail="Not set up. Browser-only events are lost to ad-blockers and iOS."
+                state={!capi ? "pending" : capi.configured ? "yes" : "no"}
+                detail={
+                  !capi
+                    ? "Checking…"
+                    : !capi.configured
+                      ? "No Meta access token. Browser-only events are lost to ad-blockers and iOS."
+                      : capi.lastPurchaseAt
+                        ? `Sending. Last sale reported ${fmt(capi.lastPurchaseAt)}.`
+                        : "Token present. No sale has been reported from the server yet."
+                }
+              />
+              <StatusRow
+                label="Delivery signal"
+                state={!capi ? "pending" : capi.lastDeliveredAt ? "yes" : "unknown"}
+                detail={
+                  capi?.lastDeliveredAt
+                    ? `Last delivery reported ${fmt(capi.lastDeliveredAt)}. Meta sees revenue you actually collected.`
+                    : "No delivery reported yet. Fires when PostEx confirms a parcel was handed over."
+                }
               />
             </div>
 

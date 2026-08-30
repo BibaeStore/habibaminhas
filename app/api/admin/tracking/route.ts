@@ -11,6 +11,7 @@ import {
   type TrackingSettings,
 } from "@/lib/tracking/config";
 import { META_EVENT_MAP, eventMapSummary } from "@/lib/tracking/event-map";
+import { isCapiConfigured } from "@/lib/tracking/capi";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://habibaminhas.com";
 const VERIFY_TIMEOUT_MS = 8000;
@@ -23,6 +24,35 @@ const VERIFY_TIMEOUT_MS = 8000;
 async function requireAdmin() {
   const admin = await getAdminSession();
   return admin ? null : NextResponse.json({ error: "Not authorised." }, { status: 401 });
+}
+
+export type CapiStatus = {
+  /** A Meta access token is present in the environment. */
+  configured: boolean;
+  /** When the server last successfully reported a sale, and a delivery. */
+  lastPurchaseAt: string | null;
+  lastDeliveredAt: string | null;
+};
+
+/**
+ * Read from the send-markers on `orders` rather than from a counter, so this reflects what
+ * Meta actually accepted rather than what we attempted.
+ */
+async function readCapiStatus(): Promise<CapiStatus> {
+  const admin = createAdminClient();
+  const [purchase, delivered] = await Promise.all([
+    admin.from("orders").select("meta_capi_purchase_at")
+      .not("meta_capi_purchase_at", "is", null)
+      .order("meta_capi_purchase_at", { ascending: false }).limit(1).maybeSingle(),
+    admin.from("orders").select("meta_capi_delivered_at")
+      .not("meta_capi_delivered_at", "is", null)
+      .order("meta_capi_delivered_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  return {
+    configured: isCapiConfigured(),
+    lastPurchaseAt: purchase.data?.meta_capi_purchase_at ?? null,
+    lastDeliveredAt: delivered.data?.meta_capi_delivered_at ?? null,
+  };
 }
 
 export type PixelVerdict = { pixel_id: string; inPageSource: boolean };
@@ -117,11 +147,15 @@ export async function GET(req: NextRequest) {
     const { settings } = await readTracking();
     // `?verify=0` renders the page without waiting on an external fetch.
     const skip = new URL(req.url).searchParams.get("verify") === "0";
-    const verification = skip ? null : await verifyLiveSite(activePixels(settings));
+    const [verification, capi] = await Promise.all([
+      skip ? Promise.resolve(null) : verifyLiveSite(activePixels(settings)),
+      readCapiStatus(),
+    ]);
 
     return NextResponse.json({
       settings,
       verification,
+      capi,
       siteUrl: SITE_URL,
       eventMap: META_EVENT_MAP,
       eventSummary: eventMapSummary(),

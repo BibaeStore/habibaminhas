@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: August 30, 2026 - Meta Pixel Phase 03: missing events + Advanced Matching ✅  
+**Last Updated**: August 30, 2026 - Meta Pixel Phase 04: Conversions API + delivery signal ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -20,6 +20,33 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### August 30, 2026 - Meta Pixel Phase 04: Conversions API + delivery signal
+
+**Changed**: new `lib/tracking/capi.ts` and `lib/tracking/normalize.ts`; server-side Purchase in
+`lib/actions/orders.ts`; `OrderDelivered` in `lib/actions/postex.ts`; migration
+`20260830_meta_capi_columns.sql` (applied); CAPI status surfaced on `/admin/marketing`.
+
+**Reason**: browser-only tracking loses whatever the browser loses - ad-blockers, iOS, a tab
+closed early - and on a mobile-first Pakistani audience that slice is large and biased. The
+delivery signal closes the COD gap: Purchase fires at order placement, but a meaningful share of
+COD parcels are refused and returned, so Meta-reported revenue overstates settled revenue by the
+RTO rate.
+
+**SEO impact**: NONE. Server-to-server. The only client-side change is `lib/analytics.ts`
+importing its normalisation rules from a shared module rather than defining them inline -
+identical behaviour, +692 bytes. No markup, metadata, canonical, robots, sitemap, structured
+data, heading, link or image change.
+
+**Note**: the audit called this a "PostEx delivery webhook". PostEx has no webhook - status is
+pull-only - so the signal was hooked to the status transition inside the existing cron sync.
+
+**BLOCKED ON THE OWNER**: no server events reach Meta until `META_CAPI_ACCESS_TOKEN` is set with
+permission on the pixel. Safe to deploy meanwhile - without a token it no-ops.
+
+**Full record**: `docs/seo-optimization-2026/META-PIXEL-PHASE-04-CONVERSIONS-API.md`
+
+---
 
 ### August 30, 2026 - Meta Pixel Phase 03: the seven missing events + Advanced Matching
 

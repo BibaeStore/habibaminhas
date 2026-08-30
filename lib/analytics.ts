@@ -14,6 +14,8 @@
  * https://developers.google.com/analytics/devguides/collection/ga4/reference/events
  */
 
+import { toMatchKeys, type CustomerMatchInput } from "@/lib/tracking/normalize";
+
 const CURRENCY = "PKR";
 
 type Gtag = (command: string, eventName: string, params?: Record<string, unknown>) => void;
@@ -145,27 +147,7 @@ function meta(eventName: string, params: Record<string, unknown>, eventId?: stri
  * Enabled on the owner's explicit instruction (30 Aug 2026) after being shown what is sent.
  */
 
-export type CustomerMatch = {
-  email?: string;
-  phone?: string;
-  firstName?: string;
-  lastName?: string;
-  city?: string;
-  province?: string;
-  postalCode?: string;
-};
-
-/** Meta expects lower-case, trimmed values with punctuation removed before hashing. */
-function norm(v: string | undefined): string | undefined {
-  const out = (v ?? "").trim().toLowerCase();
-  return out === "" ? undefined : out;
-}
-
-/** Digits only, so "+92 312 029 5812" and "0312-0295812" hash to the same customer. */
-function normPhone(v: string | undefined): string | undefined {
-  const digits = (v ?? "").replace(/\D/g, "");
-  return digits === "" ? undefined : digits;
-}
+export type CustomerMatch = CustomerMatchInput;
 
 /**
  * Attaches customer details to every subsequent event on this page.
@@ -179,17 +161,10 @@ export function setCustomerMatch(c: CustomerMatch) {
   const pixelId = window.__hmPixelId;
   if (!pixelId) return;
 
-  const data: Record<string, string> = {};
-  const em = norm(c.email);          if (em) data.em = em;
-  const ph = normPhone(c.phone);     if (ph) data.ph = ph;
-  const fn = norm(c.firstName);      if (fn) data.fn = fn;
-  const ln = norm(c.lastName);       if (ln) data.ln = ln;
-  const ct = norm(c.city)?.replace(/\s/g, ""); if (ct) data.ct = ct;
-  const st = norm(c.province);       if (st) data.st = st;
-  const zp = norm(c.postalCode);     if (zp) data.zp = zp;
-
+  // Shared with the Conversions API. Both sides MUST produce identical strings, or the same
+  // customer hashes to two different people and the two halves of a sale stop matching.
+  const data = toMatchKeys(c);
   if (Object.keys(data).length === 0) return;
-  data.country = "pk";
   window.fbq("init", pixelId, data);
 }
 

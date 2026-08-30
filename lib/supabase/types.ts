@@ -410,6 +410,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id: string
+          meta_capi_delivered_at: string | null
+          meta_capi_purchase_at: string | null
           order_number: string
           payment_method: string
           payment_status: string
@@ -439,6 +441,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id?: string
+          meta_capi_delivered_at?: string | null
+          meta_capi_purchase_at?: string | null
           order_number: string
           payment_method?: string
           payment_status?: string
@@ -468,6 +472,8 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           id?: string
+          meta_capi_delivered_at?: string | null
+          meta_capi_purchase_at?: string | null
           order_number?: string
           payment_method?: string
           payment_status?: string
