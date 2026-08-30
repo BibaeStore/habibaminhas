@@ -6,6 +6,8 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 import { decrementStock, emitLowStockNotifications } from "@/lib/actions/inventory";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
 import { sendOrderEmails } from "@/lib/email";
+import { sendServerEvent, purchaseEventId } from "@/lib/tracking/capi";
+import { headers } from "next/headers";
 
 export async function getOrders(status?: string) {
   const sb = createAdminClient();
@@ -169,6 +171,63 @@ export async function createOrder(
     paymentMethod: payment_method ?? "COD",
     status:        order.status   ?? "pending",
   }).catch((e) => console.error("[Email] Failed to send order emails:", e));
+
+  /*
+   * Server-side Purchase, alongside the browser pixel's.
+   *
+   * The browser event is lost whenever the browser is: ad-blockers, iOS restrictions, a tab
+   * closed before the beacon flushes. This half always reports. Meta collapses the two into
+   * one because both carry `purchase-{orderNumber}` -- if that ID ever stops matching, every
+   * sale is counted twice, which is worse than not sending this at all.
+   *
+   * Awaited, but its result is deliberately ignored: a sale that went unreported is a
+   * reporting problem, while an order that failed because Meta was slow is a lost customer.
+   * `sendServerEvent` never throws, and caps itself at 6 seconds.
+   */
+  try {
+    const h = await headers();
+    const capi = await sendServerEvent({
+      eventName: "Purchase",
+      eventId: purchaseEventId(newOrder.order_number),
+      eventSourceUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://habibaminhas.com"}/order/${newOrder.order_number}/`,
+      actionSource: "website",
+      customer: {
+        email: order.customer_email,
+        phone: order.customer_phone ?? undefined,
+        firstName: (order.customer_name ?? "").split(" ")[0],
+        lastName: (order.customer_name ?? "").split(" ").slice(1).join(" "),
+        city: addr.city,
+        province: addr.province,
+        postalCode: addr.postalCode,
+      },
+      customData: {
+        currency: "PKR",
+        value: order.total ?? 0,
+        order_id: newOrder.order_number,
+        content_type: "product",
+        contents: items.map((i) => ({
+          id: i.product_id ?? i.sku ?? i.product_title,
+          quantity: i.quantity,
+          item_price: i.unit_price,
+        })),
+        num_items: items.reduce((n, i) => n + i.quantity, 0),
+      },
+      // Raw, not hashed -- Meta expects these two in the clear and hashing them destroys
+      // their matching value.
+      ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+      userAgent: h.get("user-agent"),
+    });
+    if (capi.ok) {
+      await sb
+        .from("orders")
+        .update({ meta_capi_purchase_at: new Date().toISOString() })
+        .eq("id", newOrder.id);
+    } else {
+      console.error("[CAPI] Purchase not reported:", capi.reason, capi.message);
+    }
+  } catch (e) {
+    console.error("[CAPI] Purchase threw unexpectedly:", e);
+  }
 
   return { order: newOrder, error: null };
 }

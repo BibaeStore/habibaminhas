@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { trackContact } from "@/lib/analytics";
 
 export function WhatsAppButton() {
   const pathname = usePathname();
@@ -23,6 +24,7 @@ export function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
+      onClick={() => trackContact("whatsapp-fab")}
       // z-[46]: above page content, below the cart drawer (z-49) and its backdrop (z-48).
       // It was z-50, which painted the FAB on top of the drawer's Checkout / Continue
       // Shopping buttons and hijacked those taps to WhatsApp.

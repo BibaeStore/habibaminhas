@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
   LayoutDashboard, Package, ShoppingBag, Users,
-  Settings, LogOut, TrendingUp, LayoutGrid, X, Bell, Sparkles, Share2,
+  Settings, LogOut, TrendingUp, LayoutGrid, X, Bell, Sparkles, Share2, Megaphone,
 } from "lucide-react";
 import { adminLogout } from "@/lib/actions/auth";
 import { getOrderStats } from "@/lib/actions/orders";
@@ -33,6 +33,7 @@ const DAILY: NavItem[] = [
 const SETUP: NavItem[] = [
   { label: "Categories",    href: "/admin/categories",    icon: LayoutGrid },
   { label: "Analytics",     href: "/admin/analytics",     icon: TrendingUp },
+  { label: "Marketing",     href: "/admin/marketing",     icon: Megaphone },
   { label: "Virtual Try Room", href: "/admin/virtual-try-on", icon: Sparkles },
   { label: "Social",        href: "/admin/social",        icon: Share2 },
   { label: "Settings",      href: "/admin/settings",      icon: Settings },

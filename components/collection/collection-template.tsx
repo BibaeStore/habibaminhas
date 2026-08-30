@@ -136,7 +136,7 @@ export function CollectionTemplate({
             </div>
           </div>
         ) : (
-          <PaginatedProducts products={products} />
+          <PaginatedProducts products={products} category={title} />
         )}
 
         {/* Full Description Section - After Products */}

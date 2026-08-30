@@ -19,6 +19,7 @@ import {
 } from "@/lib/courier/postex/client";
 import { matchOperationalCity } from "@/lib/courier/postex/city";
 import { mapPostexStatus } from "@/lib/courier/postex/status";
+import { sendServerEvent } from "@/lib/tracking/capi";
 import { buildCreateOrderPayload } from "@/lib/courier/postex/payload";
 
 type Sb = ReturnType<typeof createAdminClient>;
@@ -256,6 +257,45 @@ export async function syncPostexStatus(
 
   if (statusChanged) {
     await logActivity(sb, orderId, "postex_status_sync", { status: order.status }, { status: internal, postex: rawStatus }, opts.adminEmail);
+  }
+
+  /*
+   * The delivery signal -- the thing that makes the revenue numbers honest.
+   *
+   * Purchase fires when the order is placed, but this is a cash-on-delivery market: a
+   * meaningful share of orders are refused at the door and returned. Meta-reported revenue
+   * therefore overstates settled revenue by the RTO rate. Reporting the moment a parcel is
+   * genuinely handed over gives the marketer a number to bid against that reflects money
+   * actually collected.
+   *
+   * Guarded on `meta_capi_delivered_at` because this runs from a cron that re-polls every
+   * in-flight consignment: without the marker, an order sitting in `delivered` would emit
+   * this event on every pass and inflate the very figure it exists to correct.
+   */
+  if (statusChanged && internal === "delivered" && !order.meta_capi_delivered_at) {
+    const capi = await sendServerEvent({
+      eventName: "OrderDelivered",
+      eventId: `delivered-${order.order_number}`,
+      // Nothing the shopper did -- something we observed from the courier.
+      actionSource: "system_generated",
+      customer: {
+        email: order.customer_email ?? undefined,
+        phone: order.customer_phone ?? undefined,
+      },
+      customData: {
+        currency: "PKR",
+        value: order.total ?? 0,
+        order_id: order.order_number,
+      },
+    });
+    if (capi.ok) {
+      await sb
+        .from("orders")
+        .update({ meta_capi_delivered_at: new Date().toISOString() })
+        .eq("id", orderId);
+    } else {
+      console.error("[CAPI] OrderDelivered not reported:", capi.reason, capi.message);
+    }
   }
 
   revalidatePath("/admin/orders");

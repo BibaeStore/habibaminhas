@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react";
 import { submitContactMessage } from "@/lib/actions/notifications";
+import { trackContact } from "@/lib/analytics";
 import { BUSINESS_ADDRESS_LINES } from "@/lib/business-info";
 
 export default function ContactPage() {
@@ -25,6 +26,7 @@ export default function ContactPage() {
         subject: form.subject,
         message: form.message,
       });
+      trackContact("contact-form");
       setSent(true);
     } catch {
       setError("Something went wrong. Please try again or contact us via WhatsApp.");

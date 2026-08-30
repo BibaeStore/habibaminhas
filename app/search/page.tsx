@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { trackSearch } from "@/lib/analytics";
 import Link from "next/link";
 import {
   Search,
@@ -145,6 +146,9 @@ function SearchContent() {
         else url.searchParams.delete("q");
         window.history.replaceState({}, "", url.toString());
       } catch {}
+      // The search is committed at the moment the URL settles, so this is one event per
+      // finished phrase rather than one per keystroke. No-ops on an empty query.
+      trackSearch(val);
     }, 400);
   };
 

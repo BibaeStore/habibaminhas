@@ -151,7 +151,8 @@ n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
 document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '${seo.fb_pixel}');
-fbq('track', 'PageView');`}
+window.__hmPixelId = '${seo.fb_pixel}';
+fbq('track', 'PageView', {page_path: window.location.pathname, page_title: document.title});`}
             </Script>
             {/*
              * Meta's canonical snippet includes this <noscript> beacon so a PageView is

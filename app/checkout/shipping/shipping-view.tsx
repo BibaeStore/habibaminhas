@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, ShieldCheck, Truck, RotateCcw, Check } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
-import { trackBeginCheckout, trackAddShippingInfo } from "@/lib/analytics";
+import { trackBeginCheckout, trackAddShippingInfo, setCustomerMatch } from "@/lib/analytics";
 import { formatPrice } from "@/lib/utils";
 import type { ShippingConfig } from "@/lib/actions/settings";
 
@@ -88,6 +88,23 @@ export function ShippingView({ shipping: shippingCfg }: { shipping: ShippingConf
       return;
     }
     setShipping({ ...form, shippingMethod: method, shippingCost, giftMessage: "", paymentMethod: "cod" });
+    /*
+     * Advanced Matching, enabled on the owner's explicit instruction (30 Aug 2026).
+     *
+     * Meta's pixel hashes every value with SHA-256 in the browser before it is transmitted,
+     * so Meta receives codes it can match a buyer against but cannot read back. Set here -
+     * the first point at which the shopper has deliberately given us these details - so
+     * every later checkout event carries the match. Nothing is sent from browsing pages.
+     */
+    setCustomerMatch({
+      email: form.email,
+      phone: form.phone,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      city: form.city,
+      province: form.province,
+      postalCode: form.postalCode,
+    });
     trackAddShippingInfo(analyticsItems(), method);
     router.push("/checkout/payment");
   }

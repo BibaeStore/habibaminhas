@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api/require-admin";
 
 const PAGE_SIZE = 15;
 
 // GET — returns VTR settings + today's usage count + paginated recent entries
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const admin = createAdminClient();
 
   const page = Math.max(1, parseInt(new URL(req.url).searchParams.get("page") ?? "1"));
@@ -59,6 +63,9 @@ export async function GET(req: NextRequest) {
 
 // POST — saves updated VTR settings
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
 

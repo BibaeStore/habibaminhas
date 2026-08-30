@@ -274,6 +274,30 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -410,6 +434,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id: string
+          meta_capi_delivered_at: string | null
+          meta_capi_purchase_at: string | null
           order_number: string
           payment_method: string
           payment_status: string
@@ -439,6 +465,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id?: string
+          meta_capi_delivered_at?: string | null
+          meta_capi_purchase_at?: string | null
           order_number: string
           payment_method?: string
           payment_status?: string
@@ -468,6 +496,8 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           id?: string
+          meta_capi_delivered_at?: string | null
+          meta_capi_purchase_at?: string | null
           order_number?: string
           payment_method?: string
           payment_status?: string
@@ -602,6 +632,7 @@ export type Database = {
           store_name: string
           store_phone: string
           timezone: string
+          tracking_settings: Json
           updated_at: string
           virtual_try_on_settings: Json
         }
@@ -619,6 +650,7 @@ export type Database = {
           store_name?: string
           store_phone?: string
           timezone?: string
+          tracking_settings?: Json
           updated_at?: string
           virtual_try_on_settings?: Json
         }
@@ -636,6 +668,7 @@ export type Database = {
           store_name?: string
           store_phone?: string
           timezone?: string
+          tracking_settings?: Json
           updated_at?: string
           virtual_try_on_settings?: Json
         }

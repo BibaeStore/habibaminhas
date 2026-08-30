@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { customerSignUp } from "@/lib/actions/customer-auth";
+import { trackCompleteRegistration } from "@/lib/analytics";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -29,6 +30,9 @@ export default function SignupPage() {
       setSubmitting(false);
       return;
     }
+    // The account exists at this point; whether the email still needs confirming does not
+    // change the fact that a registration completed.
+    trackCompleteRegistration("email");
     if (result.needsConfirmation) {
       setConfirmationSent(true);
       setSubmitting(false);
