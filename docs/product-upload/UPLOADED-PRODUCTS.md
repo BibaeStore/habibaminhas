@@ -622,3 +622,55 @@ new arrivals.
 
 **Side effect worth knowing:** this was the first product tagged `casual`, so it created a new
 indexable collection page at `/ladies/casual/`. That page is now in the sitemap.
+
+---
+
+## 047 + 048 — Midnight Rose / Ivory Rose (2026-09-01)
+
+Two colourways of the **same design**, uploaded as two separate products at the owner's request.
+
+| | Black | White |
+|---|---|---|
+| **Slug** | `ld-black-embroidered-lawn-2-piece-suit-047` | `ld-white-embroidered-lawn-2-piece-suit-048` |
+| **Title** | Midnight Rose – 2-Piece Stitched Lawn Suit… | Ivory Rose – 2-Piece Stitched Lawn Suit… |
+| **SKU** | `BIBA-BLK-LWN-SML-047` | `BIBA-WHT-LWN-SML-048` |
+| **Price** | Rs. 5,500 | Rs. 5,500 |
+| **Palette** | `#1c1916` `#e6b49b` `#7e9260` | `#f3efe8` `#e6b49b` `#7e9260` |
+
+**Common to both:** `ladies-suits` · `stitched-suits` + `2-piece-suits` + `casual` · status
+`active` · `featured` true · badge `New In` · try-on enabled, reference = image 1 · 5 × WebP each,
+1086×1448, ~10.2 MB → ~560 KB (−94.5%).
+
+**Stock:** S×2, M×6, L×2 = **10 per colour**. Owner gave "6M, 2L, 2S for both" when asked
+directly — the opening brief said only "small, medium and large are available", which per the
+standing warning is ambiguous about depth. Asking was correct.
+
+**Owner specified:** branded lawn (= cotton lawn), price 5,500, black and white colourways,
+embroidery on the neck, two motifs in the border, one motif on each sleeve, sizes S/M/L.
+
+**Read from the photos — not from the brief:**
+- **2-piece, no dupatta.** Five shots each including a full back view; no dupatta anywhere.
+  Confirmed with the owner before inserting. Stated in the prose, the Details tab **and** an FAQ.
+- **Scalloped lace edging** at both cuffs and hem, tonal to the garment. Described as *lace
+  edging* only. It is openwork (skin and trousers show through the scallops) but sits below a
+  straight hem seam, so it reads as an applied trim — **not** called cutwork or appliqué.
+- **No "hand" claim anywhere.** The owner never used the word; per the standing rule it stays out.
+- Contrast detail differs by colourway: ivory buttons on the black, **black buttons on the white**.
+- Trousers are plain and unembroidered on both.
+
+**Care lines deliberately differ** — black is "wash dark colours separately"; white is "wash
+separately, never chlorine bleach, dry in shade". Same fabric, different failure modes.
+
+**Source folder:** `new articles august 2026/outfit new` (10 PNGs, 1086×1448 — noticeably smaller
+than the 3506×4381 boutique shoots of 043–046, but above the ~1000px floor, so used as-is).
+
+**Verified live after insert:**
+- Both product URLs → 200
+- `<title>`, `<meta description>`, canonical, `robots: index, follow` all correct
+- Schema emitting: `Product`, `Offer`, `Brand`, `AggregateRating`, `BreadcrumbList`;
+  `price: 5500`, `priceCurrency: PKR`, `availability: InStock`
+- False-claim sweep clean across `description`, `short_description`, `faqs`, `title`,
+  `seo_description`, `seo_keywords` — no hand/chikankari/appliqué/cutwork/silk/organza
+- `stock` equals the sum of `sizes_stock` on both rows
+- Sitemap 182 → 186. Delta: **+2 `/product/`** (these two), +2 `/journal/` (blog queue,
+  unrelated). No section fell. No new collection page created — all three subcategories existed.
