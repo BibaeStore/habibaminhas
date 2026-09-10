@@ -373,7 +373,7 @@ export function SearchOverlay({ open, onClose }: Props) {
                   <div className="mt-6 flex flex-col gap-2">
                     {[
                       { label: "Free delivery on orders Rs. 5,000+", icon: "→" },
-                      { label: "14-day easy returns", icon: "→" },
+                      { label: "14-day easy exchanges", icon: "→" },
                       { label: "Cash on delivery nationwide", icon: "→" },
                     ].map((item) => (
                       <p key={item.label} className="flex items-center gap-2 text-[12px] text-ink-soft">

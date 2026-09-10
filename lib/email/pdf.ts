@@ -277,7 +277,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   page.drawText("HABIBA MINHAS", { x: L, y: footY - 26, size: 9, font: boldFont, color: GOLD });
   page.drawText("Handcrafted with Love in Pakistan", { x: L, y: footY - 42, size: 8, font: regularFont, color: GOLD_LIGHT });
   page.drawText("info@habibaminhas.com  |  +92 312 0295812", { x: L, y: footY - 58, size: 8, font: regularFont, color: GOLD_LIGHT });
-  page.drawText("14-Day Easy Returns  |  Cash on Delivery Available Nationwide", { x: L, y: footY - 72, size: 8, font: regularFont, color: GOLD_LIGHT });
+  page.drawText("14-Day Easy Exchanges  |  Cash on Delivery Available Nationwide", { x: L, y: footY - 72, size: 8, font: regularFont, color: GOLD_LIGHT });
 
   page.drawText("Thank you for your order!", { x: R - 150, y: footY - 26, size: 7.5, font: regularFont, color: GOLD_LIGHT });
 

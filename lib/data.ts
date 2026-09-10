@@ -197,7 +197,7 @@ export const trendTiles = [
 // ─── Promo bar messages ───────────────────────────────────────────────────────
 export const promoMessages = [
   "Premium Quality — Handcrafted with Love in Pakistan",
-  "14-Day Easy Return Policy",
+  "14-Day Easy Exchanges",
   "Cash on Delivery Available Nationwide",
   "WhatsApp Support: +92 312 0295812",
   "Email: info@habibaminhas.com",

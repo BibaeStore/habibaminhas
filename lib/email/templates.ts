@@ -72,7 +72,7 @@ function base(content: string, preheader = "") {
             <a href="https://wa.me/923120295812" style="color:#c8a978;text-decoration:none;">+92 312 0295812</a>
           </p>
           <p style="margin:0 0 10px;font-size:11px;color:#8a7a64;">
-            14-Day Easy Returns &nbsp;·&nbsp; Cash on Delivery Available Nationwide
+            14-Day Easy Exchanges &nbsp;·&nbsp; Cash on Delivery Available Nationwide
           </p>
           <p style="margin:0;font-size:10px;color:#5a5048;">
             &copy; ${new Date().getFullYear()} Habiba Minhas. All rights reserved.

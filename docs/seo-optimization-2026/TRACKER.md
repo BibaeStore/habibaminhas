@@ -632,6 +632,23 @@ curl -s -L https://habibaminhas.com/help/returns/ | grep -o '"@type":"[^"]*"' | 
 
 **Status**: ✅ Complete
 
+**Follow-up (same branch, 2026-09-10)**: the promo/announcement copy was reworded from
+**"14-Day Easy Return Policy" / "14-Day Easy Returns" → "14-Day Easy Exchanges"** in five
+places: `lib/data.ts:200` (promo bar), `components/home/announcement-strip.tsx:23`,
+`lib/email/templates.ts:75`, `lib/email/pdf.ts:280`,
+`components/layout/search-overlay.tsx:376`.
+
+Reason: the old wording promised change-of-mind **returns**, but the actual policy (and
+the Merchant Center return policy) accepts refunds for **defective items only** and
+offers **exchanges** for size/fit/style. Merchant Center reviews the submitted policy
+against the live website for up to 10 days, so the site had to stop advertising a
+returns promise it does not offer. Owner approved 2026-09-10.
+
+SEO note: the promo bar and announcement strip are **server-rendered**, so this text IS
+in the HTML Google reads (verified: the old phrase appeared 4x in the live homepage
+HTML). Body copy only — no heading, metadata, canonical, URL or JSON-LD change. The
+search overlay is a client component and not in SSR output. tsc clean.
+
 **Known remaining mismatch (NOT changed, needs owner decision)**: `/help/shipping/`
 states international shipping uses **DHL Express**; owner has said the international
 carrier will be **TCS**. Left as-is pending the international launch.

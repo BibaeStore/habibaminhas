@@ -20,7 +20,7 @@ export function AnnouncementStrip() {
             <span>Flat Nationwide Delivery</span>
           </span>
           <span className="hidden h-4 w-px bg-border-soft sm:inline-block" />
-          <span className="text-gold-dark">14-Day Easy Returns</span>
+          <span className="text-gold-dark">14-Day Easy Exchanges</span>
         </div>
         <Link
           href="/ladies"
