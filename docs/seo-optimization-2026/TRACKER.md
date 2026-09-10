@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: August 30, 2026 - Meta Pixel Phase 04: Conversions API + delivery signal ✅  
+**Last Updated**: September 10, 2026 - Returns window synced to 14 days sitewide ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -595,6 +595,46 @@ Before marking any phase complete:
 **Assigned To**: Claude (AI Assistant)
 
 **Blocked By**: None - ready to start
+
+---
+
+### 2026-09-10 - Policy Alignment - Returns window synced to 14 days
+
+**Changed**:
+- File: `app/help/[slug]/page.tsx` - lines 24, 42, 44, 45, 46 (Returns & general FAQ)
+- File: `app/legal/[slug]/page.tsx` - line 85 (Terms: Returns, Exchanges, and Refunds)
+- Action: Defect-return window changed from **7 days to 14 days**. Every remaining
+  "7 days for defects, 14 days for exchanges" split was collapsed to a single 14-day
+  window. No other copy, heading, URL, canonical or metadata touched.
+
+**Reason**: The site advertised **"14-Day Easy Return Policy"** in the sitewide
+announcement strip (`lib/data.ts:200`) while the Returns page and Terms both specified
+7 days for defects. Two different promises were live at once. This surfaced while
+configuring Google Merchant Center, whose returns form takes a single window and
+compares it against the published policy — a mismatch there is a policy flag.
+Owner chose Option A (extend defects to 14 days) over Option B (offer full 14-day
+change-of-mind refunds) on 2026-09-10.
+
+**SEO impact**: `app/help/**` and `app/legal/**` are protected content pages and these
+strings feed the rendered page **and** the `FAQPage` JSON-LD. Text-only change within
+existing answers — no question added or removed, so the FAQPage entity count is
+unchanged. No heading, slug, canonical, robots or sitemap change. Sitemap stayed at
+189 URLs.
+
+**Verification**:
+```bash
+# no stale 7-day return references remain
+grep -rn "7 days\|7-day" app/help app/legal | grep -viE "5-7 business|2-3 business|1-3 business|4-7 days|7-9pm"
+
+# FAQPage still emitting after deploy
+curl -s -L https://habibaminhas.com/help/returns/ | grep -o '"@type":"[^"]*"' | sort | uniq -c
+```
+
+**Status**: ✅ Complete
+
+**Known remaining mismatch (NOT changed, needs owner decision)**: `/help/shipping/`
+states international shipping uses **DHL Express**; owner has said the international
+carrier will be **TCS**. Left as-is pending the international launch.
 
 ---
 
