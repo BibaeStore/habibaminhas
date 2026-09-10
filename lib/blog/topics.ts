@@ -106,6 +106,31 @@ export async function getNextTopic(): Promise<Topic | null> {
  * The map's link hints are things like "Post 22" and "/kids". The model cannot be
  * trusted to resolve those, and a hallucinated URL is a broken link on a live page —
  * so we resolve them here and hand the model only URLs that actually exist.
+ *
+ * ⚠️ This list has TWO consumers with incompatible needs, and conflating them broke
+ * the pipeline for seven days (3–10 Sept 2026):
+ *
+ *   1. A *menu* for the AI writer (lib/blog/generate.ts) — may be a subset. Longer
+ *      list, bigger prompt, higher bill, so generate.ts slices it (posts 25,
+ *      products 20) before building the prompt. That is the right place to cap:
+ *      the cap is a cost lever and belongs next to the cost.
+ *   2. An *answer key* for the validator (lib/blog/validate.ts) — must be COMPLETE.
+ *      Anything missing here is reported as a link to a "non-existent page".
+ *
+ * A menu may be a selection; an answer key may not. This function therefore returns
+ * everything, unbounded, and callers cap their own view. Do not add a .limit() here
+ * to shrink the AI prompt — slice in generate.ts instead.
+ *
+ * The original bug: `.limit(60)` on published posts. Once the journal passed 60 posts
+ * the newest slugs fell outside the window (no ORDER BY, so the database returned
+ * roughly insertion order and the freshest posts dropped off the end) — exactly the
+ * slugs a new article is most likely to cross-link. Queue post 033 linked to a real,
+ * live post that the validator could no longer see, failed the gate, and because
+ * getNextQueuedPost() always retries the first unpublished file, it head-of-line
+ * blocked all 28 posts behind it and retried the identical failure every morning.
+ *
+ * Ordering is now explicit so that "which rows come back" is never arbitrary again,
+ * and newest-first means generate.ts's slice offers the model recent posts to link.
  */
 export async function getLinkTargets(): Promise<{
   collections: { url: string; label: string }[];
@@ -115,13 +140,17 @@ export async function getLinkTargets(): Promise<{
   const sb = createAdminClient();
 
   const [{ data: posts }, { data: products }, { data: allActive }] = await Promise.all([
-    sb.from("journal_posts").select("slug, title").eq("status", "published").limit(60),
+    sb
+      .from("journal_posts")
+      .select("slug, title")
+      .eq("status", "published")
+      .order("published_at", { ascending: false }),
     sb
       .from("products")
       .select("slug, title, category")
       .eq("status", "active")
       .gt("stock", 0)
-      .limit(40),
+      .order("created_at", { ascending: false }),
     // Subcategory landing pages, derived the same way app/sitemap.ts derives them.
     sb.from("products").select("category, subcategory").eq("status", "active"),
   ]);
