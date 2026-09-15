@@ -18,6 +18,7 @@ import { SizeGuideButton } from "@/components/product/size-guide-button";
 import type { Tables } from "@/lib/supabase/types";
 import { ProductSchema } from "@/components/seo/product-schema";
 import { BreadcrumbSchema } from "@/components/seo/breadcrumb-schema";
+import { isDiscounted, discountPercentOf, amountSavedOf } from "@/lib/discount";
 
 /*
  * ISR safety net for stock accuracy.
@@ -97,7 +98,9 @@ export default async function ProductPage({
   // Handle out of stock products - DON'T show 404
   const isOutOfStock = product.status === "inactive" || product.stock === 0;
 
-  const hasSale = product.compare_at && product.compare_at > product.price;
+  const hasSale = isDiscounted(product);
+  const salePct = discountPercentOf(product);
+  const saved   = amountSavedOf(product);
   const mainImage = product.images?.[0] ?? null;
   const subcategoryLabel =
     product.subcategory ?? product.subtype ?? product.category;
@@ -155,7 +158,7 @@ export default async function ProductPage({
                 {product.badge}
               </Badge>
             ) : null}
-            {hasSale && !isOutOfStock ? <Badge variant="sale">Sale</Badge> : null}
+            {hasSale && !isOutOfStock ? <Badge variant="sale">-{salePct}%</Badge> : null}
             {isOutOfStock ? (
               <Badge variant="default" className="bg-muted text-ink-soft">
                 Out of Stock
@@ -188,8 +191,14 @@ export default async function ProductPage({
                 <span className="text-[14px] text-muted line-through">
                   {formatPrice(product.compare_at!)}
                 </span>
+                {/*
+                  Rupees, not the percentage — the badge above the title already carries
+                  "-20%", and repeating it here reads as two different claims rather than
+                  one. The absolute saving is also the more persuasive number at these
+                  price points.
+                */}
                 <span className="text-[12px] uppercase tracking-[0.22em] text-sale">
-                  Save {Math.round((1 - product.price / product.compare_at!) * 100)}%
+                  Save {formatPrice(saved!)}
                 </span>
               </>
             ) : null}
