@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { HeroCarousel } from "@/components/home/hero-carousel";
 import { AnnouncementStrip } from "@/components/home/announcement-strip";
+import { FreeDeliveryBar } from "@/components/home/free-delivery-bar";
+import { getStorefrontSettings } from "@/lib/actions/settings";
 import { CategoryTiles } from "@/components/home/category-tiles";
 import { EditorialBlock } from "@/components/home/editorial-block";
 import { TrendTiles } from "@/components/home/trend-tiles";
@@ -63,9 +65,17 @@ export default async function HomePage() {
       subtype: p.subtype,
       category: p.category,
       stock: p.stock,
+      free_delivery: p.free_delivery,
     }));
+  // Read at prerender time alongside the product queries; the page stays statically
+  // generated on its existing `revalidate = 300` window, so this costs users nothing.
+  const settings = await getStorefrontSettings();
+
   return (
     <>
+      {/* Client-only and fixed-position: absent from the prerendered HTML and unable to
+          shift layout. See the note in free-delivery-bar.tsx. */}
+      <FreeDeliveryBar shipping={settings.shipping} />
       <HeroCarousel />
       <AnnouncementStrip />
       <TrendingTabs products={trendingProducts} />

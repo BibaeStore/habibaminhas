@@ -8,6 +8,7 @@ import { useCartStore } from "@/lib/cart-store";
 import { trackViewCart } from "@/lib/analytics";
 import { formatPrice } from "@/lib/utils";
 import type { ShippingConfig } from "@/lib/actions/settings";
+import { resolveShipping, freeDeliveryLabel } from "@/lib/shipping";
 
 export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }) {
   const { items, removeItem, updateQty } = useCartStore();
@@ -24,7 +25,12 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
   }, [mounted]);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const shipping = shippingCfg.standard;
+  // Single source of truth for the delivery rule - see lib/shipping.ts. The cart, both
+  // checkout steps and the saved order all call this, so the summary can never quote a figure
+  // the checkout then fails to charge.
+  const delivery = resolveShipping(items, shippingCfg, "standard");
+  const shipping = delivery.cost;
+  const freeLabel = freeDeliveryLabel(delivery);
   const total = subtotal + shipping;
 
   if (!mounted) {
@@ -170,8 +176,30 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Shipping</dt>
-                <dd>{formatPrice(shipping)}</dd>
+                {/* Struck-through original next to FREE: a waived charge is only persuasive
+                    if the customer can see what it would otherwise have cost. */}
+                <dd>
+                  {delivery.isFree ? (
+                    <span className="flex items-center gap-2">
+                      {delivery.baseCost > 0 && (
+                        <span className="text-muted line-through">{formatPrice(delivery.baseCost)}</span>
+                      )}
+                      <span className="font-medium uppercase tracking-[0.12em] text-sale">Free</span>
+                    </span>
+                  ) : (
+                    formatPrice(shipping)
+                  )}
+                </dd>
               </div>
+              {freeLabel && (
+                <div className="text-[12px] text-sale">{freeLabel}</div>
+              )}
+              {/* The whole commercial point of a threshold: tell them how close they are. */}
+              {delivery.amountToThreshold !== null && delivery.amountToThreshold > 0 && (
+                <div className="text-[12px] text-ink-soft">
+                  Add {formatPrice(delivery.amountToThreshold)} more for free delivery
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Gift wrap</dt>
                 <dd>Free</dd>
@@ -190,7 +218,9 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
             <ul className="grid grid-cols-1 gap-3 pt-2 text-[11px] text-ink-soft">
               <li className="flex items-center gap-2">
                 <Truck className="h-3.5 w-3.5 text-gold-dark" />
-                {`Flat ${formatPrice(shippingCfg.standard)} delivery nationwide`}
+                {delivery.isFree
+                  ? "Free delivery on this order"
+                  : `Flat ${formatPrice(shippingCfg.standard)} delivery nationwide`}
               </li>
               <li className="flex items-center gap-2">
                 <RotateCcw className="h-3.5 w-3.5 text-gold-dark" /> 14-day hassle-free returns

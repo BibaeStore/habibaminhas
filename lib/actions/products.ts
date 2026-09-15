@@ -249,3 +249,32 @@ export async function bulkClearDiscount(
   for (const product of touched) revalidateStorefront(product);
   return { updated, error: null };
 }
+
+/**
+ * Turn per-product free delivery on or off for a hand-picked set of products.
+ *
+ * Setting the flag does not by itself make an order ship free: delivery is billed per order,
+ * and `resolveShipping` waives it only when EVERY item in the bag carries the flag. See
+ * `lib/shipping.ts` for why that is the rule.
+ */
+export async function bulkSetFreeDelivery(
+  ids: string[],
+  freeDelivery: boolean,
+): Promise<{ updated: number; error: string | null }> {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { updated: 0, error: "Select at least one product." };
+  }
+
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("products")
+    .update({ free_delivery: freeDelivery })
+    .in("id", ids)
+    .select("category, slug");
+
+  if (error) return { updated: 0, error: error.message };
+
+  revalidatePath("/admin/products");
+  for (const product of data ?? []) revalidateStorefront(product);
+  return { updated: data?.length ?? 0, error: null };
+}

@@ -10,6 +10,7 @@ import { useCheckoutStore } from "@/lib/checkout-store";
 import { createOrder } from "@/lib/actions/orders";
 import { trackAddPaymentInfo, trackPurchase } from "@/lib/analytics";
 import { formatPrice } from "@/lib/utils";
+import { resolveShipping, freeDeliveryLabel } from "@/lib/shipping";
 import { ProductImage } from "@/components/common/product-image";
 import type { PaymentMethodsConfig, ShippingConfig } from "@/lib/actions/settings";
 
@@ -57,7 +58,19 @@ export function PaymentView({
   }, [mounted, items, shipping, router]);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const shippingCost = shipping?.shippingCost ?? shippingCfg.standard;
+  /*
+    Recomputed from the live cart rather than reusing `shipping.shippingCost` carried over
+    from the previous step. The stored figure is a snapshot: a bag edited in another tab after
+    the shipping step was completed would otherwise be charged the old delivery fee, and a
+    free-delivery item removed from the bag would still ship free.
+
+    NOTE: this is still a client-side figure sent to createOrder. Recomputing it on the server
+    at order creation is the real protection against a tampered payload - flagged separately,
+    not changed here.
+  */
+  const delivery = resolveShipping(items, shippingCfg, shipping?.shippingMethod ?? "standard");
+  const shippingCost = delivery.cost;
+  const freeLabel = freeDeliveryLabel(delivery);
   const total = subtotal + shippingCost;
 
   const [payMethod, setPayMethod] = useState<PaymentMethod>(
@@ -436,8 +449,20 @@ export function PaymentView({
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-ink-soft">Shipping</dt>
-                  <dd>{formatPrice(shippingCost)}</dd>
+                  <dd>
+                    {delivery.isFree ? (
+                      <span className="flex items-center gap-2">
+                        {delivery.baseCost > 0 && (
+                          <span className="text-muted line-through">{formatPrice(delivery.baseCost)}</span>
+                        )}
+                        <span className="font-medium uppercase tracking-[0.12em] text-sale">Free</span>
+                      </span>
+                    ) : (
+                      formatPrice(shippingCost)
+                    )}
+                  </dd>
                 </div>
+                {freeLabel && <div className="text-[12px] text-sale">{freeLabel}</div>}
                 <div className="flex justify-between">
                   <dt className="text-ink-soft">Gift wrap</dt>
                   <dd>Free</dd>
@@ -451,7 +476,7 @@ export function PaymentView({
 
             <div className="border-t border-border-soft px-6 py-4">
               <ul className="flex flex-col gap-2 text-[11px] text-ink-soft">
-                <li className="flex items-center gap-2"><Truck       className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> {`Flat ${formatPrice(shippingCfg.standard)} delivery nationwide`}</li>
+                <li className="flex items-center gap-2"><Truck       className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> {delivery.isFree ? "Free delivery on this order" : `Flat ${formatPrice(shippingCfg.standard)} delivery nationwide`}</li>
                 <li className="flex items-center gap-2"><RotateCcw   className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> 14-day hassle-free returns</li>
                 <li className="flex items-center gap-2"><ShieldCheck  className="h-3.5 w-3.5 shrink-0 text-gold-dark" /> Secure encrypted checkout</li>
               </ul>

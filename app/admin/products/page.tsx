@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   Plus, Search, Eye, Pencil, Trash2, X, Upload,
   ChevronLeft, ChevronRight, Check, AlertTriangle, Star, Package, Sparkles,
-  TrendingDown, RotateCcw,
+  TrendingDown, RotateCcw, Truck,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
@@ -14,7 +14,7 @@ import { AdminButton } from "@/components/admin/ui/button";
 import { PageHeader } from "@/components/admin/ui/page-header";
 import { StatusPill } from "@/components/admin/ui/status-pill";
 import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
-import { getProducts, updateProduct, deleteProduct, createProduct, uploadProductImage, bulkSetDiscount, bulkClearDiscount } from "@/lib/actions/products";
+import { getProducts, updateProduct, deleteProduct, createProduct, uploadProductImage, bulkSetDiscount, bulkClearDiscount, bulkSetFreeDelivery } from "@/lib/actions/products";
 import { DiscountModal } from "@/components/admin/ui/discount-modal";
 import {
   MIN_DISCOUNT_PERCENT,
@@ -93,6 +93,7 @@ export default function AdminProductsPage() {
   const [confirmEndDiscount, setConfirmEndDiscount] = useState(false);
   const [endingDiscount, setEndingDiscount] = useState(false);
   const [bulkNotice, setBulkNotice] = useState("");
+  const [freeDeliveryBusy, setFreeDeliveryBusy] = useState(false);
 
   const [mainCategories, setMainCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<{ id: string; name: string; slug: string }[]>([]);
@@ -154,6 +155,7 @@ export default function AdminProductsPage() {
     [products, selectedIds],
   );
   const selectedOnSaleCount = selectedProducts.filter(isDiscounted).length;
+  const selectedFreeShipCount = selectedProducts.filter((p) => p.free_delivery).length;
 
   // "Select all" on the header checkbox covers the visible page only. When the filter
   // matches more than one page, the bulk bar offers to extend it to the whole filtered set
@@ -309,9 +311,12 @@ export default function AdminProductsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-[15px] font-semibold text-[var(--admin-text)]">
                 {selectedIds.size} product{selectedIds.size > 1 ? "s" : ""} selected
-                {selectedOnSaleCount > 0 && (
+                {(selectedOnSaleCount > 0 || selectedFreeShipCount > 0) && (
                   <span className="ml-2 font-normal text-[var(--admin-text-soft)]">
-                    ({selectedOnSaleCount} on sale)
+                    ({[
+                      selectedOnSaleCount > 0 ? `${selectedOnSaleCount} on sale` : null,
+                      selectedFreeShipCount > 0 ? `${selectedFreeShipCount} ship free` : null,
+                    ].filter(Boolean).join(" · ")})
                   </span>
                 )}
               </span>
@@ -334,6 +339,54 @@ export default function AdminProductsPage() {
                   onClick={() => setConfirmEndDiscount(true)}
                 >
                   End Discount
+                </AdminButton>
+              )}
+
+              {/*
+                Delivery is charged once per order, so this flag only waives the fee when the
+                WHOLE bag carries it. The button says "Free Delivery ON/OFF" rather than
+                "Make delivery free" for that reason - it sets a property of the product, it
+                does not promise an outcome for every cart the product lands in.
+              */}
+              <AdminButton
+                variant="outline"
+                size="sm"
+                leadingIcon={<Truck className="h-4 w-4" />}
+                loading={freeDeliveryBusy}
+                onClick={async () => {
+                  setFreeDeliveryBusy(true);
+                  const result = await bulkSetFreeDelivery([...selectedIds], true);
+                  setFreeDeliveryBusy(false);
+                  setBulkNotice(
+                    result.error
+                      ? `Could not update delivery: ${result.error}`
+                      : `Free delivery ON for ${result.updated} product${result.updated === 1 ? "" : "s"}.`,
+                  );
+                  if (!result.error) loadProducts();
+                }}
+              >
+                Free Delivery ON
+              </AdminButton>
+
+              {selectedFreeShipCount > 0 && (
+                <AdminButton
+                  variant="outline"
+                  size="sm"
+                  leadingIcon={<Truck className="h-4 w-4" />}
+                  loading={freeDeliveryBusy}
+                  onClick={async () => {
+                    setFreeDeliveryBusy(true);
+                    const result = await bulkSetFreeDelivery([...selectedIds], false);
+                    setFreeDeliveryBusy(false);
+                    setBulkNotice(
+                      result.error
+                        ? `Could not update delivery: ${result.error}`
+                        : `Free delivery OFF for ${result.updated} product${result.updated === 1 ? "" : "s"}.`,
+                    );
+                    if (!result.error) loadProducts();
+                  }}
+                >
+                  Free Delivery OFF
                 </AdminButton>
               )}
 
@@ -489,6 +542,12 @@ export default function AdminProductsPage() {
                         compare_at <= price is bad data, and the old check rendered it as a
                         "was" price cheaper than the price being charged.
                       */}
+                      {p.free_delivery && (
+                        <div className="mt-1 inline-flex items-center gap-1 rounded bg-[var(--admin-primary-soft)] px-1.5 py-0.5 text-xs font-medium text-[var(--admin-primary)]">
+                          <Truck className="h-3 w-3" />
+                          Free delivery
+                        </div>
+                      )}
                       {isDiscounted(p) && (
                         <div className="flex items-center gap-1.5">
                           <span className="text-sm text-[var(--admin-text-muted)] line-through">
@@ -1471,6 +1530,7 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   const [stockVal,    setStockVal]    = useState(String(product.stock));
   const [statusVal,   setStatusVal]   = useState(product.status);
   const [featuredVal, setFeaturedVal] = useState(product.featured);
+  const [freeDeliveryVal, setFreeDeliveryVal] = useState(product.free_delivery ?? false);
   const [category,    setCategory]    = useState(product.category);
   const [subcategories, setSubcategories] = useState<string[]>(product.subcategory ?? []);
   const [description, setDescription] = useState(product.description ?? "");
@@ -1611,6 +1671,7 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
       stock:      totalStock,
       status:     statusVal,
       featured:   featuredVal,
+      free_delivery: freeDeliveryVal,
       description: description.trim() || null,
       short_description: shortDescription.trim() || null,
       size_guide: sizeGuideImage,
@@ -2019,6 +2080,27 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
               {featuredVal && <Check className="h-4 w-4 text-white" />}
             </button>
             <span className="text-[15px] text-[var(--admin-text)]">Mark as <strong>Featured</strong> product</span>
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-3">
+            <button
+              onClick={() => setFreeDeliveryVal(!freeDeliveryVal)}
+              className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border transition-colors ${
+                freeDeliveryVal
+                  ? "border-[var(--admin-primary)] bg-[var(--admin-primary)]"
+                  : "border-[var(--admin-border)]"
+              }`}
+            >
+              {freeDeliveryVal && <Check className="h-4 w-4 text-white" />}
+            </button>
+            <span className="text-[15px] text-[var(--admin-text)]">
+              <strong>Free delivery</strong> on this product
+              {/* Stated plainly because the per-order rule is the part that surprises people. */}
+              <span className="mt-0.5 block text-[13px] font-normal text-[var(--admin-text-soft)]">
+                Delivery is charged once per order, so the fee is only waived when every item
+                in the customer&rsquo;s bag has this ticked.
+              </span>
+            </span>
           </label>
 
           {/* ── Virtual Try Room ──────────────────────────────────── */}

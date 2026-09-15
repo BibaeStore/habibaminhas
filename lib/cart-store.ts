@@ -11,6 +11,14 @@ export type CartItem = {
   palette: string[];
   price: number;
   compare_at: number | null;
+  /*
+    Optional on purpose. The cart is persisted to localStorage, so bags saved before this
+    field existed deserialise without it. Making it required would not fail loudly — it would
+    just be `undefined` at runtime — so the type says what the data actually is, and
+    `resolveShipping` treats undefined as "delivery is charged". Defaulting the other way
+    would hand out free delivery to every stale cart in the wild.
+  */
+  free_delivery?: boolean | null;
   qty: number;
   size: string | null;
   sku: string | null;

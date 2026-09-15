@@ -25,6 +25,7 @@ export interface CardProduct {
   collection?: string;
   images?: string[];
   compare_at?: number | null;
+  free_delivery?: boolean | null;
   subcategory?: string[] | null;
   subtype?: string | null;
   palette: string[];
@@ -107,6 +108,7 @@ export function ProductCard({
       palette:    product.palette as string[],
       price:      product.price,
       compare_at: compareAt,
+      free_delivery: product.free_delivery ?? false,
       size:       null,
       sku:        null,
     });
