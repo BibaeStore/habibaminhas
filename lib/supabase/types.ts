@@ -536,6 +536,7 @@ export type Database = {
           description: string | null
           faqs: Json | null
           featured: boolean
+          free_delivery: boolean
           id: string
           images: string[]
           palette: string[]
@@ -565,6 +566,7 @@ export type Database = {
           description?: string | null
           faqs?: Json | null
           featured?: boolean
+          free_delivery?: boolean
           id?: string
           images?: string[]
           palette?: string[]
@@ -594,6 +596,7 @@ export type Database = {
           description?: string | null
           faqs?: Json | null
           featured?: boolean
+          free_delivery?: boolean
           id?: string
           images?: string[]
           palette?: string[]

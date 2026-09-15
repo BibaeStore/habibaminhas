@@ -10,6 +10,7 @@ import { useCheckoutStore } from "@/lib/checkout-store";
 import { trackBeginCheckout, trackAddShippingInfo, setCustomerMatch } from "@/lib/analytics";
 import { formatPrice } from "@/lib/utils";
 import type { ShippingConfig } from "@/lib/actions/settings";
+import { resolveShipping, freeDeliveryLabel } from "@/lib/shipping";
 
 export function ShippingView({ shipping: shippingCfg }: { shipping: ShippingConfig }) {
   const { items } = useCartStore();
@@ -26,10 +27,11 @@ export function ShippingView({ shipping: shippingCfg }: { shipping: ShippingConf
   const [method, setMethod] = useState<"standard" | "express">(
     saved?.shippingMethod ?? "standard"
   );
-  const shippingCost =
-    method === "express"
-      ? shippingCfg.express
-      : shippingCfg.standard;
+  // Shared rule - see lib/shipping.ts. Recomputed when the method changes, because a
+  // free-delivery promise covers standard shipping and never a paid express upgrade.
+  const delivery = resolveShipping(items, shippingCfg, method);
+  const shippingCost = delivery.cost;
+  const freeLabel = freeDeliveryLabel(delivery);
   const total = subtotal + shippingCost;
 
   const [form, setForm] = useState({
@@ -230,7 +232,16 @@ export function ShippingView({ shipping: shippingCfg }: { shipping: ShippingConf
                     </div>
                   </div>
                   <div className="text-[13px] font-medium">
-                    {formatPrice(shippingCfg.standard)}
+                    {delivery.isFree && method === "standard" ? (
+                      <span className="flex items-center gap-2">
+                        {shippingCfg.standard > 0 && (
+                          <span className="text-muted line-through">{formatPrice(shippingCfg.standard)}</span>
+                        )}
+                        <span className="uppercase tracking-[0.12em] text-sale">Free</span>
+                      </span>
+                    ) : (
+                      formatPrice(shippingCfg.standard)
+                    )}
                   </div>
                   <input
                     type="radio"
@@ -322,8 +333,25 @@ export function ShippingView({ shipping: shippingCfg }: { shipping: ShippingConf
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-soft">Shipping</dt>
-                <dd>{formatPrice(shippingCost)}</dd>
+                <dd>
+                  {delivery.isFree ? (
+                    <span className="flex items-center gap-2">
+                      {delivery.baseCost > 0 && (
+                        <span className="text-muted line-through">{formatPrice(delivery.baseCost)}</span>
+                      )}
+                      <span className="font-medium uppercase tracking-[0.12em] text-sale">Free</span>
+                    </span>
+                  ) : (
+                    formatPrice(shippingCost)
+                  )}
+                </dd>
               </div>
+              {freeLabel && <div className="text-[12px] text-sale">{freeLabel}</div>}
+              {delivery.amountToThreshold !== null && delivery.amountToThreshold > 0 && (
+                <div className="text-[12px] text-ink-soft">
+                  Add {formatPrice(delivery.amountToThreshold)} more for free delivery
+                </div>
+              )}
             </dl>
             <div className="flex items-center justify-between border-t border-border-soft pt-4 text-[15px] font-medium">
               <span>Total</span>

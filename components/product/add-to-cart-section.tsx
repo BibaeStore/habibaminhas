@@ -73,6 +73,7 @@ interface Props {
   palette: string[];
   price: number;
   compare_at: number | null;
+  freeDelivery?: boolean;
   sku: string | null;
   hasSizes: boolean;
   sizesStock?: Record<string, number> | null;
@@ -81,6 +82,7 @@ interface Props {
 
 export function AddToCartSection({
   id, slug, category, title, image, palette, price, compare_at, sku, hasSizes, sizesStock, tryonEnabled = false,
+  freeDelivery = false,
 }: Props) {
   const [selectedSize, setSelectedSize] = useState<string | null>(hasSizes ? null : "onesize");
   const [mobileQty, setMobileQty] = useState(1);
@@ -124,7 +126,7 @@ export function AddToCartSection({
   function handleTryOnClick() {
     // Silently add product to bag (badge updates), then open modal
     // Drawer opens AFTER the modal closes so the overlay covers the full screen
-    addItem({ id, slug, category, title, image, palette, price, compare_at, size: hasSizes ? selectedSize : null, sku });
+    addItem({ id, slug, category, title, image, palette, price, compare_at, free_delivery: freeDelivery, size: hasSizes ? selectedSize : null, sku });
     /* The strongest buying signal on this site - nobody opens a virtual try-on unless they
        are seriously considering the garment. Fired on open rather than on generate, because
        this is where the full product data lives. */
@@ -135,7 +137,7 @@ export function AddToCartSection({
   function handleAdd() {
     if (!canAdd) return;
     const size = hasSizes ? selectedSize : null;
-    addItem({ id, slug, category, title, image, palette, price, compare_at, size, sku });
+    addItem({ id, slug, category, title, image, palette, price, compare_at, free_delivery: freeDelivery, size, sku });
     trackAddToCart({ id, title, price, category, size });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);

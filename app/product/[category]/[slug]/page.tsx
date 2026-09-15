@@ -225,6 +225,7 @@ export default async function ProductPage({
               palette={product.palette}
               price={product.price}
               compare_at={product.compare_at}
+              freeDelivery={product.free_delivery ?? false}
               sku={product.sku}
               hasSizes={hasSizes}
               sizesStock={product.sizes_stock as Record<string, number> | null}

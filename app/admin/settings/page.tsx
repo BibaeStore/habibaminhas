@@ -365,9 +365,9 @@ export default function AdminSettingsPage() {
 
                 <div className="mt-5 flex flex-col gap-3">
                   {[
-                    { key: "standard" as const, label: "Standard delivery", sub: `${shipping.estimatedStd} business days`, prefix: "Rs." },
+                    { key: "standard" as const, label: "Standard delivery", sub: `${shipping.estimatedStd} business days · set 0 for a site-wide free-delivery campaign`, prefix: "Rs." },
                     { key: "express"  as const, label: "Express delivery",  sub: `${shipping.estimatedExp} business days · major cities only`, prefix: "Rs." },
-                    { key: "freeThreshold" as const, label: "Free shipping threshold", sub: "Orders above this value ship free", prefix: "Rs." },
+                    { key: "freeThreshold" as const, label: "Free shipping threshold", sub: "Orders at or above this subtotal ship free. Set 0 to switch it off.", prefix: "Rs." },
                   ].map(({ key, label, sub, prefix }) => (
                     <div key={key} className="flex items-center justify-between rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
                       <div>
