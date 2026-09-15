@@ -6,6 +6,7 @@ import Image from "next/image";
 import {
   Plus, Search, Eye, Pencil, Trash2, X, Upload,
   ChevronLeft, ChevronRight, Check, AlertTriangle, Star, Package, Sparkles,
+  TrendingDown, RotateCcw,
 } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminCard } from "@/components/admin/ui/card";
@@ -13,7 +14,16 @@ import { AdminButton } from "@/components/admin/ui/button";
 import { PageHeader } from "@/components/admin/ui/page-header";
 import { StatusPill } from "@/components/admin/ui/status-pill";
 import { ConfirmModal } from "@/components/admin/ui/confirm-modal";
-import { getProducts, updateProduct, deleteProduct, createProduct, uploadProductImage } from "@/lib/actions/products";
+import { getProducts, updateProduct, deleteProduct, createProduct, uploadProductImage, bulkSetDiscount, bulkClearDiscount } from "@/lib/actions/products";
+import { DiscountModal } from "@/components/admin/ui/discount-modal";
+import {
+  MIN_DISCOUNT_PERCENT,
+  MAX_DISCOUNT_PERCENT,
+  isDiscounted,
+  discountPercentOf,
+  originalPriceOf,
+  priceAfterDiscount,
+} from "@/lib/discount";
 import { getMainCategories, getChildCategories } from "@/lib/actions/categories";
 import { formatPrice } from "@/lib/utils";
 import type { Tables } from "@/lib/supabase/types";
@@ -79,6 +89,10 @@ export default function AdminProductsPage() {
   const [selectedIds,  setSelectedIds]  = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [confirmEndDiscount, setConfirmEndDiscount] = useState(false);
+  const [endingDiscount, setEndingDiscount] = useState(false);
+  const [bulkNotice, setBulkNotice] = useState("");
 
   const [mainCategories, setMainCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<{ id: string; name: string; slug: string }[]>([]);
@@ -128,6 +142,26 @@ export default function AdminProductsPage() {
   const paginated  = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleFilter = (setter: (v: string) => void) => (v: string) => { setter(v); setPage(1); };
+
+  /*
+    Resolved against the full product list rather than `paginated`, because selection
+    survives paging: tick three items on page 1, page across to page 2 and tick two more,
+    and the discount must apply to all five. Deriving from `paginated` would silently drop
+    the off-screen ones.
+  */
+  const selectedProducts = useMemo(
+    () => products.filter((p) => selectedIds.has(p.id)),
+    [products, selectedIds],
+  );
+  const selectedOnSaleCount = selectedProducts.filter(isDiscounted).length;
+
+  // "Select all" on the header checkbox covers the visible page only. When the filter
+  // matches more than one page, the bulk bar offers to extend it to the whole filtered set
+  // so a campaign across 40 products is not 3 pages of ticking.
+  const pageFullySelected =
+    paginated.length > 0 && paginated.every((p) => selectedIds.has(p.id));
+  const canSelectAllFiltered =
+    pageFullySelected && filtered.length > selectedIds.size;
 
   return (
     <AdminShell>
@@ -262,27 +296,77 @@ export default function AdminProductsPage() {
           </div>
         </AdminCard>
 
-        {/* Bulk delete bar */}
+        {/*
+          Bulk action bar.
+
+          Neutral-toned rather than the old danger red: it used to hold nothing but Delete,
+          and now its primary action is setting a discount. A permanently alarming bar
+          teaches the eye to ignore it, which is the last thing you want on the one control
+          that can also delete products.
+        */}
         {selectedIds.size > 0 && (
-          <div className="mb-4 flex items-center gap-4 rounded-[var(--admin-radius)] border border-[var(--admin-danger)] bg-[var(--admin-danger-soft)] px-5 py-4">
-            <span className="text-[15px] font-semibold text-[var(--admin-text)]">
-              {selectedIds.size} product{selectedIds.size > 1 ? "s" : ""} selected
-            </span>
-            <AdminButton
-              variant="danger"
-              size="sm"
-              leadingIcon={<Trash2 className="h-4 w-4" />}
-              loading={bulkDeleting}
-              onClick={() => setConfirmBulkDelete(true)}
-            >
-              {bulkDeleting ? "Deleting..." : "Delete Selected"}
-            </AdminButton>
-            <button
-              onClick={() => setSelectedIds(new Set())}
-              className="ml-auto text-sm text-[var(--admin-text-soft)] hover:text-[var(--admin-text)]"
-            >
-              Clear selection
-            </button>
+          <div className="mb-4 rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-5 py-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-[15px] font-semibold text-[var(--admin-text)]">
+                {selectedIds.size} product{selectedIds.size > 1 ? "s" : ""} selected
+                {selectedOnSaleCount > 0 && (
+                  <span className="ml-2 font-normal text-[var(--admin-text-soft)]">
+                    ({selectedOnSaleCount} on sale)
+                  </span>
+                )}
+              </span>
+
+              <AdminButton
+                variant="primary"
+                size="sm"
+                leadingIcon={<TrendingDown className="h-4 w-4" />}
+                onClick={() => { setBulkNotice(""); setShowDiscountModal(true); }}
+              >
+                Set Discount
+              </AdminButton>
+
+              {selectedOnSaleCount > 0 && (
+                <AdminButton
+                  variant="outline"
+                  size="sm"
+                  leadingIcon={<RotateCcw className="h-4 w-4" />}
+                  loading={endingDiscount}
+                  onClick={() => setConfirmEndDiscount(true)}
+                >
+                  End Discount
+                </AdminButton>
+              )}
+
+              <AdminButton
+                variant="danger"
+                size="sm"
+                leadingIcon={<Trash2 className="h-4 w-4" />}
+                loading={bulkDeleting}
+                onClick={() => setConfirmBulkDelete(true)}
+              >
+                {bulkDeleting ? "Deleting..." : "Delete Selected"}
+              </AdminButton>
+
+              <button
+                onClick={() => { setSelectedIds(new Set()); setBulkNotice(""); }}
+                className="ml-auto text-sm text-[var(--admin-text-soft)] hover:text-[var(--admin-text)]"
+              >
+                Clear selection
+              </button>
+            </div>
+
+            {canSelectAllFiltered && (
+              <button
+                onClick={() => setSelectedIds(new Set(filtered.map((p) => p.id)))}
+                className="mt-2 text-sm font-medium text-[var(--admin-primary)] hover:underline"
+              >
+                Select all {filtered.length} products matching the current filters
+              </button>
+            )}
+
+            {bulkNotice && (
+              <div className="mt-2 text-sm text-[var(--admin-primary)]">{bulkNotice}</div>
+            )}
           </div>
         )}
 
@@ -296,13 +380,23 @@ export default function AdminProductsPage() {
                     <input
                       type="checkbox"
                       className="h-5 w-5 cursor-pointer accent-[var(--admin-primary)]"
-                      checked={selectedIds.size === paginated.length && paginated.length > 0}
+                      /*
+                        Compares membership rather than counts. `selectedIds.size ===
+                        paginated.length` was true whenever the two numbers happened to
+                        match — so selecting 9 items on page 1 and paging to page 2 drew
+                        this box ticked while none of page 2 was selected, and clicking it
+                        then wiped the real selection instead of extending it.
+                      */
+                      aria-label="Select all products on this page"
+                      checked={pageFullySelected}
                       onChange={(e) => {
+                        const next = new Set(selectedIds);
                         if (e.target.checked) {
-                          setSelectedIds(new Set(paginated.map(p => p.id)));
+                          paginated.forEach((p) => next.add(p.id));
                         } else {
-                          setSelectedIds(new Set());
+                          paginated.forEach((p) => next.delete(p.id));
                         }
+                        setSelectedIds(next);
                       }}
                     />
                   </th>
@@ -390,8 +484,20 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-5 py-5">
                       <div className="text-[15px] font-medium text-[var(--admin-text)]">{formatPrice(p.price)}</div>
-                      {p.compare_at && (
-                        <div className="text-sm text-[var(--admin-text-muted)] line-through">{formatPrice(p.compare_at)}</div>
+                      {/*
+                        Gated on `isDiscounted`, not on compare_at being truthy. A row where
+                        compare_at <= price is bad data, and the old check rendered it as a
+                        "was" price cheaper than the price being charged.
+                      */}
+                      {isDiscounted(p) && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm text-[var(--admin-text-muted)] line-through">
+                            {formatPrice(p.compare_at!)}
+                          </span>
+                          <span className="rounded bg-[var(--admin-danger-soft)] px-1.5 py-0.5 text-xs font-semibold text-[var(--admin-danger)]">
+                            -{discountPercentOf(p)}%
+                          </span>
+                        </div>
                       )}
                     </td>
                     <td className="px-5 py-5 text-center">
@@ -506,6 +612,52 @@ export default function AdminProductsPage() {
           loadProducts();
         }}
       />
+
+      {/* Bulk discount — mounted conditionally so its state resets between campaigns */}
+      {showDiscountModal && (
+      <DiscountModal
+        products={selectedProducts}
+        onClose={() => setShowDiscountModal(false)}
+        onApply={async (percent) => {
+          const result = await bulkSetDiscount([...selectedIds], percent);
+          if (!result.error) {
+            /*
+              The selection is deliberately kept after a successful apply. Setting a
+              campaign is usually followed by checking the result in the table, or by
+              correcting the percentage — clearing the ticks would mean re-selecting
+              twenty products to change 20% to 25%.
+            */
+            setBulkNotice(
+              `${percent}% discount applied to ${result.updated} product${result.updated === 1 ? "" : "s"}.`,
+            );
+            loadProducts();
+          }
+          return result;
+        }}
+      />
+      )}
+
+      {/* End campaign — restores each product's original price */}
+      <ConfirmModal
+        open={confirmEndDiscount}
+        title={`End the discount on ${selectedOnSaleCount} product${selectedOnSaleCount > 1 ? "s" : ""}?`}
+        description="Each one goes back to the price it had before the discount, and disappears from the Sale page. Products in the selection that are not on sale are left alone."
+        confirmLabel="Restore original prices"
+        loading={endingDiscount}
+        onCancel={() => setConfirmEndDiscount(false)}
+        onConfirm={async () => {
+          setEndingDiscount(true);
+          const result = await bulkClearDiscount([...selectedIds]);
+          setEndingDiscount(false);
+          setConfirmEndDiscount(false);
+          setBulkNotice(
+            result.error
+              ? `Could not end the discount: ${result.error}`
+              : `Original prices restored on ${result.updated} product${result.updated === 1 ? "" : "s"}.`,
+          );
+          if (!result.error) loadProducts();
+        }}
+      />
     </AdminShell>
   );
 }
@@ -534,7 +686,9 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [subcategories, setSubcategories] = useState<string[]>([]);
   const [status,   setStatus]   = useState("draft");
   const [price,    setPrice]    = useState("0");
-  const [salePrice,setSalePrice]= useState("");
+  // Same "original price + percentage" model as the Edit form. These two used to disagree —
+  // see the note on the Edit form's price state.
+  const [discountPct, setDiscountPct] = useState("");
   const [stock,    setStock]    = useState("0");
   const [description, setDescription] = useState("");
   const [shortDescription, setShortDescription] = useState("");
@@ -600,11 +754,20 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const handleCreate = async () => {
     if (!name.trim()) { setError("Product name is required."); return; }
     if (!category) { setError("Please select a main category."); return; }
-    const parsedPrice    = parseInt(price) || 0;
-    const parsedSalePrice = salePrice ? parseInt(salePrice) : null;
+    const parsedPrice = parseInt(price) || 0;
+    const parsedPct   = discountPct.trim() ? parseInt(discountPct) : null;
     if (parsedPrice <= 0) { setError("Price must be greater than 0."); return; }
-    if (parsedSalePrice !== null && parsedSalePrice <= 0) { setError("Sale price must be greater than 0."); return; }
-    if (parsedSalePrice !== null && parsedSalePrice >= parsedPrice) { setError("Sale price must be less than the regular price."); return; }
+    if (parsedPct !== null && !Number.isInteger(parsedPct)) {
+      setError("Discount must be a whole number."); return;
+    }
+    if (
+      parsedPct !== null &&
+      (parsedPct < MIN_DISCOUNT_PERCENT || parsedPct > MAX_DISCOUNT_PERCENT)
+    ) {
+      setError(`Discount must be between ${MIN_DISCOUNT_PERCENT}% and ${MAX_DISCOUNT_PERCENT}%.`);
+      return;
+    }
+    const nextPrice = parsedPct !== null ? priceAfterDiscount(parsedPrice, parsedPct) : parsedPrice;
 
     setSaving(true); setError("");
 
@@ -633,8 +796,8 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
       category,
       subcategory: subcategories.length > 0 ? subcategories : null,
       status,
-      price: parsedSalePrice ?? parsedPrice,
-      compare_at: parsedSalePrice ? parsedPrice : null,
+      price: nextPrice,
+      compare_at: nextPrice < parsedPrice ? parsedPrice : null,
       stock: totalStock,
       featured,
       size_guide: sizeGuideImage,
@@ -878,16 +1041,23 @@ function AddProductModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Sale Price (Optional)</span>
-              <input
-                type="number"
-                value={salePrice}
-                onChange={(e) => setSalePrice(e.target.value)}
-                placeholder="—"
-                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
-              />
+              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Discount % (Optional)</span>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={MIN_DISCOUNT_PERCENT}
+                  max={MAX_DISCOUNT_PERCENT}
+                  value={discountPct}
+                  onChange={(e) => setDiscountPct(e.target.value)}
+                  placeholder="—"
+                  className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] pl-3 pr-9 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[15px] text-[var(--admin-text-muted)]">%</span>
+              </div>
             </label>
           </div>
+
+          <PriceEffectPreview price={price} discountPct={discountPct} />
 
           <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
             <div className="text-[18px] font-semibold text-[var(--admin-text)]">Sizes &amp; Stock</div>
@@ -1283,8 +1453,21 @@ function ViewProductModal({ product, onClose, onEdit }: { product: Product; onCl
 
 function EditProductModal({ product, onClose, onSaved }: { product: Product; onClose: () => void; onSaved: () => void }) {
   const [name,        setName]        = useState(product.title);
-  const [price,       setPrice]       = useState(String(product.price));
-  const [compareAt,   setCompareAt]   = useState(product.compare_at ? String(product.compare_at) : "");
+  /*
+    The edit form is expressed as "original price + discount %", not as the raw
+    price/compare_at pair the table stores.
+
+    The raw pair was a trap. The Add form labelled its second field "Sale Price" and swapped
+    the two on save; this form labelled the same field "Compare At" and did not. So a person
+    who had learned the Add form, opening Edit and typing the discounted figure into the
+    second box, produced compare_at < price — a product advertising a "was" price lower than
+    its own asking price. Deriving both columns from one unambiguous pair removes the chance
+    to enter them the wrong way round at all.
+  */
+  const [price,       setPrice]       = useState(String(originalPriceOf(product)));
+  const [discountPct, setDiscountPct] = useState(
+    discountPercentOf(product) != null ? String(discountPercentOf(product)) : "",
+  );
   const [stockVal,    setStockVal]    = useState(String(product.stock));
   const [statusVal,   setStatusVal]   = useState(product.status);
   const [featuredVal, setFeaturedVal] = useState(product.featured);
@@ -1385,10 +1568,25 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
   };
 
   const handleSave = async () => {
-    const parsedPrice    = parseInt(price) || 0;
-    const parsedCompare  = compareAt ? parseInt(compareAt) : null;
+    // `parsedPrice` is the ORIGINAL price here; the discounted figure is derived below.
+    const parsedPrice = parseInt(price) || 0;
+    const parsedPct   = discountPct.trim() ? parseInt(discountPct) : null;
     if (parsedPrice <= 0) { setError("Price must be greater than 0."); return; }
-    if (parsedCompare !== null && parsedCompare <= 0) { setError("Compare-at price must be greater than 0."); return; }
+    if (parsedPct !== null && !Number.isInteger(parsedPct)) {
+      setError("Discount must be a whole number."); return;
+    }
+    if (
+      parsedPct !== null &&
+      (parsedPct < MIN_DISCOUNT_PERCENT || parsedPct > MAX_DISCOUNT_PERCENT)
+    ) {
+      setError(`Discount must be between ${MIN_DISCOUNT_PERCENT}% and ${MAX_DISCOUNT_PERCENT}%.`);
+      return;
+    }
+
+    // Clearing the discount field must actively null compare_at, not just leave it: that is
+    // how a single product is taken off sale without touching the bulk tool.
+    const nextPrice   = parsedPct !== null ? priceAfterDiscount(parsedPrice, parsedPct) : parsedPrice;
+    const parsedCompare = parsedPct !== null && nextPrice < parsedPrice ? parsedPrice : null;
 
     setSaving(true); setError("");
 
@@ -1408,7 +1606,7 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
       title:      name.trim(),
       category,
       subcategory: subcategories.length > 0 ? subcategories : null,
-      price:      parsedPrice,
+      price:      nextPrice,
       compare_at: parsedCompare,
       stock:      totalStock,
       status:     statusVal,
@@ -1576,18 +1774,36 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
                 onChange={(e) => setPrice(e.target.value)}
                 className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
               />
+              <span className="text-xs text-[var(--admin-text-soft)]">
+                The full price, before any discount.
+              </span>
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Compare At (Optional)</span>
-              <input
-                type="number"
-                value={compareAt}
-                onChange={(e) => setCompareAt(e.target.value)}
-                placeholder="—"
-                className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-[15px] outline-none focus:border-[var(--admin-primary)]"
-              />
+              <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Discount % (Optional)</span>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={MIN_DISCOUNT_PERCENT}
+                  max={MAX_DISCOUNT_PERCENT}
+                  value={discountPct}
+                  onChange={(e) => setDiscountPct(e.target.value)}
+                  placeholder="—"
+                  className="h-11 w-full rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface)] pl-3 pr-9 text-[15px] outline-none focus:border-[var(--admin-primary)]"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[15px] text-[var(--admin-text-muted)]">%</span>
+              </div>
+              <span className="text-xs text-[var(--admin-text-soft)]">
+                Leave empty to take this product off sale.
+              </span>
             </label>
           </div>
+
+          {/*
+            Live readout of exactly what the customer will see. Mirrors the storefront
+            layout — now price, struck-through was price, percentage badge — so the effect
+            of a change is visible before saving rather than after a page reload.
+          */}
+          <PriceEffectPreview price={price} discountPct={discountPct} />
 
           <label className="flex flex-col gap-1.5">
             <span className="mb-1.5 block text-[14px] font-semibold text-[var(--admin-text)]">Status</span>
@@ -1893,6 +2109,64 @@ function EditProductModal({ product, onClose, onSaved }: { product: Product; onC
             {saved ? "Saved!" : saving ? "Saving…" : "Save Changes"}
           </AdminButton>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Price Effect Preview ─────────────────────────────────────────────────────
+
+/**
+ * Shows the storefront price block exactly as the customer will see it, live, from the
+ * two form fields.
+ *
+ * Both product forms take an original price and an optional percentage; the two columns
+ * actually written (`price` and `compare_at`) are derived. That derivation is the part
+ * people got wrong before, so rather than ask anyone to trust it, this renders the result.
+ * It uses the same `priceAfterDiscount` as the save handler and the server action.
+ */
+function PriceEffectPreview({ price, discountPct }: { price: string; discountPct: string }) {
+  const original = parseInt(price) || 0;
+  const pct = discountPct.trim() ? parseInt(discountPct) : null;
+
+  if (original <= 0) return null;
+
+  const valid =
+    pct !== null &&
+    Number.isInteger(pct) &&
+    pct >= MIN_DISCOUNT_PERCENT &&
+    pct <= MAX_DISCOUNT_PERCENT;
+
+  const next = valid ? priceAfterDiscount(original, pct!) : original;
+  const onSale = valid && next < original;
+
+  return (
+    <div className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] p-4">
+      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-text-muted)]">
+        What the customer sees
+      </div>
+      <div className="mt-2 flex flex-wrap items-baseline gap-3">
+        <span className="text-[22px] font-semibold text-[var(--admin-text)]">
+          {formatPrice(next)}
+        </span>
+        {onSale && (
+          <>
+            <span className="text-[15px] text-[var(--admin-text-muted)] line-through">
+              {formatPrice(original)}
+            </span>
+            <span className="rounded bg-[var(--admin-danger-soft)] px-2 py-0.5 text-sm font-semibold text-[var(--admin-danger)]">
+              -{pct}%
+            </span>
+            <span className="text-sm text-[var(--admin-text-soft)]">
+              Saves {formatPrice(original - next)}
+            </span>
+          </>
+        )}
+      </div>
+      <div className="mt-2 text-sm text-[var(--admin-text-soft)]">
+        {onSale
+          ? "This product will appear on the Sale page with a discount badge."
+          : "No discount — this product will not appear on the Sale page."}
       </div>
     </div>
   );

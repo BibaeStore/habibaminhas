@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: September 10, 2026 - Returns window synced to 14 days sitewide ✅  
+**Last Updated**: September 15, 2026 - Discount campaign tooling + "-20%" sale badge ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -20,6 +20,59 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### September 15, 2026 - Discount campaigns: percentage tooling + "-20%" sale badge
+
+**Changed**: new `lib/discount.ts` (shared sale maths) and
+`components/admin/ui/discount-modal.tsx`; bulk `bulkSetDiscount` / `bulkClearDiscount` server
+actions in `lib/actions/products.ts`; discount tooling throughout `app/admin/products/page.tsx`;
+sale badge text in `components/product/product-card.tsx` and
+`app/product/[category]/[slug]/page.tsx`.
+
+**Reason**: the storefront could display a sale but the dashboard had no way to set one, so
+nothing in the catalogue had ever been discounted (0 of 76 rows) and `/offers` - an indexed,
+sitemap-listed page - has been serving an empty product grid under copy promising "savings of
+20-50%". The owner is running a campaign on hand-picked items.
+
+**SEO impact**: LIMITED, APPROVED BY OWNER 2026-09-15 (asked before implementing).
+
+Two rendered-text changes on indexed pages, both inside the existing sale badge:
+- Product cards on `/`, `/shop`, `/ladies`, `/kids`, `/baby`, `/accessories`, `/new`, `/offers`:
+  badge text `Sale` -> `-20%`. Same element, same position, same length class; no layout shift.
+- Product page: the badge above the `<h1>` likewise, and the price row's `Save 20%` -> `Save
+  Rs. 1,000` so the badge's percentage is not repeated as a second differently-worded claim.
+
+Both are gated on a product actually being discounted. **At the time of the change 0 products
+were discounted, so the rendered HTML of every page was byte-identical to before.** The new text
+appears only as the owner opts individual products in.
+
+NOT changed, deliberately: `components/seo/product-schema.tsx`. Marking `compare_at` as a
+`ListPrice` `priceSpecification` would likely earn a strikethrough rich result, but it is
+structured data and the owner chose not to touch it this round. **Still on the table.**
+
+No change to: metadata, `generateMetadata`, canonicals, robots, `app/sitemap.ts`, redirects,
+rewrites, middleware, slugs, routes, heading text or hierarchy, internal links, `alt` text, or
+the LCP image's `priority`.
+
+Merchant Center: no risk taken. The owner chose to discount from current prices rather than
+raise prices first, so every `compare_at` is a price the item genuinely sold at. The feed's
+`price`/`sale_price` mapping in `lib/merchant/google-feed.ts` was already correct and is
+untouched.
+
+**Verified** against a local production build (`next build` + `next start`), raw `grep -c`:
+- Homepage: `<title>`, `<meta name="description">`, `index, follow`, canonical - all intact.
+- Product page: `index, follow` + canonical intact; JSON-LD still emits `Product`, `Offer`,
+  `Brand`, `AggregateRating`, `BreadcrumbList` (plus `Organization`, `WebSite`, `Person`,
+  `SearchAction`, `ContactPoint` sitewide).
+- Sitemap: **194 `<loc>`** vs the 182 baseline of 2026-08-30. `/journal/` 66 -> 76, `/product/`
+  71 -> 73, every other section unchanged. **No section fell.**
+
+**Open item, NOT actioned - needs an owner decision**: two products carry a hardcoded price in
+`seo_title`, and it is *already* stale independently of this work -
+`ld-black-embroidered-lawn-2-piece-suit-047` and `ld-white-embroidered-lawn-2-piece-suit-048`
+both say "Rs. 5,500" in the indexed `<title>` while the database price is Rs. 7,000. Discounting
+either one makes the mismatch worse. `seo_title` feeds `<title>`, so it was reported rather than
+edited.
 
 ### August 30, 2026 - Meta Pixel Phase 04: Conversions API + delivery signal
 

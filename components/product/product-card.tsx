@@ -10,6 +10,7 @@ import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { useWishlistStore } from "@/lib/wishlist-store";
 import { trackAddToWishlist } from "@/lib/analytics";
 import { useCartStore } from "@/lib/cart-store";
+import { isDiscounted, discountPercentOf } from "@/lib/discount";
 
 const motifs = ["lattice", "floral", "ogee", "stripes", "arch"] as const;
 
@@ -64,7 +65,11 @@ export function ProductCard({
   const img       = product.image ?? product.images?.[0] ?? null;
   const compareAt = product.compareAt ?? product.compare_at ?? null;
   const collection = product.collection ?? product.subcategory ?? product.subtype ?? null;
-  const hasSale   = compareAt && compareAt > product.price;
+  // Routed through the shared helpers so the card, the product page, the admin table and
+  // the Google Merchant feed all agree on what "on sale" means and on the percentage shown.
+  const priceRow  = { price: product.price, compare_at: compareAt };
+  const hasSale   = isDiscounted(priceRow);
+  const salePct   = discountPercentOf(priceRow);
   const aspect    = compact ? "4/5" : "3/4";
   const isOutOfStock = (product.stock ?? 0) <= 0;
 
@@ -131,7 +136,12 @@ export function ProductCard({
               {product.badge}
             </Badge>
           )}
-          {hasSale && <Badge variant="sale">Sale</Badge>}
+          {/*
+            The percentage rather than a bare "Sale": the size of the offer is the part that
+            earns the click, and it costs no extra space. Derived from the two prices in the
+            database, so it can never advertise a discount the checkout will not honour.
+          */}
+          {hasSale && <Badge variant="sale">-{salePct}%</Badge>}
         </div>
 
         {/* Wishlist button */}
@@ -299,7 +309,7 @@ export function ProductCard({
                         {product.badge}
                       </Badge>
                     )}
-                    {hasSale && <Badge variant="sale">Sale</Badge>}
+                    {hasSale && <Badge variant="sale">-{salePct}%</Badge>}
                   </div>
                 )}
 

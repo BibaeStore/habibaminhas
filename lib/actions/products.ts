@@ -6,6 +6,12 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 import { emitLowStockNotifications } from "@/lib/actions/inventory";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
 import { LOW_STOCK_THRESHOLD } from "@/lib/inventory-constants";
+import {
+  MIN_DISCOUNT_PERCENT,
+  MAX_DISCOUNT_PERCENT,
+  originalPriceOf,
+  priceAfterDiscount,
+} from "@/lib/discount";
 
 export async function uploadProductImage(formData: FormData) {
   const file = formData.get("file") as File | null;
@@ -130,4 +136,116 @@ export async function deleteProduct(id: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/products");
   revalidateStorefront(deleted);
+}
+
+/**
+ * Put a set of hand-picked products on sale at one percentage.
+ *
+ * Deliberately takes an explicit list of ids rather than a filter: a discount is a
+ * commercial decision made per product in the dashboard, and an action that could be
+ * handed "everything matching X" is one mis-click away from repricing the catalogue.
+ *
+ * Re-running this on rows that are already discounted is safe and idempotent — each row's
+ * ORIGINAL price is recovered via `originalPriceOf` first, so moving a campaign from 20%
+ * to 30% yields 30% off the original, not 30% off the already-cut price.
+ */
+export async function bulkSetDiscount(
+  ids: string[],
+  percent: number,
+): Promise<{ updated: number; error: string | null }> {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { updated: 0, error: "Select at least one product." };
+  }
+  if (!Number.isFinite(percent) || !Number.isInteger(percent)) {
+    return { updated: 0, error: "Discount must be a whole number." };
+  }
+  if (percent < MIN_DISCOUNT_PERCENT || percent > MAX_DISCOUNT_PERCENT) {
+    return {
+      updated: 0,
+      error: `Discount must be between ${MIN_DISCOUNT_PERCENT}% and ${MAX_DISCOUNT_PERCENT}%.`,
+    };
+  }
+
+  const sb = createAdminClient();
+  const { data: rows, error: readError } = await sb
+    .from("products")
+    .select("id, price, compare_at, category, slug")
+    .in("id", ids);
+
+  if (readError) return { updated: 0, error: readError.message };
+  if (!rows || rows.length === 0) return { updated: 0, error: "No matching products found." };
+
+  let updated = 0;
+  const touched: { category: string | null; slug: string | null }[] = [];
+
+  for (const row of rows) {
+    const original = originalPriceOf(row);
+    const next = priceAfterDiscount(original, percent);
+
+    // A percentage too small to move an integer price leaves `next === original`, which
+    // would write a compare_at equal to price — the exact inverted-looking row that
+    // `isDiscounted` has to defend against downstream. Skip rather than store it.
+    if (next >= original) continue;
+
+    const { error } = await sb
+      .from("products")
+      .update({ price: next, compare_at: original })
+      .eq("id", row.id);
+    if (error) return { updated, error: error.message };
+
+    updated += 1;
+    touched.push({ category: row.category, slug: row.slug });
+  }
+
+  revalidatePath("/admin/products");
+  for (const product of touched) revalidateStorefront(product);
+  return { updated, error: null };
+}
+
+/**
+ * End a sale on a set of products, restoring each one's original price.
+ *
+ * The inverse of `bulkSetDiscount`, and exact: because `compare_at` stores the untouched
+ * original rather than a derived figure, ending a campaign returns the catalogue to the
+ * precise prices it had beforehand — no rounding residue accumulating across campaigns.
+ *
+ * Rows that are not on sale are skipped, so this is safe to run over a mixed selection.
+ */
+export async function bulkClearDiscount(
+  ids: string[],
+): Promise<{ updated: number; error: string | null }> {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { updated: 0, error: "Select at least one product." };
+  }
+
+  const sb = createAdminClient();
+  const { data: rows, error: readError } = await sb
+    .from("products")
+    .select("id, price, compare_at, category, slug")
+    .in("id", ids);
+
+  if (readError) return { updated: 0, error: readError.message };
+  if (!rows || rows.length === 0) return { updated: 0, error: "No matching products found." };
+
+  let updated = 0;
+  const touched: { category: string | null; slug: string | null }[] = [];
+
+  for (const row of rows) {
+    // Clears an inverted/equal compare_at too (isDiscounted is false for those), which is
+    // the only route back for a row broken by the old Edit form.
+    if (row.compare_at == null) continue;
+
+    const { error } = await sb
+      .from("products")
+      .update({ price: originalPriceOf(row), compare_at: null })
+      .eq("id", row.id);
+    if (error) return { updated, error: error.message };
+
+    updated += 1;
+    touched.push({ category: row.category, slug: row.slug });
+  }
+
+  revalidatePath("/admin/products");
+  for (const product of touched) revalidateStorefront(product);
+  return { updated, error: null };
 }
