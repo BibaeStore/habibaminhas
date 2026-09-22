@@ -790,7 +790,7 @@ export default function AdminOrdersPage() {
             <table className="w-full text-left">
               <thead className="bg-[var(--admin-surface-alt)] text-[13px] font-semibold uppercase tracking-wide text-[var(--admin-text-muted)]">
                 <tr>
-                  <th className="px-5 py-4 font-semibold">
+                  <th className="px-3 py-4 font-semibold">
                     <input
                       type="checkbox"
                       className="h-5 w-5 accent-[var(--admin-primary)]"
@@ -798,33 +798,31 @@ export default function AdminOrdersPage() {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-5 py-4 font-semibold">Order / Tracking</th>
-                  <th className="px-5 py-4 font-semibold">Customer</th>
-                  <th className="px-5 py-4 font-semibold">Date</th>
-                  <th className="px-5 py-4 font-semibold text-center">Items</th>
-                  <th className="px-5 py-4 font-semibold">Payment</th>
-                  <th className="px-5 py-4 font-semibold">Pay. Status</th>
-                  <th className="px-5 py-4 font-semibold">Status</th>
-                  <th className="px-5 py-4 font-semibold">PostEx</th>
-                  <th className="px-5 py-4 text-right font-semibold">Total</th>
-                  <th className="px-5 py-4 font-semibold" />
+                  <th className="px-3 py-4 font-semibold">Order / Tracking</th>
+                  <th className="px-3 py-4 font-semibold">Customer</th>
+                  <th className="px-3 py-4 font-semibold">Date</th>
+                  <th className="px-3 py-4 font-semibold text-center">Items</th>
+                  <th className="px-3 py-4 font-semibold">Payment</th>
+                  <th className="px-3 py-4 font-semibold">Status</th>
+                  <th className="px-3 py-4 font-semibold">PostEx</th>
+                  <th className="px-3 py-4 text-right font-semibold">Total</th>
+                  <th className="px-3 py-4 font-semibold" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--admin-border)]">
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-5" /></td>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-28" /><div className="skeleton mt-2 h-4 w-20" /></td>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-32" /><div className="skeleton mt-2 h-4 w-16" /></td>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-24" /></td>
-                      <td className="px-5 py-5 text-center"><div className="skeleton mx-auto h-5 w-8" /></td>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-16" /></td>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-20" /></td>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-24" /></td>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-20" /></td>
-                      <td className="px-5 py-5 text-right"><div className="skeleton ml-auto h-5 w-20" /></td>
-                      <td className="px-5 py-5"><div className="skeleton h-5 w-16" /></td>
+                      <td className="px-3 py-5"><div className="skeleton h-5 w-5" /></td>
+                      <td className="px-3 py-5"><div className="skeleton h-5 w-28" /><div className="skeleton mt-2 h-4 w-20" /></td>
+                      <td className="px-3 py-5"><div className="skeleton h-5 w-32" /><div className="skeleton mt-2 h-4 w-16" /></td>
+                      <td className="px-3 py-5"><div className="skeleton h-5 w-24" /></td>
+                      <td className="px-3 py-5 text-center"><div className="skeleton mx-auto h-5 w-8" /></td>
+                      <td className="px-3 py-5"><div className="skeleton h-5 w-16" /><div className="skeleton mt-2 h-4 w-20" /></td>
+                      <td className="px-3 py-5"><div className="skeleton h-5 w-24" /></td>
+                      <td className="px-3 py-5"><div className="skeleton h-5 w-20" /></td>
+                      <td className="px-3 py-5 text-right"><div className="skeleton ml-auto h-5 w-20" /></td>
+                      <td className="px-3 py-5"><div className="skeleton h-5 w-16" /></td>
                     </tr>
                   ))
                 ) : paginated.map((o) => {
@@ -832,7 +830,7 @@ export default function AdminOrdersPage() {
                   const statusColor = STATUS_COLORS[o.status] ?? { bg: "#f3f4f6", text: "#6b7280", border: "#e5e7eb" };
                   return (
                     <tr key={o.id} className="h-14 transition-colors hover:bg-[var(--admin-surface-alt)]">
-                      <td className="px-5 py-5">
+                      <td className="px-3 py-5">
                         <input
                           type="checkbox"
                           className="h-5 w-5 accent-[var(--admin-primary)]"
@@ -840,27 +838,27 @@ export default function AdminOrdersPage() {
                           onChange={(e) => handleRowSelect(o.id, e.target.checked)}
                         />
                       </td>
-                      <td className="px-5 py-5">
+                      <td className="px-3 py-5">
                         <div className="text-sm font-medium text-[var(--admin-text)]">{o.order_number}</div>
                         <div className="mt-0.5 font-mono text-xs text-[var(--admin-text-muted)]">{o.tracking_number ?? "No tracking"}</div>
                       </td>
-                      <td className="px-5 py-5">
+                      <td className="px-3 py-5">
                         <div className="text-sm font-medium text-[var(--admin-text)]">{o.customer_name}</div>
                         <div className="text-xs text-[var(--admin-text-muted)]">{getCity(o.address)}</div>
                       </td>
-                      <td className="px-5 py-5 text-sm text-[var(--admin-text-soft)]">{date}</td>
-                      <td className="px-5 py-5 text-center text-sm text-[var(--admin-text-soft)]">{o.order_items?.length ?? 0}</td>
-                      <td className="px-5 py-5">
+                      <td className="px-3 py-5 text-sm text-[var(--admin-text-soft)]">{date}</td>
+                      <td className="px-3 py-5 text-center text-sm text-[var(--admin-text-soft)]">{o.order_items?.length ?? 0}</td>
+                      <td className="px-3 py-5">
                         <span className="rounded-[var(--admin-radius)] border border-[var(--admin-border)] bg-[var(--admin-surface-alt)] px-2.5 py-1 text-xs font-medium text-[var(--admin-text-soft)]">
                           {o.payment_method}
                         </span>
+                        <div className="mt-1.5">
+                          <StatusPill tone={PAYMENT_TONE[o.payment_status.toLowerCase()] ?? "neutral"}>
+                            {o.payment_status}
+                          </StatusPill>
+                        </div>
                       </td>
-                      <td className="px-5 py-5">
-                        <StatusPill tone={PAYMENT_TONE[o.payment_status.toLowerCase()] ?? "neutral"}>
-                          {o.payment_status}
-                        </StatusPill>
-                      </td>
-                      <td className="px-5 py-5">
+                      <td className="px-3 py-5">
                         {/* ✅ PHASE 1: Custom Colored Status Pill */}
                         <span
                           className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide"
@@ -873,7 +871,7 @@ export default function AdminOrdersPage() {
                           {o.status}
                         </span>
                       </td>
-                      <td className="px-5 py-5">
+                      <td className="px-3 py-5">
                         {o.postex_tracking_number && o.postex_status ? (
                           <StatusPill tone={POSTEX_TONE[o.postex_status.trim().toLowerCase()] ?? "primary"}>
                             {o.postex_status}
@@ -882,9 +880,9 @@ export default function AdminOrdersPage() {
                           <span className="text-xs text-[var(--admin-text-muted)]">Not booked</span>
                         )}
                       </td>
-                      <td className="px-5 py-5 text-right text-sm font-medium text-[var(--admin-text)]">{formatPrice(o.total)}</td>
-                      <td className="px-5 py-5">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-3 py-5 text-right text-sm font-medium text-[var(--admin-text)]">{formatPrice(o.total)}</td>
+                      <td className="px-3 py-5">
+                        <div className="flex flex-col items-start gap-1">
                           <Link href={`/admin/orders/${o.id}`}>
                             <AdminButton variant="outline" size="sm" leadingIcon={<Eye className="h-3.5 w-3.5" />}>
                               View
@@ -900,7 +898,7 @@ export default function AdminOrdersPage() {
                 })}
                 {!loading && paginated.length === 0 && (
                   <tr>
-                    <td colSpan={11} className="px-5 py-14 text-center text-sm text-[var(--admin-text-muted)]">
+                    <td colSpan={10} className="px-5 py-14 text-center text-sm text-[var(--admin-text-muted)]">
                       No orders match the current filter.
                     </td>
                   </tr>
