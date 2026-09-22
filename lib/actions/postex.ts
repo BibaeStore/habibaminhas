@@ -2,7 +2,8 @@
 
 /**
  * Server actions that bridge our admin dashboard to the PostEx courier module.
- * All PostEx writes live here (nothing in the customer checkout path calls this).
+ * All PostEx writes live here. Checkout reaches bookPostexShipment only through
+ * lib/courier/postex/auto-book.ts, after the order is saved and the customer has their response.
  * Every action is a no-op when PostEx is not configured (the env kill-switch).
  */
 import { revalidatePath } from "next/cache";
