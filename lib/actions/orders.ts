@@ -8,6 +8,8 @@ import { revalidateStorefront } from "@/lib/revalidate-storefront";
 import { sendOrderEmails } from "@/lib/email";
 import { sendServerEvent, purchaseEventId } from "@/lib/tracking/capi";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { autoBookPostex } from "@/lib/courier/postex/auto-book";
 
 export async function getOrders(status?: string) {
   const sb = createAdminClient();
@@ -89,6 +91,9 @@ export async function createOrder(
    * do not have, which is worse than the reverse.
    */
   revalidateStorefront();
+
+  // Book COD orders with PostEx automatically, once the customer already has their response.
+  after(() => autoBookPostex(newOrder.id));
 
   // Optional: link Supabase Auth user (non-critical, guest checkout works without it)
   let authUserId: string | null = null;

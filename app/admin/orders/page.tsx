@@ -51,6 +51,17 @@ const PAYMENT_TONE: Record<string, StatusTone> = {
   "n/a":     "neutral",
 };
 
+/** Keys are PostEx's own labels, lowercased. "Unbooked" = created but not yet on a load sheet. */
+const POSTEX_TONE: Record<string, StatusTone> = {
+  unbooked:            "warning",
+  booked:              "primary",
+  delivered:           "success",
+  returned:            "danger",
+  "out for return":    "danger",
+  expired:             "danger",
+  "un-assigned by me": "neutral",
+};
+
 function getAddr(address: Order["address"]): string {
   if (!address) return "—";
   if (typeof address === "string") return address;
@@ -794,6 +805,7 @@ export default function AdminOrdersPage() {
                   <th className="px-5 py-4 font-semibold">Payment</th>
                   <th className="px-5 py-4 font-semibold">Pay. Status</th>
                   <th className="px-5 py-4 font-semibold">Status</th>
+                  <th className="px-5 py-4 font-semibold">PostEx</th>
                   <th className="px-5 py-4 text-right font-semibold">Total</th>
                   <th className="px-5 py-4 font-semibold" />
                 </tr>
@@ -810,6 +822,7 @@ export default function AdminOrdersPage() {
                       <td className="px-5 py-5"><div className="skeleton h-5 w-16" /></td>
                       <td className="px-5 py-5"><div className="skeleton h-5 w-20" /></td>
                       <td className="px-5 py-5"><div className="skeleton h-5 w-24" /></td>
+                      <td className="px-5 py-5"><div className="skeleton h-5 w-20" /></td>
                       <td className="px-5 py-5 text-right"><div className="skeleton ml-auto h-5 w-20" /></td>
                       <td className="px-5 py-5"><div className="skeleton h-5 w-16" /></td>
                     </tr>
@@ -860,6 +873,15 @@ export default function AdminOrdersPage() {
                           {o.status}
                         </span>
                       </td>
+                      <td className="px-5 py-5">
+                        {o.postex_tracking_number && o.postex_status ? (
+                          <StatusPill tone={POSTEX_TONE[o.postex_status.trim().toLowerCase()] ?? "primary"}>
+                            {o.postex_status}
+                          </StatusPill>
+                        ) : (
+                          <span className="text-xs text-[var(--admin-text-muted)]">Not booked</span>
+                        )}
+                      </td>
                       <td className="px-5 py-5 text-right text-sm font-medium text-[var(--admin-text)]">{formatPrice(o.total)}</td>
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-1.5">
@@ -878,7 +900,7 @@ export default function AdminOrdersPage() {
                 })}
                 {!loading && paginated.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="px-5 py-14 text-center text-sm text-[var(--admin-text-muted)]">
+                    <td colSpan={11} className="px-5 py-14 text-center text-sm text-[var(--admin-text-muted)]">
                       No orders match the current filter.
                     </td>
                   </tr>
