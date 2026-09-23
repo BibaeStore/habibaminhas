@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: September 15, 2026 - Discount campaign tooling + "-20%" sale badge ✅  
+**Last Updated**: September 23, 2026 - /shop hero banner swapped to new WebP photo ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -20,6 +20,28 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### September 23, 2026 - /shop hero banner: new photo, PNG -> WebP
+
+**Changed**: `app/shop/page.tsx` line 67, `image="/banners/shop-banner.png"` ->
+`image="/banners/shop-banner.webp"`; new file `public/banners/shop-banner.webp`.
+
+**Reason**: owner's new banner photo (two models, white and black embroidered lawn suits).
+
+**SEO impact**: NEUTRAL TO POSITIVE, APPROVED BY OWNER 2026-09-23 (asked before merging).
+- This is the LCP image on `/shop/`. `priority`, `alt` (the page title) and `sizes` are
+  unchanged - they live in `components/collection/collection-template.tsx`, not touched.
+- No CLS: the image fills a fixed-aspect box (`aspect-square sm:aspect-[21/9]`), so its new
+  intrinsic size (2048x1152 vs 1024x1024) cannot move the layout.
+- Source weight 938 KB -> 343 KB.
+- Old `shop-banner.png` left in `public/`, so nothing that referenced it 404s.
+- Title, description, headings, canonical, JSON-LD, sitemap: untouched.
+
+Known visual trade-off, accepted: on mobile the square crop cuts into both models at the edges.
+
+**Verification**: `/shop/` still `index, follow` with canonical; sitemap `<loc>` count unchanged.
+
+**Status**: ✅ Complete
 
 ### September 15, 2026 - Discount campaigns: percentage tooling + "-20%" sale badge
 
