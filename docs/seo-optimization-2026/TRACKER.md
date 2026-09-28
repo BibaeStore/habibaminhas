@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: September 28, 2026 - colour variants on product pages (branch, not merged) 🚧  
+**Last Updated**: September 28, 2026 - house size chart on product pages + /content/size-guide/ (branch, not merged) 🚧  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -20,6 +20,29 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### September 28, 2026 - House size chart: product pop-up + /content/size-guide/
+
+**Changed** (branch `feat/size-chart`, NOT merged):
+- New `public/size-guide/habiba-minhas-ladies-size-chart.webp` (owner's chart, 1024x1536, 140 KB).
+- `components/product/size-guide-button.tsx`: every ladies-suit product now shows "Size guide";
+  `size_guide` values that are not real paths (`"false"` on 15 ladies rows, a missing
+  `/placeholder-size-guide.png` on 1 kids row) are treated as no chart. Kids get no chart.
+- `components/product/size-guide-modal.tsx`: portalled, centred, whole chart fitted to the
+  screen, Esc / tap-outside closes. Renders nothing until opened -> not in the server HTML.
+- `app/content/[slug]/page.tsx` (size-guide only): new h2 "Shirt & Trouser Size Chart
+  (Inches)" + the image + two HTML tables with the same numbers. Two sentences in "Ladies
+  Ready-to-Wear Suits" corrected, as approved: XS removed (not sold); "standard 112cm
+  length" replaced with "shirt and sleeve length vary by article".
+
+**SEO impact**: NEUTRAL TO POSITIVE, APPROVED BY OWNER 2026-09-28 before implementation.
+- Product pages: only the words "Size guide" added to the HTML. Title, description,
+  canonical, JSON-LD unchanged (diffed against live for 048).
+- Size guide page: additive heading + crawlable table (AEO-quotable numbers). Title,
+  description, canonical, h1 and the other sections unchanged. Chart image is lazy
+  (below the hero, which stays the LCP image).
+
+**Status**: 🚧 Awaiting owner approval to merge
 
 ### September 28, 2026 - Colour variants on a single product page (product 049)
 

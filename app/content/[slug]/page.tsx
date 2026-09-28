@@ -3,6 +3,92 @@ import { notFound } from "next/navigation";
 
 type Params = { slug: string };
 
+/*
+ * The house size chart, as both the owner's image and a real text table. The table is what
+ * search engines and AI answer engines can read and quote — numbers inside an image are
+ * invisible to them. Keep the two in step if the chart ever changes.
+ */
+const SIZE_CHART = {
+  shirt: [
+    ["Shoulder", "14", "15", "16"],
+    ["Chest width", "19", "20", "22"],
+    ["Waist width", "18", "19", "21"],
+    ["Hip width", "21", "22", "24"],
+  ],
+  trouser: [
+    ["Waist (elastic relaxed)", "13", "14", "15"],
+    ["Hip width", "21", "22", "24"],
+    ["Thigh width", "12", "13", "14"],
+    ["Length (waist to hem)", "38", "39", "40"],
+  ],
+};
+
+function ChartTable({ caption, rows, note }: { caption: string; rows: string[][]; note: string }) {
+  return (
+    <div className="mt-6 overflow-x-auto">
+      <table className="w-full border-collapse text-[14px]">
+        <caption className="mb-2 text-left text-[11px] uppercase tracking-[0.26em] text-gold-dark">
+          {caption}
+        </caption>
+        <thead>
+          <tr className="bg-cream text-ink">
+            <th scope="col" className="border border-border-soft px-3 py-2 text-left font-medium">Measurement</th>
+            <th scope="col" className="border border-border-soft px-3 py-2 font-medium">Small (S)</th>
+            <th scope="col" className="border border-border-soft px-3 py-2 font-medium">Medium (M)</th>
+            <th scope="col" className="border border-border-soft px-3 py-2 font-medium">Large (L)</th>
+          </tr>
+        </thead>
+        <tbody className="text-ink-soft">
+          {rows.map(([label, ...vals]) => (
+            <tr key={label}>
+              <th scope="row" className="border border-border-soft px-3 py-2 text-left font-normal text-ink">{label}</th>
+              {vals.map((v, i) => (
+                <td key={i} className="border border-border-soft px-3 py-2 text-center">{v}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-[12px] text-muted">{note}</p>
+    </div>
+  );
+}
+
+function SizeChartSection() {
+  return (
+    <section className="mt-10">
+      <h2 className="font-display text-3xl italic text-ink">Shirt &amp; Trouser Size Chart (Inches)</h2>
+      <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">
+        These are the garment&apos;s own measurements for Habiba Minhas ladies suits in Small, Medium
+        and Large, in inches, measured laid flat from seam to seam. Double the chest, waist, hip and
+        thigh widths to get the full circumference. Trouser waist is measured with the elastic
+        relaxed. Shirt and sleeve length, flare and leg opening vary by design, so confirm the
+        measurements of your chosen article before ordering.
+      </p>
+      <div className="mx-auto mt-6 max-w-md">
+        <Image
+          src="/size-guide/habiba-minhas-ladies-size-chart.webp"
+          alt="Habiba Minhas size guide — shirt and trouser measurements in inches for Small, Medium and Large"
+          width={1024}
+          height={1536}
+          sizes="(max-width: 480px) 100vw, 448px"
+          className="h-auto w-full"
+        />
+      </div>
+      <ChartTable
+        caption="Shirt — measured laid flat, inches"
+        rows={SIZE_CHART.shirt}
+        note="Shirt and sleeve length vary by article."
+      />
+      <ChartTable
+        caption="Trouser — measured laid flat, inches"
+        rows={SIZE_CHART.trouser}
+        note="Elastic-waist reference. Flare and leg opening vary by design."
+      />
+    </section>
+  );
+}
+
 const pages: Record<
   string,
   {
@@ -12,6 +98,8 @@ const pages: Record<
     sections: { heading: string; body: string }[];
     tone: [string, string, string];
     motif: "floral" | "lattice" | "ogee" | "arch" | "stripes";
+    /** Renders the house shirt & trouser size chart (image + text table) after the intro. */
+    sizeChart?: boolean;
   }
 > = {
   "fabric-glossary": {
@@ -81,11 +169,12 @@ const pages: Record<
       "Finding the right size for Pakistani clothing can be confusing if you're used to Western sizing. Our comprehensive guide covers ready-to-wear suits, kids wear, and how to measure yourself at home. Every silhouette is cut twice — once for the hanger, once for the body. These are the exact measurements our Karachi tailors work from when creating each piece.",
     tone: ["#d7dbe4", "#6f7c8f", "#1a1612"],
     motif: "ogee",
+    sizeChart: true,
     sections: [
       {
         heading: "Ladies Ready-to-Wear Suits",
         body:
-          "Pakistani ready-to-wear sizing follows a different system than Western standard sizes. Our sizes: XS fits UK 6 (bust 32-34 inches, waist 26-28 inches, hip 36-38 inches) · S fits UK 8-10 (bust 34-36 inches, waist 28-30 inches, hip 38-40 inches) · M fits UK 12 (bust 36-38 inches, waist 30-32 inches, hip 40-42 inches) · L fits UK 14 (bust 38-40 inches, waist 32-34 inches, hip 42-44 inches) · XL fits UK 16 (bust 40-42 inches, waist 34-36 inches, hip 44-46 inches). All our kameez (shirts) run long by design — expect a standard 112cm length from shoulder to hem. This traditional proportion flatters most heights and can be hemmed shorter if needed. Shalwar and trousers are tailored to complement the kameez length. When between sizes, we recommend sizing up for Pakistani formal wear as suits tend to run fitted, and slight extra room is more comfortable than a tight fit.",
+          "Pakistani ready-to-wear sizing follows a different system than Western standard sizes. Most of our ladies suits come in Small, Medium and Large, and the size chart above gives the garment's own measurements in inches, laid flat. As a guide to your body size: S fits UK 8-10 (bust 34-36 inches, waist 28-30 inches, hip 38-40 inches) · M fits UK 12 (bust 36-38 inches, waist 30-32 inches, hip 40-42 inches) · L fits UK 14 (bust 38-40 inches, waist 32-34 inches, hip 42-44 inches) · XL fits UK 16 (bust 40-42 inches, waist 34-36 inches, hip 44-46 inches). Shirt and sleeve length vary by article, so check the length on each product page before ordering — a shirt that is too long can be hemmed shorter by any tailor. Shalwar and trousers are tailored to complement the kameez length. When between sizes, we recommend sizing up for Pakistani formal wear as suits tend to run fitted, and slight extra room is more comfortable than a tight fit.",
       },
       {
         heading: "How to Measure Yourself",
@@ -223,6 +312,7 @@ export default async function ContentPage({
       </div>
       <div className="mx-auto max-w-3xl">
         <p className="text-[16px] leading-relaxed text-ink-soft">{page.intro}</p>
+        {page.sizeChart && <SizeChartSection />}
         <div className="mt-10 flex flex-col gap-8">
           {page.sections.map((s) => (
             <section key={s.heading}>
