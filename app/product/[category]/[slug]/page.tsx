@@ -217,7 +217,7 @@ export default async function ProductPage({
             <div className="mt-8">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] uppercase tracking-[0.26em]">Size</span>
-                <SizeGuideButton sizeGuideUrl={product.size_guide} />
+                <SizeGuideButton sizeGuideUrl={product.size_guide} category={product.category} />
               </div>
             </div>
           )}
