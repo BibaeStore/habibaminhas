@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 export type CartItem = {
-  cartKey: string; // slug + ":" + (size ?? "onesize")
+  cartKey: string; // slug + ":" + (size ?? "onesize"), with ":" + color before the size on colour-variant lines
   id: string;
   slug: string;
   category?: string; // Optional for backward compatibility with legacy cart items
@@ -22,6 +22,8 @@ export type CartItem = {
   qty: number;
   size: string | null;
   sku: string | null;
+  /** Colourway on colour-variant products; absent on everything else and on older saved bags. */
+  color?: string | null;
 };
 
 interface CartStore {
@@ -43,7 +45,10 @@ export const useCartStore = create<CartStore>()(
       openDrawer: () => set({ drawerOpen: true }),
       closeDrawer: () => set({ drawerOpen: false }),
       addItem: (item) => {
-        const cartKey = `${item.slug}:${item.size ?? "onesize"}`;
+        // Single-colour keys keep their original shape, so bags already saved still merge.
+        const cartKey = item.color
+          ? `${item.slug}:${item.color}:${item.size ?? "onesize"}`
+          : `${item.slug}:${item.size ?? "onesize"}`;
         const existing = get().items.find((i) => i.cartKey === cartKey);
         if (existing) {
           set({

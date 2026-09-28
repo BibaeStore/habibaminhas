@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: September 23, 2026 - /shop hero banner swapped to new WebP photo ✅  
+**Last Updated**: September 28, 2026 - colour variants on product pages (branch, not merged) 🚧  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -20,6 +20,34 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### September 28, 2026 - Colour variants on a single product page (product 049)
+
+**Changed** (branch `feat/colour-variants`, NOT merged):
+- New nullable columns `products.colors` (jsonb) and `order_items.color` (text); the
+  `decrement_product_stock` RPC also decrements a colour's per-size stock when an order line
+  carries a colour. Migration `supabase/migrations/20260928_product_colour_variants.sql`
+  (already applied - additive, inert for every product without colours).
+- `app/product/[category]/[slug]/page.tsx`, `components/product/product-gallery.tsx`,
+  `components/product/add-to-cart-section.tsx`, new `components/product/colour-selector.tsx`:
+  swatch row + per-colour gallery, rendered ONLY when `products.colors` is set.
+- Cart/checkout/order lines carry the colour (title suffix, SKU suffix, `color` column).
+
+**Reason**: owner wanted one article in 4 embroidery colours on one page (049 Paisley Prism),
+with the chosen colour recorded on the order. Owner chose this over 4 linked products.
+
+**SEO impact**: NEUTRAL, APPROVED BY OWNER 2026-09-28 before any code was written.
+- Existing product pages: no change. Verified on a local prod build against live for 030,
+  046, 048 - title, description, canonical, robots, OG, JSON-LD, h1-h3, img alt, visible
+  text and links byte-identical. Props are only passed when colours exist.
+- `components/seo/*` untouched: 049 emits one `Product` + one `Offer` like every product.
+- LCP image on 049 keeps `priority` / `fetchPriority="high"`.
+- 049 inserted as `draft` so it stays out of the sitemap until this branch is deployed; flip
+  to `active` after deploy -> +1 `/product/` in the sitemap, no new collection page.
+
+**Verification**: see the product-upload log entry for 049.
+
+**Status**: 🚧 Awaiting owner approval to merge
 
 ### September 23, 2026 - /shop hero banner: new photo, PNG -> WebP
 

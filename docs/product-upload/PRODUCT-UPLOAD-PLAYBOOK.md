@@ -303,6 +303,21 @@ Also turn `featured` **off** for a sold-out piece — one flag drives both the h
 `/new/`, and sending shoppers to something they cannot buy costs conversion. Badge `Limited` reads
 honestly on a sold-out one-off; `Restock` if it is coming back.
 
+### Colour variants — one design in several colours (since 049, 2026-09-28)
+
+Two supported ways; **ask the owner which**:
+- **Separate linked products** (047/048) — one row per colour, cross-linked in the copy.
+- **One product with swatches** (049) — set `products.colors`:
+  `[{"name":"Pink","code":"PNK","hex":"#e0607e","images":[…],"sizes_stock":{"M":1}}, …]`.
+  The page shows swatches, the gallery shows the chosen colour's photos, and a sold-out colour
+  greys out. The order line gets `– Pink` on the title, `-PNK` on the SKU and `color = 'Pink'`.
+  `stock` must equal the sum over all colours; `sizes_stock` holds the per-size totals.
+  `images[0]` is the default colour's hero (the default is the first colour with stock).
+  Name the files `<base>-<colour>-N.webp` by running the optimiser once per colour folder.
+
+⚠️ The admin product editor does not know about `colors` — per-colour stock is edited in SQL.
+Restocking via the admin changes only the totals, not the colour that sold out.
+
 ---
 
 ## Slug rules

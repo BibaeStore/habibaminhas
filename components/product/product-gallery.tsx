@@ -4,6 +4,8 @@ import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { cn } from "@/lib/utils";
+import { useColourSelectionStore } from "@/lib/colour-selection-store";
+import { defaultColourIndex, type ProductColour } from "@/lib/product-colours";
 
 const MOTIFS = ["floral", "lattice", "ogee", "arch"] as const;
 // Object positions used when the same image fills multiple thumbnail slots
@@ -13,11 +15,31 @@ interface Props {
   images: string[];
   title: string;
   palette: string[];
+  /** Colour-variant products only. When set, the gallery shows the selected colour's photos. */
+  colours?: ProductColour[] | null;
+  slug?: string;
 }
 
-export function ProductGallery({ images, title, palette }: Props) {
+export function ProductGallery({ images: productImages, title, palette, colours, slug }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedColour = useColourSelectionStore((s) =>
+    colours && slug ? (s.bySlug[slug] ?? defaultColourIndex(colours)) : 0,
+  );
+  const colour = colours?.[selectedColour] ?? null;
+  const images = colour ? colour.images : productImages;
+
+  // A new colour starts from its first photo — adjusted during render, not in an effect.
+  const [shownColour, setShownColour] = useState(selectedColour);
+  if (shownColour !== selectedColour) {
+    setShownColour(selectedColour);
+    setActiveIndex(0);
+  }
+
+  // Colour mode shows every photo of the colour; single-colour products keep the fixed 4 slots.
+  const slotCount = colour ? Math.max(4, images.length) : 4;
+  const altSuffix = colour ? ` in ${colour.name}` : "";
 
   // Active image — fall back to first image if a slot has none
   const activeImage = images[activeIndex] ?? images[0] ?? null;
@@ -81,7 +103,7 @@ export function ProductGallery({ images, title, palette }: Props) {
             <Image
               key={activeImage}
               src={activeImage}
-              alt={title}
+              alt={`${title}${altSuffix}`}
               fill
               priority
               draggable={false}
@@ -101,7 +123,7 @@ export function ProductGallery({ images, title, palette }: Props) {
 
       {/* ── Thumbnail strip ── */}
       <div className="grid grid-cols-4 gap-2">
-        {Array.from({ length: 4 }).map((_, i) => {
+        {Array.from({ length: slotCount }).map((_, i) => {
           // Use distinct images when available; otherwise reuse first image with different crop
           const img = images[i] ?? images[0] ?? null;
           const isActive = i === activeIndex;
@@ -122,16 +144,16 @@ export function ProductGallery({ images, title, palette }: Props) {
               {img ? (
                 <Image
                   src={img}
-                  alt={`${title} — view ${i + 1}`}
+                  alt={`${title}${altSuffix} — view ${i + 1}`}
                   fill
                   sizes="(max-width: 640px) 25vw, 15vw"
                   className="object-cover pointer-events-none transition-transform duration-500 group-hover:scale-105"
-                  style={{ objectPosition: THUMB_POSITIONS[i] }}
+                  style={{ objectPosition: THUMB_POSITIONS[i % 4] }}
                 />
               ) : (
                 <PlaceholderImage
                   tone={palette as [string, string, string]}
-                  motif={MOTIFS[i]}
+                  motif={MOTIFS[i % 4]}
                   aspect="3/4"
                 />
               )}

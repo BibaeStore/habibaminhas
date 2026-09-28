@@ -118,6 +118,9 @@ export function CartView({ shipping: shippingCfg }: { shipping: ShippingConfig }
                     </button>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-[12px] text-ink-soft">
+                    {item.color && (
+                      <span>Colour: <strong className="font-medium">{item.color}</strong></span>
+                    )}
                     {item.size && item.size !== "onesize" && (
                       <span>Size: <strong className="font-medium">{item.size}</strong></span>
                     )}

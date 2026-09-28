@@ -117,6 +117,7 @@ export function PaymentView({
         product_image: item.image,
         sku: item.sku,
         size: item.size !== "onesize" ? item.size : null,
+        color: item.color ?? null,
         quantity: item.qty,
         unit_price: item.price,
         total_price: item.price * item.qty,
@@ -414,6 +415,9 @@ export function PaymentView({
                   <div className="flex flex-1 items-start justify-between gap-2 text-[13px]">
                     <div>
                       <div className="font-medium leading-snug">{item.title}</div>
+                      {item.color && (
+                        <div className="mt-0.5 text-[11px] uppercase tracking-[0.16em] text-muted">{item.color}</div>
+                      )}
                       {item.size && item.size !== "onesize" && (
                         <div className="mt-0.5 text-[11px] uppercase tracking-[0.16em] text-muted">{item.size}</div>
                       )}

@@ -15,6 +15,8 @@ import { ProductCard, type CardProduct } from "@/components/product/product-card
 import { AddToCartSection } from "@/components/product/add-to-cart-section";
 import { ProductDetailsTabs } from "@/components/product/product-details-tabs";
 import { SizeGuideButton } from "@/components/product/size-guide-button";
+import { ColourSelector } from "@/components/product/colour-selector";
+import { parseColours } from "@/lib/product-colours";
 import type { Tables } from "@/lib/supabase/types";
 import { ProductSchema } from "@/components/seo/product-schema";
 import { BreadcrumbSchema } from "@/components/seo/breadcrumb-schema";
@@ -111,6 +113,9 @@ export default async function ProductPage({
     .then((ps: Product[]) => ps.filter((p) => p.id !== product.id).slice(0, 4))
     .catch(() => [] as Product[]);
 
+  // null on every single-colour product, which renders exactly as it did before colours existed
+  const colours = parseColours(product.colors);
+
   // Determine if product uses sizes (ladies/kids suits typically do)
   const hasSizes = ["ladies-suits", "kids-formal"].includes(product.category);
 
@@ -135,6 +140,7 @@ export default async function ProductPage({
             images={product.images ?? []}
             title={product.title}
             palette={product.palette}
+            {...(colours ? { colours, slug: product.slug } : {})}
           />
         </div>
 
@@ -204,6 +210,8 @@ export default async function ProductPage({
             ) : null}
           </div>
 
+          {colours && !isOutOfStock && <ColourSelector slug={product.slug} colours={colours} />}
+
           {/* Size selector label */}
           {hasSizes && !isOutOfStock && (
             <div className="mt-8">
@@ -230,6 +238,7 @@ export default async function ProductPage({
               hasSizes={hasSizes}
               sizesStock={product.sizes_stock as Record<string, number> | null}
               tryonEnabled={product.tryon_enabled ?? false}
+              {...(colours ? { colours } : {})}
             />
           )}
 

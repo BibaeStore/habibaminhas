@@ -368,6 +368,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          color: string | null
           created_at: string
           id: string
           order_id: string
@@ -381,6 +382,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          color?: string | null
           created_at?: string
           id?: string
           order_id: string
@@ -394,6 +396,7 @@ export type Database = {
           unit_price: number
         }
         Update: {
+          color?: string | null
           created_at?: string
           id?: string
           order_id?: string
@@ -531,6 +534,7 @@ export type Database = {
         Row: {
           badge: string | null
           category: string
+          colors: Json | null
           compare_at: number | null
           created_at: string
           description: string | null
@@ -561,6 +565,7 @@ export type Database = {
         Insert: {
           badge?: string | null
           category: string
+          colors?: Json | null
           compare_at?: number | null
           created_at?: string
           description?: string | null
@@ -591,6 +596,7 @@ export type Database = {
         Update: {
           badge?: string | null
           category?: string
+          colors?: Json | null
           compare_at?: number | null
           created_at?: string
           description?: string | null
