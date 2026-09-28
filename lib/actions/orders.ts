@@ -80,7 +80,12 @@ export async function createOrder(
 
   // Decrement stock and emit low-stock notifications
   const crossed = await decrementStock(
-    items.map((i) => ({ product_id: i.product_id ?? null, quantity: i.quantity })),
+    items.map((i) => ({
+      product_id: i.product_id ?? null,
+      quantity:   i.quantity,
+      size:       i.size ?? null,
+      color:      i.color ?? null,
+    })),
   );
   await emitLowStockNotifications(crossed);
 

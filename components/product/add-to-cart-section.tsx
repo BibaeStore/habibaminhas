@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { Minus, Plus, Heart, Share2, Sparkles, Lock } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { useWishlistStore } from "@/lib/wishlist-store";
+import { useColourSelectionStore } from "@/lib/colour-selection-store";
+import { defaultColourIndex, type ProductColour } from "@/lib/product-colours";
 import { trackViewItem, trackAddToCart, trackAddToWishlist, trackCustomizeProduct } from "@/lib/analytics";
 import Image from "next/image";
 
@@ -78,13 +80,30 @@ interface Props {
   hasSizes: boolean;
   sizesStock?: Record<string, number> | null;
   tryonEnabled?: boolean;
+  /** Colour-variant products only — see lib/product-colours.ts. */
+  colours?: ProductColour[] | null;
 }
 
 export function AddToCartSection({
-  id, slug, category, title, image, palette, price, compare_at, sku, hasSizes, sizesStock, tryonEnabled = false,
-  freeDelivery = false,
+  id, slug, category, title: productTitle, image: productImage, palette, price, compare_at, sku: productSku,
+  hasSizes, sizesStock: productSizesStock, tryonEnabled = false, freeDelivery = false, colours = null,
 }: Props) {
-  const [selectedSize, setSelectedSize] = useState<string | null>(hasSizes ? null : "onesize");
+  /*
+    On a colour-variant product everything the bag records is per colour: the line title and
+    SKU carry the colour, so every order screen, email, invoice and PostEx booking shows it
+    without knowing colours exist, and stock is read from the colour, not the product.
+  */
+  const colourIndex = useColourSelectionStore((s) =>
+    colours ? (s.bySlug[slug] ?? defaultColourIndex(colours)) : 0,
+  );
+  const colour = colours?.[colourIndex] ?? null;
+  const title      = colour ? `${productTitle} – ${colour.name}` : productTitle;
+  const sku        = colour && productSku ? `${productSku}-${colour.code}` : productSku;
+  const image      = colour ? (colour.images[0] ?? productImage) : productImage;
+  const sizesStock = colour ? colour.sizes_stock : productSizesStock;
+  const color      = colour?.name ?? null;
+
+  const [pickedSize, setSelectedSize] = useState<string | null>(hasSizes ? null : "onesize");
   const [mobileQty, setMobileQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [isTryOnOpen, setIsTryOnOpen] = useState(false);
@@ -115,6 +134,10 @@ export function AddToCartSection({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // A size picked on one colour does not carry over to a colour where it is sold out.
+  const selectedSize =
+    hasSizes && pickedSize && !isSizeInStock(pickedSize) ? null : pickedSize;
+
   const canAdd = !hasSizes || !!selectedSize;
 
   function handleWishlist() {
@@ -126,7 +149,7 @@ export function AddToCartSection({
   function handleTryOnClick() {
     // Silently add product to bag (badge updates), then open modal
     // Drawer opens AFTER the modal closes so the overlay covers the full screen
-    addItem({ id, slug, category, title, image, palette, price, compare_at, free_delivery: freeDelivery, size: hasSizes ? selectedSize : null, sku });
+    addItem({ id, slug, category, title, image, palette, price, compare_at, free_delivery: freeDelivery, size: hasSizes ? selectedSize : null, sku, color });
     /* The strongest buying signal on this site - nobody opens a virtual try-on unless they
        are seriously considering the garment. Fired on open rather than on generate, because
        this is where the full product data lives. */
@@ -137,7 +160,7 @@ export function AddToCartSection({
   function handleAdd() {
     if (!canAdd) return;
     const size = hasSizes ? selectedSize : null;
-    addItem({ id, slug, category, title, image, palette, price, compare_at, free_delivery: freeDelivery, size, sku });
+    addItem({ id, slug, category, title, image, palette, price, compare_at, free_delivery: freeDelivery, size, sku, color });
     trackAddToCart({ id, title, price, category, size });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
@@ -148,8 +171,8 @@ export function AddToCartSection({
     const url = `${window.location.origin}/product/${category}/${slug}`;
     if (navigator.share) {
       navigator.share({
-        title,
-        text: `Check out ${title} at Habiba Minhas`,
+        title: productTitle,
+        text: `Check out ${productTitle} at Habiba Minhas`,
         url,
       }).catch(() => {});
     } else {

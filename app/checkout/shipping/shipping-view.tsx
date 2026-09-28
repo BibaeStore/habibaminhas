@@ -317,6 +317,9 @@ export function ShippingView({ shipping: shippingCfg }: { shipping: ShippingConf
                   <div className="flex flex-1 items-start justify-between gap-2 text-[13px]">
                     <div>
                       <div className="font-medium leading-snug">{item.title}</div>
+                      {item.color && (
+                        <div className="mt-0.5 text-[11px] text-muted">{item.color}</div>
+                      )}
                       {item.size && item.size !== "onesize" && (
                         <div className="mt-0.5 text-[11px] text-muted">{item.size}</div>
                       )}

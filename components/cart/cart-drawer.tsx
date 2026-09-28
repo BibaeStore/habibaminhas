@@ -180,6 +180,11 @@ export function CartDrawer({ open, onClose }: Props) {
                     {/* In Stock + Size */}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[11px] font-medium text-sage">In Stock</span>
+                      {item.color && (
+                        <span className="text-[11px] uppercase tracking-[0.16em] text-muted">
+                          · Colour: {item.color}
+                        </span>
+                      )}
                       {item.size && item.size !== "onesize" && (
                         <span className="text-[11px] uppercase tracking-[0.16em] text-muted">
                           · Size: {item.size}

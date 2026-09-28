@@ -674,3 +674,43 @@ than the 3506×4381 boutique shoots of 043–046, but above the ~1000px floor, s
 - `stock` equals the sum of `sizes_stock` on both rows
 - Sitemap 182 → 186. Delta: **+2 `/product/`** (these two), +2 `/journal/` (blog queue,
   unrelated). No section fell. No new collection page created — all three subcategories existed.
+
+---
+
+## 049 — Paisley Prism (white lawn, paisley-embroidered yoke, 4 colours on ONE page) (2026-09-28)
+
+**🔴 First colour-variant product.** One product row, four colourways chosen by swatch on the
+page. Built on branch `feat/colour-variants` — see "Colour variants" in the playbook.
+
+| Field | Value |
+|---|---|
+| **id** | `aa61d0db-0896-4ae3-8f5b-b086d339737e` |
+| **slug** | `ld-white-paisley-embroidered-lawn-2-piece-suit-049` |
+| **SKU** | `BIBA-WHT-LWN-M-049` · order lines get `-PNK` / `-PPL` / `-MHD` / `-SGR` |
+| **Price** | Rs. 3,800 · `compare_at` null · `free_delivery` false |
+| **Stock** | Medium ×1 per colour = 4 (`sizes_stock` M:4; per colour in `colors[].sizes_stock`) |
+| **Colours** | Pink (7 photos, default), Purple (4), Mehndi Green (4), Sea Green (1) |
+| **Subcategory** | `stitched-suits`, `2-piece-suits`, `casual` |
+| **Images** | 16 × WebP, 28.6 MB → 1.66 MB (−94.3%), 1122×1402 |
+| **status** | ⚠️ `draft` until the branch is deployed — then set `active` |
+| **Source folder** | `new articles august 2026/all hb clothes/White with 4 color Embroidery` |
+
+**Owner specified:** lawn, 2-piece, Medium, 4 colours as one article, Rs. 3,800, Medium ×1 per
+colour, no dupatta (confirmed from photos and by the owner).
+
+**Photos are AI-generated and the embroidery layout differs between shots** — the Pink set has
+two visibly different yokes. Flagged; owner said use all of them. Sea Green has only one photo.
+
+**Not claimed:** hand, chikankari, cutwork, appliqué. No close-ups exist, so the copy describes
+only what the full-length shots show: paisley + floral thread embroidery outlined in black at
+the yoke and both cuffs, narrow embroidered placket, plain back and trousers.
+
+**Copy angles:** *"Which colour should I choose?"* (occasion + jewellery pairing per colour),
+*"Is it the same suit in every colour?"*, and *"Will the coloured embroidery bleed onto the
+white?"* — coloured thread on a white ground is the real washing risk on this piece.
+
+**Verified (local prod build of the branch):** 049 → 200, `index, follow`, canonical correct,
+`Product` + `Offer` + `Brand` + `AggregateRating` + `BreadcrumbList`; swatch switches gallery
+(pink-1 → purple-1, 7 → 4 thumbs); Purple-M and Pink-M land as two bag lines with colour in
+title/SKU/`color`; RPC test in a rolled-back transaction: Pink M 1→0, total 4→3, Purple untouched.
+Existing pages 030/046/048 SEO surface identical to live.

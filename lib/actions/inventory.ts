@@ -7,13 +7,20 @@ import { LOW_STOCK_THRESHOLD } from "@/lib/inventory-constants";
  * Atomically decrements stock for a list of items via the
  * `decrement_product_stock` RPC. Returns the products whose stock crossed the
  * low-stock threshold during this call so the caller can fire notifications.
+ *
+ * `color` + `size` are only acted on for colour-variant products, where the RPC also
+ * decrements that colour's per-size stock; everything else ignores them.
  */
 export async function decrementStock(
-  items: Array<{ product_id: string | null; quantity: number }>,
+  items: Array<{ product_id: string | null; quantity: number; size?: string | null; color?: string | null }>,
 ): Promise<Array<{ id: string; title: string; stock: number }>> {
   const payload = items
     .filter((i) => i.product_id && i.quantity > 0)
-    .map((i) => ({ product_id: i.product_id, quantity: i.quantity }));
+    .map((i) => ({
+      product_id: i.product_id,
+      quantity: i.quantity,
+      ...(i.color && i.size ? { color: i.color, size: i.size } : {}),
+    }));
   if (payload.length === 0) return [];
 
   const sb = createAdminClient();
