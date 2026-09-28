@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: September 28, 2026 - colour variants on product pages (branch, not merged) 🚧  
+**Last Updated**: September 28, 2026 - colour variants on product pages, merged + live ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -23,7 +23,7 @@
 
 ### September 28, 2026 - Colour variants on a single product page (product 049)
 
-**Changed** (branch `feat/colour-variants`, NOT merged):
+**Changed** (branch `feat/colour-variants`, merged to main as `b4ebc7c` with owner approval):
 - New nullable columns `products.colors` (jsonb) and `order_items.color` (text); the
   `decrement_product_stock` RPC also decrements a colour's per-size stock when an order line
   carries a colour. Migration `supabase/migrations/20260928_product_colour_variants.sql`
@@ -45,9 +45,11 @@ with the chosen colour recorded on the order. Owner chose this over 4 linked pro
 - 049 inserted as `draft` so it stays out of the sitemap until this branch is deployed; flip
   to `active` after deploy -> +1 `/product/` in the sitemap, no new collection page.
 
-**Verification**: see the product-upload log entry for 049.
+**Verification (live, after deploy + activation)**: 049 → 200, `index, follow`, canonical
+correct, `Product`/`Offer`/`Brand`/`AggregateRating`/`BreadcrumbList`. Sitemap 203 → 204,
+`/product/` 73 → 74, all other sections unchanged. Existing 048 unchanged.
 
-**Status**: 🚧 Awaiting owner approval to merge
+**Status**: ✅ Complete
 
 ### September 23, 2026 - /shop hero banner: new photo, PNG -> WebP
 
