@@ -1,6 +1,6 @@
 # SEO/AEO/GEO Optimization - Progress Tracker
 
-**Last Updated**: September 28, 2026 - house size chart on product pages + /content/size-guide/ (branch, not merged) 🚧  
+**Last Updated**: September 28, 2026 - colour variants + house size chart, both merged + live ✅  
 **Current Phase**: Phase 2 (Product Content & AEO)  
 **Overall Completion**: 24.2% (15/62 tasks complete)
 
@@ -23,7 +23,7 @@
 
 ### September 28, 2026 - House size chart: product pop-up + /content/size-guide/
 
-**Changed** (branch `feat/size-chart`, NOT merged):
+**Changed** (branch `feat/size-chart`, merged to main as `b2b5f4b` with owner approval):
 - New `public/size-guide/habiba-minhas-ladies-size-chart.webp` (owner's chart, 1024x1536, 140 KB).
 - `components/product/size-guide-button.tsx`: every ladies-suit product now shows "Size guide";
   `size_guide` values that are not real paths (`"false"` on 15 ladies rows, a missing
@@ -42,11 +42,15 @@
   description, canonical, h1 and the other sections unchanged. Chart image is lazy
   (below the hero, which stays the LCP image).
 
-**Status**: 🚧 Awaiting owner approval to merge
+**Verification (live, after deploy)**: `/content/size-guide/` 200, same title, `index, follow`,
+canonical; 2 tables present, "112cm" gone. 048 shows "Size guide", same title/canonical/robots,
+schema unchanged. Chart image 200. Sitemap 204 (unchanged).
+
+**Status**: ✅ Complete
 
 ### September 28, 2026 - Colour variants on a single product page (product 049)
 
-**Changed** (branch `feat/colour-variants`, NOT merged):
+**Changed** (branch `feat/colour-variants`, merged to main as `b4ebc7c` with owner approval):
 - New nullable columns `products.colors` (jsonb) and `order_items.color` (text); the
   `decrement_product_stock` RPC also decrements a colour's per-size stock when an order line
   carries a colour. Migration `supabase/migrations/20260928_product_colour_variants.sql`
@@ -68,9 +72,11 @@ with the chosen colour recorded on the order. Owner chose this over 4 linked pro
 - 049 inserted as `draft` so it stays out of the sitemap until this branch is deployed; flip
   to `active` after deploy -> +1 `/product/` in the sitemap, no new collection page.
 
-**Verification**: see the product-upload log entry for 049.
+**Verification (live, after deploy + activation)**: 049 → 200, `index, follow`, canonical
+correct, `Product`/`Offer`/`Brand`/`AggregateRating`/`BreadcrumbList`. Sitemap 203 → 204,
+`/product/` 73 → 74, all other sections unchanged. Existing 048 unchanged.
 
-**Status**: 🚧 Awaiting owner approval to merge
+**Status**: ✅ Complete
 
 ### September 23, 2026 - /shop hero banner: new photo, PNG -> WebP
 

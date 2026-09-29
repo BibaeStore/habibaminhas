@@ -692,7 +692,7 @@ page. Built on branch `feat/colour-variants` — see "Colour variants" in the pl
 | **Colours** | Pink (7 photos, default), Purple (4), Mehndi Green (4), Sea Green (1) |
 | **Subcategory** | `stitched-suits`, `2-piece-suits`, `casual` |
 | **Images** | 16 × WebP, 28.6 MB → 1.66 MB (−94.3%), 1122×1402 |
-| **status** | ⚠️ `draft` until the branch is deployed — then set `active` |
+| **status** | `active` since 2026-09-28 (after merge `b4ebc7c` deployed) |
 | **Source folder** | `new articles august 2026/all hb clothes/White with 4 color Embroidery` |
 
 **Owner specified:** lawn, 2-piece, Medium, 4 colours as one article, Rs. 3,800, Medium ×1 per
@@ -714,3 +714,9 @@ white?"* — coloured thread on a white ground is the real washing risk on this 
 (pink-1 → purple-1, 7 → 4 thumbs); Purple-M and Pink-M land as two bag lines with colour in
 title/SKU/`color`; RPC test in a rolled-back transaction: Pink M 1→0, total 4→3, Purple untouched.
 Existing pages 030/046/048 SEO surface identical to live.
+
+**Verified LIVE after merge + activation (2026-09-28):** URL → 200; title, description, canonical,
+`index, follow` correct; schema `Product`, `Offer` (`price 3800`, `InStock`), `Brand`,
+`AggregateRating`, `BreadcrumbList`; listed on `/`, `/new/`, `/ladies/casual/`,
+`/ladies/2-piece-suits/`. Sitemap 203 → 204: **+1 `/product/` (73 → 74), every other section
+unchanged**. Existing 048 still `index, follow` with its canonical and no swatches.
