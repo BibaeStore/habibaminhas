@@ -14,6 +14,61 @@ for f in "new articles august 2026/all hb clothes"/*/; do n=$(basename "$f");
 **As of 2026-08-20 the `all hb clothes` batch is fully processed — zero folders remain.**
 All 17 folders map to products 030–046.
 
+**As of 2026-10-03 the `silk articles` batch is fully processed — all 7 folders map to 056–062.**
+
+---
+
+## 056–062 — the silk batch (semi-formal / party wear)
+
+Uploaded 2026-10-03 in one session. Source: `new articles august 2026/silk articles/` — seven
+unnamed folders (`New folder` … `New folder (7)`), all AI-composited shots at 1122×1402 (one
+3506×4381 hero in `New folder`). Numbers 050–055 were already taken by baby/accessories, so the
+batch starts at **056**.
+
+**Batch-wide decisions (owner):** all silk, all fully stitched 3-piece, collection = **party wear**
+(the owner's "semi-formal"), `featured = true`, badge `New In`, try-on on, no `compare_at`.
+Subcategory on every row: `stitched-suits`, `3-piece-suits`, `party-wear` — no new collection page.
+Care = dry clean recommended on all (silk + chiffon).
+
+| # | Name | Slug | Price | Stock | Imgs | Source folder |
+|---|---|---|---|---|---|---|
+| 056 | Navy Lagoon | `ld-navy-teal-embroidered-silk-3-piece-suit-056` | 3,999 | S1 M3 L1 (5) | 6 | `silk articles/New folder` |
+| 057 | Olive Rosewood | `ld-olive-green-embroidered-silk-3-piece-suit-057` | 3,999 | S1 M2 L1 (4) | 5 | `silk articles/New folder (2)` |
+| 058 | Rose Quartz | `ld-pink-embroidered-silk-3-piece-suit-058` | 3,999 | S1 M2 L1 (4) | 5 | `silk articles/New folder (3)` |
+| 059 | Aqua Mist | `ld-aqua-embroidered-silk-3-piece-suit-059` | 3,999 | S1 M2 L1 (4) | 5 | `silk articles/New folder (4)` |
+| 060 | Noir Ruby | `ld-black-red-silk-maxi-3-piece-suit-060` | 4,900 | S1 M2 L1 (4) | 5 | `silk articles/New folder (5)` |
+| 061 | Peacock Plum | `ld-purple-teal-embroidered-silk-3-piece-suit-061` | 5,200 | S1 M2 L1 (4) | 2 | `silk articles/New folder (6)` |
+| 062 | Forest Saffron | `ld-bottle-green-silk-3-piece-suit-062` | 3,900 | S1 M2 L1 (4) | 5 | `silk articles/New folder (7)` |
+
+SKUs follow `BIBA-{NVY|OLV|PNK|AQU|BLK|PUR|BGN}-SLK-SML-0NN`.
+
+### Open items — unconfirmed by the owner, copy written defensively
+
+- **056** — trousers written as **silk** (photos show the shirt's sheen); owner said "the bottom is
+  in chiffon", read as the dupatta. Confirm.
+- **058** — gold-toned embroidery; zari/tilla **not** claimed (owner never answered).
+- **059** — owner said "fronts are embroidered", but every photo shows a plain front (cuffs,
+  piped square neck and dupatta border only). Copy claims neither front embroidery nor a plain
+  front. Colour named **aqua** by the owner.
+- **060** — red floral work on the dupatta: embroidered vs printed never confirmed, so "red floral
+  work". Silhouette is a flared **maxi** over **straight** trousers — the only non-flapper one.
+- **061** — the two back photos **contradict** each other (one embroidered hem, one plain). Both
+  dropped; only 2 front images published; back not mentioned. Ask for a real back photo.
+  "triple dobby" read as chiffon dupatta.
+- **062** — dupatta floral: embroidered vs printed unconfirmed, written as "pattern".
+
+**Copy angles:** each FAQ set explains why silk makes a suit semi-formal (vs cotton/lawn casual),
+defines flapper trousers, and gives a "for barat/walima choose formal wear" negative recommendation.
+The seven cross-link by contrast — Navy vs Olive (cool vs warm, same price), Navy vs Plum (same
+teal accent, quiet vs dressed-up), Noir Ruby (maxi + straight vs everyone else's flapper),
+Forest Saffron (the only unembroidered shirt).
+
+**Verified live (all seven):** URL → 200, `index, follow`, correct canonical, `Product` / `Offer` /
+`Brand` / `AggregateRating` / `BreadcrumbList`, `InStock`, correct price. Sitemap **204 → 211**,
+`/product/` **74 → 81**, `/ladies/` unchanged at 7. All 7 render on `/`, `/new/`,
+`/ladies/party-wear/`, `/ladies/stitched-suits/`, `/ladies/3-piece-suits/`. False-claim sweep
+(hand-*, zari, tilla, sequin, chikankari, appliqué, organza, "pure silk") clean on all seven.
+
 ---
 
 ## 044, 045, 046 — the rest of the boutique-shoot batch
