@@ -14,6 +14,65 @@ for f in "new articles august 2026/all hb clothes"/*/; do n=$(basename "$f");
 **As of 2026-08-20 the `all hb clothes` batch is fully processed — zero folders remain.**
 All 17 folders map to products 030–046.
 
+**As of 2026-10-03 the `silk articles` batch is fully processed — all 7 folders map to 056–062.**
+
+---
+
+## 056–062 — the silk batch (semi-formal / party wear)
+
+Uploaded 2026-10-03 in one session. Source: `new articles august 2026/silk articles/` — seven
+unnamed folders (`New folder` … `New folder (7)`), all AI-composited shots at 1122×1402 (one
+3506×4381 hero in `New folder`). Numbers 050–055 were already taken by baby/accessories, so the
+batch starts at **056**.
+
+**Batch-wide decisions (owner):** all silk, all fully stitched 3-piece, collection = **party wear**
+(the owner's "semi-formal"), `featured = true`, badge `New In`, try-on on, no `compare_at`.
+Subcategory on every row: `stitched-suits`, `3-piece-suits`, `party-wear` — no new collection page.
+Care = dry clean recommended on all (silk + chiffon).
+
+| # | Name | Slug | Price | Stock | Imgs | Source folder |
+|---|---|---|---|---|---|---|
+| 056 | Navy Lagoon | `ld-navy-teal-embroidered-silk-3-piece-suit-056` | 3,999 | S1 M3 L1 (5) | 6 | `silk articles/New folder` |
+| 057 | Olive Rosewood | `ld-olive-green-embroidered-silk-3-piece-suit-057` | 3,999 | S1 M2 L1 (4) | 5 | `silk articles/New folder (2)` |
+| 058 | Rose Quartz | `ld-pink-embroidered-silk-3-piece-suit-058` | 3,999 | S1 M2 L1 (4) | 5 | `silk articles/New folder (3)` |
+| 059 | Aqua Mist | `ld-aqua-embroidered-silk-3-piece-suit-059` | 3,999 | S1 M2 L1 (4) | 5 | `silk articles/New folder (4)` |
+| 060 | Noir Ruby | `ld-black-red-silk-maxi-3-piece-suit-060` | 4,900 | S1 M2 L1 (4) | 5 | `silk articles/New folder (5)` |
+| 061 | Peacock Plum | `ld-purple-teal-embroidered-silk-3-piece-suit-061` | 5,200 | S1 M2 L1 (4) | 2 | `silk articles/New folder (6)` |
+| 062 | Forest Saffron | `ld-bottle-green-silk-3-piece-suit-062` | 3,900 | S1 M2 L1 (4) | 5 | `silk articles/New folder (7)` |
+
+SKUs follow `BIBA-{NVY|OLV|PNK|AQU|BLK|PUR|BGN}-SLK-SML-0NN`.
+
+### Follow-up answers (same day) — applied by UPDATE to body copy only
+
+seo_title / seo_description / slug were left untouched on all seven.
+
+- **Flapper confirmed** on every suit except 060 (straight trousers). 056 trousers stay **silk**.
+- **058** — owner confirmed **thread and zari work**. Neck/border spec lines, body copy and the
+  colours FAQ now say so; added a "What is zari work?" FAQ (12 FAQs).
+- **059** — owner: embroidery is "only neck… with border". The crops show the neck is teal **piping**
+  and the embroidered borders are the **cuffs**; hem and body plain. Copy now states the body is
+  plain ("Front & Back: Plain Body"). Colour **aqua** per owner.
+- **060 / 062** — dupatta florals confirmed **embroidered** ("red floral embroidery",
+  "mustard-gold floral embroidery").
+- **061** — owner: "the images I have are all we have". Stays at 2 front images; back not
+  mentioned, because the two AI back shots contradicted each other. "triple dobby" = chiffon dupatta.
+
+⚠️ **These photos are AI-composited** (ChatGPT renders on the boutique background), and 061 proved
+they can disagree with each other on garment details. Treat them as less authoritative than the
+real-shoot photos of 030–046 when the owner's words and a picture conflict.
+
+**Copy angles:** each FAQ set explains why silk makes a suit semi-formal (vs cotton/lawn casual),
+defines flapper trousers, and gives a "for barat/walima choose formal wear" negative recommendation.
+The seven cross-link by contrast — Navy vs Olive (cool vs warm, same price), Navy vs Plum (same
+teal accent, quiet vs dressed-up), Noir Ruby (maxi + straight vs everyone else's flapper),
+Forest Saffron (the only unembroidered shirt).
+
+**Verified live (all seven):** URL → 200, `index, follow`, correct canonical, `Product` / `Offer` /
+`Brand` / `AggregateRating` / `BreadcrumbList`, `InStock`, correct price. Sitemap **204 → 211**,
+`/product/` **74 → 81**, `/ladies/` unchanged at 7. All 7 render on `/`, `/new/`,
+`/ladies/party-wear/`, `/ladies/stitched-suits/`, `/ladies/3-piece-suits/`. False-claim sweep
+(hand-*, zari, tilla, sequin, chikankari, appliqué, organza, "pure silk") clean on all seven.
+
 ---
 
 ## 044, 045, 046 — the rest of the boutique-shoot batch

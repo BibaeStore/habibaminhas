@@ -94,6 +94,11 @@ Voice notes and transcription mangle the same words repeatedly. Confirmed meanin
 | "pulse lace" | **pearl lace** — individual pearls stitched along an edge | 046 |
 | "A8 line" | **A-line** | 046 |
 | "chicken kari", "chicken curry" | **chikankari** — but see the craft-term warning below; the term has been wrong as often as right | 033, 035, 045 |
+| "sale suit", "sell articles", "6-suit", "salmon articles" | **silk** — "sale" does NOT mean a discount; confirm before setting `compare_at` | 056–062 |
+| "slapper", "leopard trouser" | **flapper** trousers | 058, 061 |
+| "dobata", "tubata", "dubuta", "chiffon data", "triple dobby", "do better" | **(chiffon) dupatta** | 056–062 |
+| "mac embroidery" | **neck** embroidery | 058 |
+| "four-side(d) embroidery / lace" | dupatta embroidered or laced on all four edges | 056–062 |
 
 ### 🔴 Craft terms are wrong in BOTH directions — always read the close-up
 
