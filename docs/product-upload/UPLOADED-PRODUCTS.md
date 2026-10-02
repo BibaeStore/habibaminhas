@@ -42,20 +42,24 @@ Care = dry clean recommended on all (silk + chiffon).
 
 SKUs follow `BIBA-{NVY|OLV|PNK|AQU|BLK|PUR|BGN}-SLK-SML-0NN`.
 
-### Open items — unconfirmed by the owner, copy written defensively
+### Follow-up answers (same day) — applied by UPDATE to body copy only
 
-- **056** — trousers written as **silk** (photos show the shirt's sheen); owner said "the bottom is
-  in chiffon", read as the dupatta. Confirm.
-- **058** — gold-toned embroidery; zari/tilla **not** claimed (owner never answered).
-- **059** — owner said "fronts are embroidered", but every photo shows a plain front (cuffs,
-  piped square neck and dupatta border only). Copy claims neither front embroidery nor a plain
-  front. Colour named **aqua** by the owner.
-- **060** — red floral work on the dupatta: embroidered vs printed never confirmed, so "red floral
-  work". Silhouette is a flared **maxi** over **straight** trousers — the only non-flapper one.
-- **061** — the two back photos **contradict** each other (one embroidered hem, one plain). Both
-  dropped; only 2 front images published; back not mentioned. Ask for a real back photo.
-  "triple dobby" read as chiffon dupatta.
-- **062** — dupatta floral: embroidered vs printed unconfirmed, written as "pattern".
+seo_title / seo_description / slug were left untouched on all seven.
+
+- **Flapper confirmed** on every suit except 060 (straight trousers). 056 trousers stay **silk**.
+- **058** — owner confirmed **thread and zari work**. Neck/border spec lines, body copy and the
+  colours FAQ now say so; added a "What is zari work?" FAQ (12 FAQs).
+- **059** — owner: embroidery is "only neck… with border". The crops show the neck is teal **piping**
+  and the embroidered borders are the **cuffs**; hem and body plain. Copy now states the body is
+  plain ("Front & Back: Plain Body"). Colour **aqua** per owner.
+- **060 / 062** — dupatta florals confirmed **embroidered** ("red floral embroidery",
+  "mustard-gold floral embroidery").
+- **061** — owner: "the images I have are all we have". Stays at 2 front images; back not
+  mentioned, because the two AI back shots contradicted each other. "triple dobby" = chiffon dupatta.
+
+⚠️ **These photos are AI-composited** (ChatGPT renders on the boutique background), and 061 proved
+they can disagree with each other on garment details. Treat them as less authoritative than the
+real-shoot photos of 030–046 when the owner's words and a picture conflict.
 
 **Copy angles:** each FAQ set explains why silk makes a suit semi-formal (vs cotton/lawn casual),
 defines flapper trousers, and gives a "for barat/walima choose formal wear" negative recommendation.
